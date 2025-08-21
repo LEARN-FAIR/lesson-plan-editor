@@ -25,24 +25,6 @@ export const loadMarkdownFile = async (): Promise<string> => {
 };
 
 /**
- * Saves the markdown content
- * In a real application, this would make an API call to save to a file or database
- * @param content The markdown content to save
- * @returns Promise indicating success or failure
- */
-export const saveMarkdownFile = async (content: string): Promise<void> => {
-  // In a real application, you would make an API call here
-  // For demo purposes, we just log and return success
-  console.log('Saving markdown content:', content);
-  
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // If this were a real API, we might handle potential errors here
-  return Promise.resolve();
-};
-
-/**
  * Exports the markdown content as a file download
  * @param content The markdown content to export
  * @param filename The filename to use for the download

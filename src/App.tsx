@@ -6,7 +6,7 @@ import {
   Snackbar
 } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { loadMarkdownFile, saveMarkdownFile, exportMarkdownFile } from './services/markdownService';
+import { loadMarkdownFile, exportMarkdownFile } from './services/markdownService';
 import Editor from './components/Editor';
 import GitHubCallback from './components/GitHubCallback';
 import AuthGuard from './components/AuthGuard';
@@ -88,12 +88,17 @@ This is the main content of the sample FAIR lesson plan.`;
 
   const handleSaveMarkdown = async (updatedMarkdown: string) => {
     try {
+      // Store markdown content in memory for later GitHub integration
       setSavedContent(updatedMarkdown);
-      await saveMarkdownFile(updatedMarkdown);
+      console.log('Markdown content saved in memory for later GitHub push');
+      
+      // Simulate a delay to provide feedback to the user
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       setSaveSnackbarOpen(true);
     } catch (err) {
-      console.error('Error saving markdown:', err);
-      setSaveError(err instanceof Error ? err.message : 'Failed to save markdown');
+      console.error('Error processing markdown:', err);
+      setSaveError(err instanceof Error ? err.message : 'Failed to process markdown');
       setSaveDialogOpen(true); // Show dialog with error details
     }
   };
@@ -154,7 +159,7 @@ This is the main content of the sample FAIR lesson plan.`;
           <DialogContentText>
             {saveError ? 
               `Error: ${saveError}. Please try again.` :
-              'In a production environment, this would save the file to your system or server. For now, the updated markdown has been logged to the console.'}
+              'The markdown content has been saved in memory and will be available for pushing to GitHub later.'}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
