@@ -10,7 +10,7 @@ import PrerequisitesEditor from './sections/PrerequisitesEditor';
 import TermsEditor from './sections/TermsEditor';
 import ResourcesEditor from './sections/ResourcesEditor';
 import ContentEditor from './sections/ContentEditor';
-import RawEditor from './sections/RawEditor';
+
 import GitHubCommitButton from './GitHubCommitButton';
 import { getCurrentFilename } from '../services/markdownService';
 
@@ -116,7 +116,7 @@ const Editor: React.FC<EditorProps> = ({ initialMarkdown, onSave }) => {
             <Tab label="Terms" {...a11yProps(5)} />
             <Tab label="Resources" {...a11yProps(6)} />
             <Tab label="Content" {...a11yProps(7)} />
-            <Tab label="Raw Editor" {...a11yProps(8)} />
+
           </Tabs>
         </Box>
         
@@ -176,12 +176,7 @@ const Editor: React.FC<EditorProps> = ({ initialMarkdown, onSave }) => {
           />
         </TabPanel>
         
-        <TabPanel value={tabValue} index={8}>
-          <RawEditor 
-            markdown={initialMarkdown} 
-            onChange={onSave} 
-          />
-        </TabPanel>
+
       </Paper>
     </Container>
   );

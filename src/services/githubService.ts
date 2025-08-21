@@ -9,10 +9,12 @@ import { Octokit } from '@octokit/rest';
 const TOKEN_STORAGE_KEY = 'github_oauth_token';
 const USER_STORAGE_KEY = 'github_user';
 
-// Configuration
-const CLIENT_ID = 'Iv23liKrIx8ddAZ4XLwU'; // Replace with your GitHub OAuth App client ID
-const REDIRECT_URI = `${window.location.origin}/github-callback`;
-const SCOPE = 'repo'; // Permissions needed
+// Configuration for GitHub OAuth callback
+// The actual OAuth redirection is handled by the backend
+const GITHUB_CALLBACK_PATH = '/github-callback';
+
+// Backend API URL - Update this if your backend is running on a different port/host
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
 
 // Types for file parameters
 export interface CommitFileParams {
@@ -66,45 +68,61 @@ class GitHubService {
   }
 
   /**
-   * Redirect to GitHub for OAuth authentication
+   * Redirect to GitHub for OAuth authentication via backend
    */
   redirectToGitHub() {
-    const params = new URLSearchParams({
-      client_id: CLIENT_ID,
-      redirect_uri: REDIRECT_URI,
-      scope: SCOPE,
-      state: this.generateRandomString(32)
-    });
-    
-    // Redirect to GitHub OAuth login page
-    window.location.href = `https://github.com/login/oauth/authorize?${params.toString()}`;
+    // Use the backend endpoint to handle GitHub OAuth redirection
+    window.location.href = `${API_URL}/auth/github/login`;
   }
 
   /**
    * Handle the OAuth callback from GitHub
-   * NOTE: In a production app, this should be handled by a backend service
-   * to keep client_secret secure. This is just a mock implementation.
+   * Uses our backend to securely exchange the code for an access token
    */
   async handleAuthCallback(code: string): Promise<void> {
-    // This is a mock implementation for demonstration
-    // In a real app, you would send the code to your backend
-    // and the backend would make the token exchange request
+    // If we already have a token, don't try to exchange the code again
+    if (this.token && this.isAuthenticated()) {
+      console.log('Already authenticated, skipping code exchange');
+      return Promise.resolve();
+    }
     
-    // Simulate token exchange
-    this.token = `mock_oauth_token_${this.generateRandomString(16)}`;
-    sessionStorage.setItem(TOKEN_STORAGE_KEY, this.token);
-    this.octokit = new Octokit({ auth: this.token });
-    
-    // Get mock user data
-    this.user = {
-      login: 'mockuser',
-      name: 'Mock User',
-      avatar_url: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
-      email: 'mock@example.com'
-    };
-    
-    sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user));
-    return Promise.resolve();
+    try {
+      console.log('Exchanging code for token...');
+      
+      // Exchange the code for an access token via our backend
+      const tokenResponse = await fetch(`${API_URL}/auth/github/callback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code })
+      });
+      
+      if (!tokenResponse.ok) {
+        const errorData = await tokenResponse.json();
+        throw new Error(errorData.error || 'Failed to exchange code for token');
+      }
+      
+      const tokenData = await tokenResponse.json();
+      this.token = tokenData.access_token;
+      
+      // Save token to session storage
+      if (this.token) {
+        sessionStorage.setItem(TOKEN_STORAGE_KEY, this.token);
+        console.log('Token saved to session storage');
+      }
+      
+      // Initialize Octokit with the token
+      this.octokit = new Octokit({ auth: this.token });
+      
+      // Get user data from GitHub API
+      await this.getCurrentUser();
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error handling GitHub callback:', error);
+      throw error;
+    }
   }
   
   /**
@@ -136,8 +154,8 @@ class GitHubService {
    * Get current authenticated user information
    */
   async getCurrentUser(): Promise<GitHubUser> {
-    if (!this.octokit) {
-      throw new Error('GitHub client not initialized. Call initialize() first.');
+    if (!this.token) {
+      throw new Error('Not authenticated with GitHub');
     }
 
     try {
@@ -146,7 +164,40 @@ class GitHubService {
         return this.user;
       }
       
-      // Otherwise fetch from API
+      // Try to get user data from our backend first (more secure)
+      try {
+        if (!this.token) {
+          throw new Error('Token is not available');
+        }
+        
+        const userResponse = await fetch(`${API_URL}/auth/github/user`, {
+          headers: {
+            'Authorization': `Bearer ${this.token}`
+          }
+        });
+        
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          this.user = {
+            login: userData.login,
+            name: userData.name || undefined,
+            avatar_url: userData.avatar_url,
+            email: userData.email || undefined
+          };
+          
+          // Save to session storage
+          sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user));
+          return this.user;
+        }
+      } catch (backendError) {
+        console.warn('Failed to get user from backend, falling back to direct API call:', backendError);
+      }
+      
+      // Fallback to direct GitHub API call if backend fails
+      if (!this.octokit) {
+        this.octokit = new Octokit({ auth: this.token });
+      }
+      
       const response = await this.octokit.users.getAuthenticated();
       this.user = {
         login: response.data.login,

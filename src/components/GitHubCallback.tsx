@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Paper } from '@mui/material';
 import githubService from '../services/githubService';
@@ -11,10 +11,25 @@ const GitHubCallback: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
+  const [processing, setProcessing] = useState<boolean>(false);
+  const processed = useRef<boolean>(false);
 
   useEffect(() => {
+    // Only process once per component mount
+    if (processed.current) {
+      return;
+    }
+
     const handleCallback = async () => {
+      // If already processing, don't try again
+      if (processing) {
+        return;
+      }
+
       try {
+        setProcessing(true);
+        processed.current = true;
+        
         // Get the code from URL query params
         const searchParams = new URLSearchParams(location.search);
         const code = searchParams.get('code');
@@ -23,21 +38,33 @@ const GitHubCallback: React.FC = () => {
           throw new Error('No authorization code received from GitHub');
         }
         
+        // Check if we already have a token in session storage
+        if (sessionStorage.getItem('github_oauth_token')) {
+          console.log('Already authenticated, redirecting to editor');
+          navigate('/');
+          return;
+        }
+        
         // Exchange code for token
         await githubService.handleAuthCallback(code);
+        
+        // Clear the code from the URL to prevent reprocessing on refresh
+        window.history.replaceState({}, document.title, '/github-callback');
         
         // Redirect back to editor after successful authentication
         setTimeout(() => {
           navigate('/');
-        }, 2000);
+        }, 1500);
       } catch (err) {
         console.error('GitHub OAuth callback error:', err);
         setError(`Authentication failed: ${(err as Error).message}`);
+        setProcessing(false);
       }
     };
 
+    // Execute the callback handler once
     handleCallback();
-  }, [location.search, navigate]);
+  }, []);
 
   return (
     <Box

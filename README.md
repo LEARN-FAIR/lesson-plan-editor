@@ -1,6 +1,13 @@
-# Getting Started with Create React App
+# LEARN-FAIR Lesson Plan Editor
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React TypeScript application for editing FAIR lesson plans with GitHub integration for saving and versioning content.
+
+## Features
+
+- Markdown-based lesson plan editing
+- GitHub integration for saving and versioning content
+- OAuth authentication with GitHub
+- Full-stack application with secure backend for OAuth flow
 
 ## Available Scripts
 
@@ -39,7 +46,59 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
+## GitHub Integration Setup
+
+### Backend Setup
+
+1. Navigate to the server directory:
+   ```
+   cd server
+   ```
+
+2. Install dependencies:
+   ```
+   npm install
+   ```
+
+3. Create a `.env` file based on the `.env.example` file:
+   ```
+   cp .env.example .env
+   ```
+
+4. Register a new OAuth application on GitHub:
+   - Go to GitHub > Settings > Developer settings > OAuth Apps > New OAuth App
+   - Set the Homepage URL to `http://localhost:3000`
+   - Set the Authorization callback URL to `http://localhost:3000/github-callback`
+   - Copy the Client ID and Client Secret to your `.env` file
+
+5. Start the backend server:
+   ```
+   npm run dev
+   ```
+
+### Frontend Setup
+
+1. In the main project directory, update the GitHub client ID in `src/services/githubService.ts`:
+   ```typescript
+   const CLIENT_ID = 'your_github_client_id'; // Replace with your GitHub OAuth App client ID
+   ```
+
+2. Install dependencies and start the frontend application:
+   ```
+   npm install
+   npm start
+   ```
+
+## Using GitHub Integration
+
+1. Click the "Sign in with GitHub" button in the editor.
+2. You will be redirected to GitHub to authorize the application.
+3. After authorization, you'll be redirected back to the editor with your GitHub account connected.
+4. Use the commit form to save your lesson plan to a GitHub repository.
+
 ## Learn More
+
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 

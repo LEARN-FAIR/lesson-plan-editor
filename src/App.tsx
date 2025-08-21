@@ -5,10 +5,12 @@ import {
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
   Snackbar
 } from '@mui/material';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { loadMarkdownFile, saveMarkdownFile, exportMarkdownFile } from './services/markdownService';
 import Editor from './components/Editor';
 import GitHubCallback from './components/GitHubCallback';
+import AuthGuard from './components/AuthGuard';
+import UserMenu from './components/UserMenu';
 import './App.css';
 
 function MainEditor() {
@@ -19,6 +21,7 @@ function MainEditor() {
   const [savedContent, setSavedContent] = useState<string | null>(null);
   const [saveSnackbarOpen, setSaveSnackbarOpen] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMarkdown = async () => {
@@ -104,6 +107,11 @@ This is the main content of the sample FAIR lesson plan.`;
   const handleCloseDialog = () => {
     setSaveDialogOpen(false);
   };
+  
+  const handleLogout = () => {
+    // Force a reload to ensure the app resets to the login state
+    window.location.href = '/';
+  };
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -117,6 +125,7 @@ This is the main content of the sample FAIR lesson plan.`;
             Export
           </Button>
           <Button color="inherit">Documentation</Button>
+          <UserMenu onLogout={handleLogout} />
         </Toolbar>
       </AppBar>
       
@@ -174,7 +183,11 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<MainEditor />} />
+        <Route path="/" element={
+          <AuthGuard>
+            <MainEditor />
+          </AuthGuard>
+        } />
         <Route path="/github-callback" element={<GitHubCallback />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
