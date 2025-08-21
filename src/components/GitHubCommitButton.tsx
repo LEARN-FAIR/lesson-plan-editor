@@ -1,37 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import TextField from '@mui/material/TextField';
-import CircularProgress from '@mui/material/CircularProgress';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  TextField,
+  CircularProgress,
+  Alert,
+  Menu,
+  MenuItem,
+  IconButton,
+  Box,
+  Typography,
+  Avatar,
+  Divider,
+  Stack,
+  Snackbar
+} from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import Alert from '@mui/material/Alert';
-import Stack from '@mui/material/Stack';
-import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
-import Avatar from '@mui/material/Avatar';
-import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
-import githubService from '../services/githubService';
-import { CommitFileParams } from '../services/githubService';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import githubService, { CommitFileParams } from '../services/githubService';
+
 
 interface GitHubCommitButtonProps {
   content: string;
   filePath: string;
   disabled?: boolean;
   color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+  onExport: () => void;
 }
 
-const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePath, disabled = false, color }) => {
+const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePath, disabled = false, color, onExport }) => {
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
-  
-  // Commit information
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [owner, setOwner] = useState<string>('');
   const [repo, setRepo] = useState<string>('');
   const [branch, setBranch] = useState<string>('main');
@@ -49,12 +56,26 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
 
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
-    // Reset error state when opening dialog
-    setError(null);
+    setAnchorEl(null);
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
+    setError(null);
+    setSuccess(false);
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+  
+  const handleExport = () => {
+    handleMenuClose();
+    onExport();
   };
 
   const handleSignInWithGitHub = () => {
@@ -117,9 +138,36 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
         disabled={disabled}
         color={color || "primary"}
         sx={{ ml: 1 }}
+        endIcon={
+          <IconButton 
+            size="small" 
+            onClick={(e: React.MouseEvent<HTMLElement>) => {
+              e.stopPropagation();
+              handleMenuOpen(e);
+            }}
+            sx={{ 
+              p: 0, 
+              color: 'inherit',
+              '&:hover': { backgroundColor: 'transparent' } 
+            }}
+          >
+            <ArrowDropDownIcon />
+          </IconButton>
+        }
       >
         Commit to GitHub
       </Button>
+      
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={handleExport}>
+          <FileDownloadIcon fontSize="small" sx={{ mr: 1 }} />
+          Export
+        </MenuItem>
+      </Menu>
 
       <Dialog open={isDialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>Commit to GitHub</DialogTitle>

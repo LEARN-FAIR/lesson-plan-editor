@@ -3,8 +3,11 @@ import {
   Box, Typography, Button, Container, 
   CircularProgress, Alert, AlertTitle, 
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
-  Snackbar
+  Snackbar,
+  Stack
 } from '@mui/material';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import DescriptionIcon from '@mui/icons-material/Description';
 import { useNavigate, useParams } from 'react-router-dom';
 import { extractLessonPathParts, generateLessonPlanUrl, constructLessonPath } from '../utils/urlUtils';
 import githubRepoService, { Repository } from '../services/githubRepoService';
@@ -164,23 +167,47 @@ const EditorPage: React.FC = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <StyledAppBar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Lesson Plan Editor
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          {setupComplete && (
-            <Button variant="outlined" color="inherit" onClick={handleReturnToSelection}>
-              Change Selection
-            </Button>
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Typography variant="h6" component="div" color="white">
+            Lesson Plan Editor
+          </Typography>
+          {setupComplete && githubRepoService.getSelectedRepo() && lessonPlanService.getSelectedLessonPlan() && (
+            <Box 
+              component="button" 
+              onClick={handleReturnToSelection}
+              sx={{ 
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                p: 0,
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              <Stack direction="row" spacing={2} sx={{ opacity: 0.8, color: 'white' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <GitHubIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  <Typography variant="caption" color="inherit">
+                    {`${githubRepoService.getSelectedRepo()?.owner.login}/${githubRepoService.getSelectedRepo()?.name}`}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <DescriptionIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  <Typography variant="caption" color="inherit">
+                    {lessonPlanService.getSelectedLessonPlan()?.name || ''}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
           )}
-          <Button variant="outlined" color="inherit" onClick={handleExportMarkdown} disabled={!markdownContent}>
-            Export
-          </Button>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           {markdownContent && (
             <GitHubCommitButton 
               content={markdownContent} 
               filePath={getCurrentFilename()} 
               color="inherit"
+              onExport={handleExportMarkdown}
             />
           )}
           <UserMenu />
