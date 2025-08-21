@@ -333,6 +333,65 @@ class GitHubRepoService {
       throw error;
     }
   }
+
+  /**
+   * Create a new branch in the selected repository
+   * @param branchName Name for the new branch
+   * @param sourceBranch Source branch to create from (defaults to the default branch)
+   * @returns The newly created branch
+   */
+  async createBranch(branchName: string, sourceBranch?: string): Promise<Branch> {
+    if (!githubService.isAuthenticated()) {
+      throw new Error('Not authenticated with GitHub');
+    }
+
+    const repo = this.getSelectedRepo();
+    if (!repo) {
+      throw new Error('No repository selected');
+    }
+
+    try {
+      const octokit = new Octokit({ auth: sessionStorage.getItem('github_oauth_token') });
+      
+      // If no source branch is provided, use the current branch or default branch
+      const sourceRef = sourceBranch || this.getSelectedBranch() || repo.default_branch;
+      
+      // Get the SHA of the latest commit on the source branch
+      const refResponse = await octokit.git.getRef({
+        owner: repo.owner.login,
+        repo: repo.name,
+        ref: `heads/${sourceRef}`
+      });
+      
+      const sha = refResponse.data.object.sha;
+      
+      // Create the new branch
+      const createRefResponse = await octokit.git.createRef({
+        owner: repo.owner.login,
+        repo: repo.name,
+        ref: `refs/heads/${branchName}`,
+        sha
+      });
+      
+      // Format the response to match our Branch interface
+      const newBranch: Branch = {
+        name: branchName,
+        commit: {
+          sha,
+          url: createRefResponse.data.object.url
+        },
+        protected: false
+      };
+      
+      // Set this as the selected branch
+      this.setSelectedBranch(branchName);
+      
+      return newBranch;
+    } catch (error) {
+      console.error('Error creating branch:', error);
+      throw error;
+    }
+  }
 }
 
 // Create singleton instance

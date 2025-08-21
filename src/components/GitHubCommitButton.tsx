@@ -23,6 +23,8 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import githubService, { CommitFileParams } from '../services/githubService';
+import githubRepoService from '../services/githubRepoService';
+import lessonPlanService from '../services/lessonPlanService';
 
 
 interface GitHubCommitButtonProps {
@@ -39,10 +41,11 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [owner, setOwner] = useState<string>('');
-  const [repo, setRepo] = useState<string>('');
-  const [branch, setBranch] = useState<string>('main');
   const [commitMessage, setCommitMessage] = useState<string>(`Update ${filePath}`);
+  
+  // GitHub App installation dialog state
+  const [isAppInstallDialogOpen, setIsAppInstallDialogOpen] = useState<boolean>(false);
+  const [installationUrl, setInstallationUrl] = useState<string>('');
 
   // Check authentication status
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(githubService.isAuthenticated());
@@ -57,6 +60,9 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
     setAnchorEl(null);
+    
+    // Set commit message based on the current file path
+    setCommitMessage(`Update ${filePath}`);
   };
 
   const handleCloseDialog = () => {
@@ -95,8 +101,17 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
       return;
     }
 
-    if (!owner || !repo) {
-      setError('Owner and repository names are required');
+    // Get the selected repository and branch from the service
+    const selectedRepo = githubRepoService.getSelectedRepo();
+    const selectedBranch = githubRepoService.getSelectedBranch();
+
+    if (!selectedRepo) {
+      setError('No repository selected. Please select a repository first.');
+      return;
+    }
+
+    if (!selectedBranch) {
+      setError('No branch selected. Please select a branch first.');
       return;
     }
 
@@ -104,13 +119,31 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
     setError(null);
 
     try {
+      // Check if the user has write access to the repository first
+      const hasAccess = await githubService.checkRepositoryWriteAccess(
+        selectedRepo.owner.login, 
+        selectedRepo.name
+      );
+      
+      if (!hasAccess) {
+        // Generate installation URL
+        const url = githubService.getAppInstallationUrl(
+          selectedRepo.owner.login, 
+          selectedRepo.name
+        );
+        setInstallationUrl(url);
+        setIsLoading(false);
+        setIsAppInstallDialogOpen(true);
+        return;
+      }
+      
       const params: CommitFileParams = {
-        owner,
-        repo,
+        owner: selectedRepo.owner.login,
+        repo: selectedRepo.name,
         path: filePath,
         message: commitMessage,
         content,
-        branch
+        branch: selectedBranch
       };
 
       const result = await githubService.commitFile(params);
@@ -119,7 +152,19 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
       handleCloseDialog();
     } catch (err) {
       console.error('Commit error:', err);
-      setError(`Failed to commit to GitHub: ${(err as Error).message}`);
+      
+      // Check if this is a GitHub App installation error
+      if ((err as Error).message.includes('Resource not accessible by integration')) {
+        // Generate installation URL
+        const url = githubService.getAppInstallationUrl(
+          selectedRepo.owner.login, 
+          selectedRepo.name
+        );
+        setInstallationUrl(url);
+        setIsAppInstallDialogOpen(true);
+      } else {
+        setError(`Failed to commit to GitHub: ${(err as Error).message}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -127,6 +172,19 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
 
   const handleCloseSnackbar = () => {
     setSuccess(false);
+  };
+
+  // Handle closing the app installation dialog
+  const handleCloseAppInstallDialog = () => {
+    setIsAppInstallDialogOpen(false);
+  };
+
+  // Handle opening the app installation URL
+  const handleOpenAppInstallation = () => {
+    const selectedRepo = githubRepoService.getSelectedRepo();
+    if (selectedRepo) {
+      window.open(installationUrl, '_blank');
+    }
   };
 
   return (
@@ -211,36 +269,37 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
               
               <Stack spacing={2}>
                 <DialogContentText>
-                  Enter the GitHub repository details where you want to commit the file.
+                  You are about to commit changes to the selected repository and branch.
                 </DialogContentText>
-                <TextField
-                  label="Owner (username or organization)"
-                  fullWidth
-                  variant="outlined"
-                  value={owner}
-                  onChange={(e) => setOwner(e.target.value)}
-                />
-                <TextField
-                  label="Repository name"
-                  fullWidth
-                  variant="outlined"
-                  value={repo}
-                  onChange={(e) => setRepo(e.target.value)}
-                />
-                <TextField
-                  label="Branch"
-                  fullWidth
-                  variant="outlined"
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
-                />
-                <TextField
-                  label="File path in repository"
-                  fullWidth
-                  variant="outlined"
-                  value={filePath}
-                  disabled
-                />
+                
+                {/* Display repository info */}
+                {githubRepoService.getSelectedRepo() && (
+                  <Box sx={{ mb: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Repository</Typography>
+                    <Typography variant="body1">
+                      {githubRepoService.getSelectedRepo()?.full_name}
+                    </Typography>
+                  </Box>
+                )}
+                
+                {/* Display branch info */}
+                {githubRepoService.getSelectedBranch() && (
+                  <Box sx={{ mb: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Branch</Typography>
+                    <Typography variant="body1">
+                      {githubRepoService.getSelectedBranch()}
+                    </Typography>
+                  </Box>
+                )}
+                
+                {/* Display file path info */}
+                <Box sx={{ mb: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>File</Typography>
+                  <Typography variant="body1" sx={{ wordBreak: 'break-all' }}>
+                    {filePath}
+                  </Typography>
+                </Box>
+                
                 <TextField
                   label="Commit message"
                   fullWidth
@@ -257,7 +316,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
           {isAuthenticated && (
             <Button 
               onClick={handleCommit} 
-              disabled={isLoading || !owner || !repo}
+              disabled={isLoading || !githubRepoService.getSelectedRepo() || !githubRepoService.getSelectedBranch()}
               variant="contained"
               color="primary"
             >
@@ -266,7 +325,8 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
           )}
         </DialogActions>
       </Dialog>
-
+      
+      {/* Success notification */}
       <Snackbar
         open={success}
         autoHideDuration={6000}
@@ -276,6 +336,54 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
           File successfully committed to GitHub!
         </Alert>
       </Snackbar>
+      
+      {/* GitHub App Installation Dialog */}
+      <Dialog open={isAppInstallDialogOpen} onClose={handleCloseAppInstallDialog}>
+        <DialogTitle>
+          <Box display="flex" alignItems="center">
+            <GitHubIcon color="warning" sx={{ mr: 1 }} />
+            GitHub App Installation Required
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            To commit changes to this repository, you need to install the GitHub App. 
+            This will grant the necessary permissions to create branches and make commits.
+          </DialogContentText>
+          
+          <Alert severity="info" sx={{ mt: 2, mb: 2 }}>
+            <Typography variant="body2" gutterBottom>
+              <strong>Installation steps:</strong>
+            </Typography>
+            <ol style={{ marginTop: 0, paddingLeft: '1.5rem' }}>
+              <li>Click the "Install GitHub App" button below</li>
+              <li>On the GitHub page, select your organization/account</li>
+              <li>Choose the repository you want to install the app on</li>
+              <li>Click "Install" to complete the process</li>
+              <li>Return to this page and try again</li>
+            </ol>
+          </Alert>
+          
+          {githubRepoService.getSelectedRepo() && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>Selected Repository</Typography>
+              <Typography variant="body1">
+                {githubRepoService.getSelectedRepo()?.full_name}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAppInstallDialog}>Cancel</Button>
+          <Button 
+            onClick={handleOpenAppInstallation} 
+            variant="contained" 
+            color="primary"
+          >
+            Install GitHub App
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

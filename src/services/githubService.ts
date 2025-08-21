@@ -4,6 +4,7 @@
  */
 
 import { Octokit } from '@octokit/rest';
+import githubRepoService from './githubRepoService';
 
 // Session storage keys
 const TOKEN_STORAGE_KEY = 'github_oauth_token';
@@ -230,6 +231,52 @@ class GitHubService {
   }
 
   /**
+   * Check if the user has write access to a repository
+   * @param owner Repository owner
+   * @param repo Repository name
+   * @returns True if the user has write access, false otherwise
+   */
+  async checkRepositoryWriteAccess(owner: string, repo: string): Promise<boolean> {
+    if (!this.octokit) {
+      throw new Error('GitHub client not initialized. Call initialize() first.');
+    }
+    
+    try {
+      // Get repository permissions for the authenticated user
+      const repoResponse = await this.octokit.repos.get({
+        owner,
+        repo
+      });
+      
+      // Check if the user has push access
+      const permissions = repoResponse.data.permissions;
+      return permissions?.push === true;
+    } catch (error) {
+      console.error('Error checking repository permissions:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get the GitHub App installation URL for a repository
+   * @param owner Repository owner
+   * @param repo Repository name
+   * @returns The installation URL for the GitHub App
+   */
+  getAppInstallationUrl(owner: string, repo: string): string {
+    // Get the repository object to access its ID
+    const selectedRepo = githubRepoService.getSelectedRepo();
+    
+    if (selectedRepo && selectedRepo.id) {
+      // Use the specific GitHub App installation URL with the repository ID preselected
+      return `https://github.com/apps/lesson-plan-editor/installations/new?target_id=${selectedRepo.id}`;
+    } else {
+      // Fallback to the basic installation URL if no repository ID is available
+      return 'https://github.com/apps/lesson-plan-editor/installations/new';
+    }
+  }
+
+  /**
    * Commit a file to a GitHub repository
    */
   async commitFile(params: CommitFileParams) {
@@ -259,8 +306,9 @@ class GitHubService {
         console.log('File does not exist yet, will create new:', path);
       }
 
-      // Prepare the content by Base64 encoding it
-      const contentEncoded = btoa(content);
+      // Prepare the content by Base64 encoding it with Unicode support
+      // Use a Unicode-safe base64 encoding to handle non-Latin1 characters
+      const contentEncoded = btoa(unescape(encodeURIComponent(content)));
       
       // Create or update the file
       const response = await this.octokit.repos.createOrUpdateFileContents({
@@ -276,6 +324,7 @@ class GitHubService {
       return response.data;
     } catch (error) {
       console.error('Error loading GitHub session:', error);
+      throw error;
     }
   }
 }
