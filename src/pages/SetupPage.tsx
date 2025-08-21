@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Box, AppBar, Toolbar, Typography, Container, 
+  Box, Typography, Container, 
   CircularProgress, Alert, AlertTitle
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import githubRepoService, { Repository } from '../services/githubRepoService';
 import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
 import UserMenu from '../components/UserMenu';
 import SetupStepper from '../components/SetupStepper';
+import StyledAppBar from '../components/StyledAppBar';
 
 const SetupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,14 +24,12 @@ const SetupPage: React.FC = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Lesson Plan Editor - Setup
-          </Typography>
-          <UserMenu />
-        </Toolbar>
-      </AppBar>
+      <StyledAppBar>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          Lesson Plan Editor - Setup
+        </Typography>
+        <UserMenu />
+      </StyledAppBar>
 
       <Container maxWidth="lg" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', py: 2 }}>
         {loading ? (

@@ -11,9 +11,6 @@ import TermsEditor from './sections/TermsEditor';
 import ResourcesEditor from './sections/ResourcesEditor';
 import ContentEditor from './sections/ContentEditor';
 
-import GitHubCommitButton from './GitHubCommitButton';
-import { getCurrentFilename } from '../services/markdownService';
-
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -94,12 +91,6 @@ const Editor: React.FC<EditorProps> = ({ initialMarkdown, onSave }) => {
   return (
     <Container maxWidth="lg">
       <Paper elevation={3} sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid #eee' }}>
-          <GitHubCommitButton 
-            content={initialMarkdown} 
-            filePath={getCurrentFilename()} 
-          />
-        </Box>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs
             value={tabValue}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { CssBaseline } from '@mui/material';
+import { CssBaseline, ThemeProvider } from '@mui/material';
+import theme from './theme/theme';
 
 // Pages
 import EditorPage from './pages/EditorPage';
@@ -13,10 +14,11 @@ import Layout from './components/Layout';
 
 function App() {
   return (
-    <Router>
-      <Layout>
-        <CssBaseline />
-        <Routes>
+    <ThemeProvider theme={theme}>
+      <Router>
+        <Layout>
+          <CssBaseline />
+          <Routes>
           {/* Setup Page Route */}
           <Route path="/" element={
             <AuthGuard>
@@ -36,9 +38,10 @@ function App() {
           
           {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Layout>
-    </Router>
+          </Routes>
+        </Layout>
+      </Router>
+    </ThemeProvider>
   );
 }
 

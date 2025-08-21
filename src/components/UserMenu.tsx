@@ -7,7 +7,8 @@ import {
   Menu, 
   MenuItem, 
   IconButton,
-  Tooltip
+  Tooltip,
+  Divider
 } from '@mui/material';
 import githubService from '../services/githubService';
 
@@ -75,9 +76,6 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
           />
         </IconButton>
       </Tooltip>
-      <Typography variant="body2" sx={{ ml: 1, display: { xs: 'none', sm: 'block' } }}>
-        {user.name || user.login}
-      </Typography>
       
       <Menu
         anchorEl={anchorEl}
@@ -102,9 +100,10 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        <MenuItem onClick={handleClose}>
-          <Avatar src={user.avatar_url} /> Profile
+        <MenuItem disabled>
+          {user.name || user.login}
         </MenuItem>
+        <Divider />
         <MenuItem onClick={handleLogout}>
           Logout
         </MenuItem>

@@ -22,9 +22,10 @@ interface GitHubCommitButtonProps {
   content: string;
   filePath: string;
   disabled?: boolean;
+  color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
 }
 
-const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePath, disabled = false }) => {
+const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePath, disabled = false, color }) => {
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +115,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
         startIcon={<GitHubIcon />}
         onClick={handleOpenDialog}
         disabled={disabled}
+        color={color || "primary"}
         sx={{ ml: 1 }}
       >
         Commit to GitHub

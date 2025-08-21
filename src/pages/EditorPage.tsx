@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Box, AppBar, Toolbar, Typography, Button, Container, 
+  Box, Typography, Button, Container, 
   CircularProgress, Alert, AlertTitle, 
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
   Snackbar
@@ -13,15 +13,15 @@ import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
 import { exportMarkdownFile } from '../services/markdownService';
 import Editor from '../components/Editor';
 import UserMenu from '../components/UserMenu';
+import StyledAppBar from '../components/StyledAppBar';
+import GitHubCommitButton from '../components/GitHubCommitButton';
+import { getCurrentFilename } from '../services/markdownService';
 
 const EditorPage: React.FC = () => {
   const [markdownContent, setMarkdownContent] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState<boolean>(false);
-  const [savedContent, setSavedContent] = useState<string | null>(null);
-  const [saveSnackbarOpen, setSaveSnackbarOpen] = useState<boolean>(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [setupComplete, setSetupComplete] = useState<boolean>(false);
   const navigate = useNavigate();
   const params = useParams();
@@ -126,16 +126,7 @@ const EditorPage: React.FC = () => {
   }, [owner, repo, category, lesson, navigate]);
 
   const handleSaveMarkdown = async (updatedMarkdown: string) => {
-    try {
-      setSaveError(null);
-      setSavedContent(updatedMarkdown);
-      setSaveSnackbarOpen(true);
-      setMarkdownContent(updatedMarkdown);
-    } catch (err) {
-      console.error('Error saving markdown:', err);
-      setSaveError(err instanceof Error ? err.message : 'Failed to save markdown');
-      setSaveSnackbarOpen(true);
-    }
+    setMarkdownContent(updatedMarkdown);
   };
 
   const handleExportMarkdown = () => {
@@ -172,22 +163,29 @@ const EditorPage: React.FC = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Lesson Plan Editor
-          </Typography>
+      <StyledAppBar>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          Lesson Plan Editor
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           {setupComplete && (
-            <Button color="inherit" onClick={handleReturnToSelection}>
+            <Button variant="outlined" color="inherit" onClick={handleReturnToSelection}>
               Change Selection
             </Button>
           )}
-          <Button color="inherit" onClick={handleExportMarkdown} disabled={!markdownContent}>
+          <Button variant="outlined" color="inherit" onClick={handleExportMarkdown} disabled={!markdownContent}>
             Export
           </Button>
+          {markdownContent && (
+            <GitHubCommitButton 
+              content={markdownContent} 
+              filePath={getCurrentFilename()} 
+              color="inherit"
+            />
+          )}
           <UserMenu />
-        </Toolbar>
-      </AppBar>
+        </Box>
+      </StyledAppBar>
 
       <Container maxWidth="lg" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', py: 2 }}>
         {loading ? (
@@ -234,13 +232,6 @@ const EditorPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={saveSnackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSaveSnackbarOpen(false)}
-        message={saveError || "Content saved successfully"}
-      />
     </Box>
   );
 };

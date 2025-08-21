@@ -1,0 +1,48 @@
+import React, { ReactNode } from 'react';
+import { AppBar, Toolbar, styled, alpha, Container, Box } from '@mui/material';
+
+interface StyledAppBarProps {
+  children: ReactNode;
+}
+
+const StyledToolbar = styled(Toolbar)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flexShrink: 0,
+  borderRadius: `calc(${theme.shape.borderRadius}px + 8px)`,
+  backdropFilter: 'blur(24px)',
+  border: '1px solid',
+  borderColor: (theme.vars || theme).palette.divider,
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
+  boxShadow: (theme.vars || theme).shadows[1],
+  padding: '8px 12px',
+}));
+
+
+
+const StyledAppBar: React.FC<StyledAppBarProps> = ({ children }) => {
+  return (
+    <Box sx={{ mb: 8 }}> {/* Add margin to create space for the fixed AppBar */}
+      <AppBar 
+        position="fixed"
+        enableColorOnDark
+        sx={{ 
+          boxShadow: 0,
+          bgcolor: 'transparent',
+          backgroundImage: 'none',
+          mt: 'calc(var(--template-frame-height, 0px) + 28px)',
+        }}
+      >
+        <Container maxWidth="lg">
+          <StyledToolbar variant="dense" disableGutters>
+            {children}
+          </StyledToolbar>
+        </Container>
+      </AppBar>
+    </Box>
+  );
+};
+
+export default StyledAppBar;
