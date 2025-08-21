@@ -3,14 +3,17 @@ import {
   Box, AppBar, Toolbar, Typography, Button, Container, 
   CssBaseline, CircularProgress, Alert, AlertTitle, 
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
-  Snackbar
+  Snackbar, Divider, Paper
 } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { loadMarkdownFile, exportMarkdownFile } from './services/markdownService';
+import githubRepoService, { Repository } from './services/githubRepoService';
+import lessonPlanService, { LessonPlan } from './services/lessonPlanService';
 import Editor from './components/Editor';
 import GitHubCallback from './components/GitHubCallback';
 import AuthGuard from './components/AuthGuard';
 import UserMenu from './components/UserMenu';
+import SetupStepper from './components/SetupStepper';
 import './App.css';
 
 function MainEditor() {
@@ -21,76 +24,52 @@ function MainEditor() {
   const [savedContent, setSavedContent] = useState<string | null>(null);
   const [saveSnackbarOpen, setSaveSnackbarOpen] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [setupComplete, setSetupComplete] = useState<boolean>(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchMarkdown = async () => {
-      try {
-        const content = await loadMarkdownFile();
-        setMarkdownContent(content);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error loading markdown:', err);
-        setError(err instanceof Error ? err.message : String(err));
-        setLoading(false);
-        
-        // Use a hardcoded fallback markdown sample for demonstration
-        const sampleMarkdown = `---
-number: 1.1
-title: Sample FAIR Lesson Plan
-status: draft
-layout: lesson-plan
-
-authors:
-  - "0000-0001-1234-5678"
-  - "Sample Author"
-
-reviewers:
-  - "0000-0002-8765-4321"
-
-description: >  
-  This is a sample lesson plan for demonstration purposes.
-
-fair_elements:
-  - F
-  - A
-  - I
-  - R
-
-learning_outcomes:
-  1:
-    outcome: the importance of the FAIR principles
-    verbs:
-      - verb: understanding
-        level: beginner
-
-activities:
-  before: []
-  during: []
-  after: []
-
-prerequisites: []
-
-terms4FAIRskills: []
-
-additionalResources: []
----
-
-This is the main content of the sample FAIR lesson plan.`;
-        
-        setMarkdownContent(sampleMarkdown);
-        setError(null);
-      }
-    };
+    const repo = githubRepoService.getSelectedRepo();
+    const lessonPlan = lessonPlanService.getSelectedLessonPlan();
     
-    fetchMarkdown();
-  }, []);
+    if (repo && lessonPlan) {
+      setSetupComplete(true);
+      
+      if (lessonPlan.decoded_content) {
+        setMarkdownContent(lessonPlan.decoded_content);
+        setLoading(false);
+        return;
+      }
+      
+      const fetchLessonPlanContent = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          
+          const fullLessonPlan = await lessonPlanService.getLessonPlan(lessonPlan.path);
+          if (fullLessonPlan.decoded_content) {
+            setMarkdownContent(fullLessonPlan.decoded_content);
+          } else {
+            throw new Error('Could not load lesson plan content');
+          }
+        } catch (err) {
+          console.error('Error loading lesson plan:', err);
+          setError(err instanceof Error ? err.message : 'Failed to load lesson plan');
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      fetchLessonPlanContent();
+    } else {
+      setSetupComplete(false);
+      setLoading(false);
+    }
+  }, [setupComplete]);
 
   const handleSaveMarkdown = async (updatedMarkdown: string) => {
     try {
-      // Store markdown content in memory for later GitHub integration
-      setSavedContent(updatedMarkdown);
-      console.log('Markdown content saved in memory for later GitHub push');
+      setSaveError(null);
+      setSaveDialogOpen(false);
       
       // Simulate a delay to provide feedback to the user
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -103,19 +82,35 @@ This is the main content of the sample FAIR lesson plan.`;
     }
   };
   
-  const handleExportMarkdown = () => {
+  const handleExportMarkdown = async () => {
     if (markdownContent) {
-      exportMarkdownFile(markdownContent);
+      try {
+        await exportMarkdownFile(markdownContent);
+      } catch (err) {
+        console.error('Error exporting markdown:', err);
+        setSaveError(err instanceof Error ? err.message : 'Failed to export markdown');
+        setSaveDialogOpen(true); // Show dialog with error details
+      }
     }
   };
-
-  const handleCloseDialog = () => {
-    setSaveDialogOpen(false);
+  
+  const handleSetupComplete = (repo: Repository, lessonPlan: LessonPlan) => {
+    setSetupComplete(true);
+    
+    if (lessonPlan.decoded_content) {
+      setMarkdownContent(lessonPlan.decoded_content);
+      setLoading(false);
+    }
   };
   
-  const handleLogout = () => {
-    // Force a reload to ensure the app resets to the login state
-    window.location.href = '/';
+  const handleReturnToSelection = () => {
+    // Clear selected repo and lesson plan in service layer
+    githubRepoService.clearSelectedRepo();
+    lessonPlanService.clearSelectedLessonPlan();
+    
+    // Reset UI state
+    setSetupComplete(false);
+    setMarkdownContent(null);
   };
 
   return (
@@ -126,11 +121,20 @@ This is the main content of the sample FAIR lesson plan.`;
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             FAIR Lesson Plan Editor
           </Typography>
+          {setupComplete && (
+            <Button 
+              color="inherit" 
+              onClick={handleReturnToSelection}
+              sx={{ mr: 1 }}
+            >
+              Change Selection
+            </Button>
+          )}
           <Button color="inherit" onClick={handleExportMarkdown} disabled={!markdownContent}>
             Export
           </Button>
           <Button color="inherit">Documentation</Button>
-          <UserMenu onLogout={handleLogout} />
+          <UserMenu />
         </Toolbar>
       </AppBar>
       
@@ -144,6 +148,8 @@ This is the main content of the sample FAIR lesson plan.`;
             <AlertTitle>Error</AlertTitle>
             {error} — <strong>Please check the file path or network connection.</strong>
           </Alert>
+        ) : !setupComplete ? (
+          <SetupStepper onComplete={handleSetupComplete} />
         ) : markdownContent ? (
           <Editor 
             initialMarkdown={markdownContent} 
@@ -152,33 +158,23 @@ This is the main content of the sample FAIR lesson plan.`;
         ) : null}
       </Container>
       
-      {/* Save Dialog (for demonstration or errors) */}
-      <Dialog open={saveDialogOpen} onClose={handleCloseDialog}>
-        <DialogTitle>{saveError ? 'Error Saving' : 'Markdown Saved'}</DialogTitle>
+      <Dialog open={saveDialogOpen} onClose={() => setSaveDialogOpen(false)}>
+        <DialogTitle>Error</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {saveError ? 
-              `Error: ${saveError}. Please try again.` :
-              'The markdown content has been saved in memory and will be available for pushing to GitHub later.'}
+            {saveError || 'An error occurred while processing the markdown.'}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Close</Button>
-          {!saveError && (
-            <Button onClick={handleExportMarkdown} color="primary" autoFocus>
-              Export File
-            </Button>
-          )}
+          <Button onClick={() => setSaveDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
       
-      {/* Success Snackbar */}
-      <Snackbar 
-        open={saveSnackbarOpen} 
-        autoHideDuration={6000}
+      <Snackbar
+        open={saveSnackbarOpen}
+        autoHideDuration={3000}
         onClose={() => setSaveSnackbarOpen(false)}
-        message="Markdown saved successfully!"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        message="Markdown content saved successfully!"
       />
     </Box>
   );

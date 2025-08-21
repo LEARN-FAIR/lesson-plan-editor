@@ -12,7 +12,7 @@ import {
 import githubService from '../services/githubService';
 
 interface UserMenuProps {
-  onLogout: () => void;
+  onLogout?: () => void;
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
@@ -46,7 +46,11 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
   const handleLogout = () => {
     handleClose();
     githubService.logout();
-    onLogout();
+    if (onLogout) {
+      onLogout();
+    }
+    // Force a reload to ensure the app resets to the login state
+    window.location.href = '/';
   };
 
   if (!user) {
