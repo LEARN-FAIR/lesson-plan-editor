@@ -58,12 +58,15 @@ class LessonPlanService {
         auth: sessionStorage.getItem('github_oauth_token')
       });
 
+      // Get the selected branch or fall back to default branch
+      const selectedBranch = githubRepoService.getSelectedBranch() || selectedRepo.default_branch;
+      
       // Get the contents of the _lesson-plans folder
       const response = await octokit.repos.getContent({
         owner: selectedRepo.owner.login,
         repo: selectedRepo.name,
         path: LESSON_PLANS_FOLDER,
-        ref: selectedRepo.default_branch
+        ref: selectedBranch
       });
 
       if (!Array.isArray(response.data)) {
@@ -86,7 +89,7 @@ class LessonPlanService {
               owner: selectedRepo.owner.login,
               repo: selectedRepo.name,
               path: topicsPath,
-              ref: selectedRepo.default_branch
+              ref: selectedBranch
             });
             
             if (Array.isArray(topicsResponse.data)) {
@@ -150,7 +153,7 @@ class LessonPlanService {
         owner,
         repo,
         path: `${categoryPath}/index.md`,
-        ref: githubRepoService.getSelectedRepo()?.default_branch
+        ref: githubRepoService.getSelectedBranch() || githubRepoService.getSelectedRepo()?.default_branch
       });
       
       if ('content' in indexResponse.data && typeof indexResponse.data.content === 'string') {
@@ -196,7 +199,7 @@ class LessonPlanService {
         owner: repo.owner.login,
         repo: repo.name,
         path,
-        ref: repo.default_branch
+        ref: githubRepoService.getSelectedBranch() || repo.default_branch
       });
       
       if (Array.isArray(response.data)) {

@@ -33,11 +33,16 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 // No longer importing modal components
 import githubRepoService, { Repository } from '../services/githubRepoService';
 import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
+import BranchSelector from '../components/BranchSelector';
 
 const steps = [
   {
     label: 'Select Repository',
     description: 'Select a GitHub repository to work with.'
+  },
+  {
+    label: 'Select Branch',
+    description: 'Choose a branch from the repository.'
   },
   {
     label: 'Select Lesson Plan',
@@ -52,6 +57,7 @@ interface SetupStepperProps {
 const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
   const [activeStep, setActiveStep] = useState<number>(0);
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [selectedLessonPlan, setSelectedLessonPlan] = useState<LessonPlan | null>(null);
 
   // Repository step state
@@ -74,27 +80,38 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
       setSelectedRepo(repo);
     }
 
+    // Check if there's already a selected branch
+    const branch = githubRepoService.getSelectedBranch();
+    if (branch) {
+      setSelectedBranch(branch);
+    }
+
     // Load repositories regardless
     fetchRepositories();
   }, []);
 
-  // Load lesson plans when a repository is selected
+  // Load lesson plans when a repository and branch are selected
   useEffect(() => {
-    if (selectedRepo) {
+    if (selectedRepo && selectedBranch) {
       fetchLessonPlans();
     }
-  }, [selectedRepo]);
+  }, [selectedRepo, selectedBranch]);
 
   const handleNext = () => {
     if (activeStep === 0) {
-      // After repository selection, move to lesson plan selection
+      // After repository selection, move to branch selection
       if (selectedRepo) {
         setActiveStep(1);
       }
     } else if (activeStep === 1) {
-      // After lesson plan selection, complete the setup
-      if (selectedRepo && selectedLessonPlan) {
+      // After branch selection, move to lesson plan selection
+      if (selectedRepo && selectedBranch) {
         setActiveStep(2);
+      }
+    } else if (activeStep === 2) {
+      // After lesson plan selection, complete the setup
+      if (selectedRepo && selectedBranch && selectedLessonPlan) {
+        setActiveStep(3);
         onComplete(selectedRepo, selectedLessonPlan);
       }
     }
@@ -107,14 +124,26 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
   const handleReset = () => {
     setActiveStep(0);
     setSelectedRepo(null);
+    setSelectedBranch(null);
     setSelectedLessonPlan(null);
     githubRepoService.clearSelectedRepo();
+    githubRepoService.setSelectedBranch(null);
     lessonPlanService.clearSelectedLessonPlan();
   };
 
   const handleRepoSelected = (repo: Repository) => {
     setSelectedRepo(repo);
     githubRepoService.setSelectedRepo(repo);
+    // Reset branch and lesson plan when repo changes
+    setSelectedBranch(null);
+    setSelectedLessonPlan(null);
+  };
+  
+  const handleBranchSelected = (branch: string) => {
+    setSelectedBranch(branch);
+    githubRepoService.setSelectedBranch(branch);
+    // Reset lesson plan when branch changes
+    setSelectedLessonPlan(null);
   };
 
   const handleLessonPlanSelected = (lessonPlan: LessonPlan) => {
@@ -150,13 +179,22 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
     try {
       setLoadingLessonPlans(true);
       setLessonPlanError(null);
+      if (!selectedRepo) {
+        throw new Error('No repository selected');
+      }
+      if (!selectedBranch) {
+        throw new Error('No branch selected');
+      }
+      // Update lessonPlanService to use the selected branch
       const plans = await lessonPlanService.getLessonPlans();
       setLessonPlans(plans);
 
       // If there are categories, expand the first one
-      const categories = groupLessonPlansByCategory(plans);
-      if (categories.length > 0) {
-        setExpandedCategory(categories[0].category);
+      if (plans.length > 0) {
+        const categories = groupLessonPlansByCategory(plans);
+        if (categories.length > 0) {
+          setExpandedCategory(categories[0].category);
+        }
       }
     } catch (err) {
       console.error('Error fetching lesson plans:', err);
@@ -244,68 +282,56 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
 
                 {/* Repository Selection Step */}
                 {index === 0 && (
-                  <Box sx={{ mt: 2 }}>
-                    {repoError && (
-                      <Alert severity="info" sx={{ mb: 2 }}>
-                        {repoError}
-                      </Alert>
-                    )}
-
+                  <Box>
                     {loadingRepos ? (
-                      <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                      <Box display="flex" justifyContent="center" my={4}>
                         <CircularProgress />
                       </Box>
-                    ) : repositories.length === 0 ? (
-                      <Box sx={{ my: 2 }}>
-                        <Typography variant="body1" gutterBottom>
-                          You don't have access to the original repository or any forks.
-                        </Typography>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={handleCreateFork}
-                          startIcon={<ForkRightIcon />}
-                          sx={{ mt: 1 }}
-                        >
-                          Fork on GitHub
-                        </Button>
-                      </Box>
+                    ) : repoError ? (
+                      <Alert severity="error" sx={{ mt: 2 }}>
+                        {repoError}
+                      </Alert>
                     ) : (
                       <>
-                        <List sx={{ width: '100%', bgcolor: 'background.paper', mb: 2 }}>
+                        <Typography variant="body1" paragraph>
+                          Select a repository to work with. You can use the original repository or your own fork.
+                        </Typography>
+
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                          <Button
+                            variant="outlined"
+                            startIcon={<ForkRightIcon />}
+                            onClick={handleCreateFork}
+                          >
+                            Create Fork
+                          </Button>
+                        </Box>
+
+                        <List>
                           {repositories.map((repo) => (
                             <ListItem key={repo.id} disablePadding>
                               <ListItemButton
                                 onClick={() => handleRepoSelected(repo)}
                                 selected={selectedRepo?.id === repo.id}
-                                sx={{
-                                  border: selectedRepo?.id === repo.id ? '1px solid #1976d2' : 'none',
-                                  borderRadius: 1,
-                                  mb: 1
-                                }}
                               >
                                 <ListItemAvatar>
                                   <Avatar src={repo.owner.avatar_url} alt={repo.owner.login} />
                                 </ListItemAvatar>
                                 <ListItemText
-                                  primary={
-                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                      {repo.full_name}
-                                      {repo.fork && (
-                                        <Tooltip title="This is a fork">
-                                          <ForkRightIcon fontSize="small" sx={{ ml: 1, color: 'text.secondary' }} />
-                                        </Tooltip>
-                                      )}
-                                    </Box>
-                                  }
+                                  primary={repo.full_name}
                                   secondary={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                                      {repo.permissions?.push ? (
-                                        <Chip label="Write Access" size="small" color="success" variant="outlined" />
-                                      ) : (
-                                        <Chip label="Read Only" size="small" color="warning" variant="outlined" />
+                                    <>
+                                      {repo.description || 'No description'}
+                                      {repo.fork && (
+                                        <Chip
+                                          label="Fork"
+                                          size="small"
+                                          color="primary"
+                                          variant="outlined"
+                                          sx={{ ml: 1 }}
+                                        />
                                       )}
-                                    </Box>
+                                    </>
                                   }
                                 />
                               </ListItemButton>
@@ -330,8 +356,22 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
                   </Box>
                 )}
 
-                {/* Lesson Plan Selection Step */}
+                {/* Branch Selection Step */}
                 {index === 1 && (
+                  <Box sx={{ mt: 2 }}>
+                    <BranchSelector 
+                      onBranchSelected={(branch) => {
+                        console.log('Branch selected:', branch);
+                        setSelectedBranch(branch);
+                      }}
+                      onBack={() => handleBack()}
+                      repoId={selectedRepo?.id} // Pass repo ID to trigger refresh when repo changes
+                    />
+                  </Box>
+                )}
+
+                {/* Lesson Plan Selection Step */}
+                {index === 2 && (
                   <Box sx={{ mt: 2 }}>
                     {lessonPlanError && (
                       <Alert severity="error" sx={{ mb: 2 }}>
@@ -422,7 +462,7 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
                       variant="contained"
                       onClick={handleNext}
                       sx={{ mt: 1, mr: 1 }}
-                      disabled={index === 0 && !selectedRepo || index === 1 && !selectedLessonPlan}
+                      disabled={index === 0 && !selectedRepo || index === 1 && !selectedBranch || index === 2 && !selectedLessonPlan}
                     >
                       {index === steps.length - 1 ? 'Finish' : 'Continue'}
                     </Button>

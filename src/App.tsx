@@ -27,7 +27,7 @@ function App() {
           } />
           
           {/* Editor Page Route */}
-          <Route path="/edit/:owner/:repo/:category/:lesson" element={
+          <Route path="/edit/:owner/:repo/:branch/:category/:lesson" element={
             <AuthGuard>
               <EditorPage />
             </AuthGuard>

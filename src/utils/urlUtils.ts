@@ -24,11 +24,13 @@ export const extractLessonPathParts = (path: string): { category: string, lesson
  * Generates the URL for a repository and lesson plan
  * @param repo The GitHub repository
  * @param lessonPlan The lesson plan
+ * @param branch The branch name (optional, uses default branch if not provided)
  * @returns The URL to use for navigation
  */
-export const generateLessonPlanUrl = (repo: Repository, lessonPlan: LessonPlan): string => {
+export const generateLessonPlanUrl = (repo: Repository, lessonPlan: LessonPlan, branch?: string): string => {
   const pathParts = extractLessonPathParts(lessonPlan.path);
-  return `/edit/${repo.owner.login}/${repo.name}/${pathParts.category}/${pathParts.lesson}`;
+  const branchName = branch || repo.default_branch || 'main';
+  return `/edit/${repo.owner.login}/${repo.name}/${branchName}/${pathParts.category}/${pathParts.lesson}`;
 };
 
 /**

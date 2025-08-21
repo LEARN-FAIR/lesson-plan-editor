@@ -11,6 +11,7 @@ const TARGET_OWNER = 'elixir-europe-training';
 
 // Session storage keys
 const SELECTED_REPO_KEY = 'selected_github_repo';
+const SELECTED_BRANCH_KEY = 'selected_github_branch';
 
 // Extended interface for GitHub repository with additional properties we need
 export interface Repository {
@@ -34,10 +35,46 @@ export interface Repository {
   source?: {
     full_name: string;
   };
+  url: string;
+  created_at: string;
+  updated_at: string;
+  pushed_at: string;
+  git_url: string;
+  ssh_url: string;
+  clone_url: string;
+  homepage: string | null;
+  size: number;
+  stargazers_count: number;
+  watchers_count: number;
+  language: string | null;
+  forks_count: number;
+  archived: boolean;
+  disabled: boolean;
+  open_issues_count: number;
+  license: {
+    key: string;
+    name: string;
+    url: string;
+  } | null;
+  topics: string[];
+  visibility: string;
+  forks: number;
+  open_issues: number;
+  watchers: number;
+}
+
+export interface Branch {
+  name: string;
+  commit: {
+    sha: string;
+    url: string;
+  };
+  protected: boolean;
 }
 
 class GitHubRepoService {
   private selectedRepo: Repository | null = null;
+  private selectedBranch: string | null = null;
 
   constructor() {
     // Try to load selected repo from session storage
@@ -48,6 +85,12 @@ class GitHubRepoService {
       } catch (e) {
         console.error('Failed to parse stored repo:', e);
       }
+    }
+
+    // Try to load selected branch from session storage
+    const branch = sessionStorage.getItem(SELECTED_BRANCH_KEY);
+    if (branch) {
+      this.selectedBranch = branch;
     }
   }
 
@@ -85,18 +128,27 @@ class GitHubRepoService {
       
       // Filter to only include forks of the target repository
       const userForks = userReposResponse.data.filter(repo => {
-        // Check if it's a fork and then check the source repository
+        // Check if it's a fork and then check if it's a fork of our target
         if (repo.fork) {
-          // Get the source repository details to check if it's a fork of our target
-          try {
+          // For direct API response, we need to check the source property
+          if ((repo as any).source) {
             const sourceRepo = (repo as any).source;
             return sourceRepo && sourceRepo.full_name === `${TARGET_OWNER}/${TARGET_REPO}`;
-          } catch (e) {
-            return false;
           }
+          
+          // For repos without source info in the initial response, check the name pattern
+          // This is a heuristic and not 100% reliable
+          if (repo.name === TARGET_REPO) {
+            return true;
+          }
+          
+          // We could make an additional API call to get detailed fork info if needed
+          // but for now this basic check should work for most cases
         }
         return false;
       });
+      
+      console.log('Found user forks:', userForks.length);
       
       repos = [...repos, ...userForks as Repository[]];
       
@@ -108,11 +160,75 @@ class GitHubRepoService {
   }
 
   /**
+   * Search for repositories matching the query
+   */
+  async searchRepositories(query: string): Promise<Repository[]> {
+    try {
+      if (!githubService.isAuthenticated()) {
+        throw new Error('Not authenticated with GitHub');
+      }
+      
+      const response = await fetch(`https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=10`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('github_oauth_token')}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.items;
+    } catch (error) {
+      console.error('Error searching repositories:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get branches for a repository
+   */
+  async getBranches(owner: string, repo: string): Promise<Branch[]> {
+    try {
+      if (!githubService.isAuthenticated()) {
+        throw new Error('Not authenticated with GitHub');
+      }
+      
+      console.log(`Fetching branches for ${owner}/${repo}`);
+      console.log('Auth token exists:', !!sessionStorage.getItem('github_oauth_token'));
+      
+      // Use Octokit instead of fetch for better error handling
+      const octokit = new Octokit({ auth: sessionStorage.getItem('github_oauth_token') });
+      
+      const response = await octokit.repos.listBranches({
+        owner,
+        repo,
+        per_page: 100
+      });
+      
+      console.log('Branches response:', response.status, response.data.length);
+      return response.data as Branch[];
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Set the selected repository
    */
-  setSelectedRepo(repo: Repository): void {
+  setSelectedRepo(repo: Repository | null): void {
     this.selectedRepo = repo;
-    sessionStorage.setItem(SELECTED_REPO_KEY, JSON.stringify(repo));
+    if (repo) {
+      sessionStorage.setItem(SELECTED_REPO_KEY, JSON.stringify(repo));
+      // Reset selected branch when changing repo
+      this.setSelectedBranch(null);
+    } else {
+      sessionStorage.removeItem(SELECTED_REPO_KEY);
+      this.setSelectedBranch(null);
+    }
   }
 
   /**
@@ -121,6 +237,53 @@ class GitHubRepoService {
   getSelectedRepo(): Repository | null {
     return this.selectedRepo;
   }
+  
+  /**
+   * Set the selected branch
+   */
+  setSelectedBranch(branch: string | null): void {
+    this.selectedBranch = branch;
+    if (branch) {
+      sessionStorage.setItem(SELECTED_BRANCH_KEY, branch);
+    } else {
+      sessionStorage.removeItem(SELECTED_BRANCH_KEY);
+    }
+  }
+  
+  /**
+   * Get the selected branch
+   */
+  getSelectedBranch(): string | null {
+    return this.selectedBranch;
+  }
+
+  /**
+   * Check if a repository is the target repository or its fork
+   * @param repo The repository to check
+   * @returns True if the repository is the target or its fork, false otherwise
+   */
+  isTargetRepoOrFork(repo: Repository): boolean {
+    // Check if it's the target repository
+    if (repo.owner.login === TARGET_OWNER && repo.name === TARGET_REPO) {
+      return true;
+    }
+    
+    // Check if it's a fork of the target repository
+    if (repo.fork) {
+      // If source information is available
+      if ((repo as any).source) {
+        const sourceRepo = (repo as any).source;
+        return sourceRepo && sourceRepo.full_name === `${TARGET_OWNER}/${TARGET_REPO}`;
+      }
+      
+      // Fallback to name matching (less reliable)
+      if (repo.name === TARGET_REPO) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
 
   /**
    * Clear the selected repository
@@ -128,6 +291,14 @@ class GitHubRepoService {
   clearSelectedRepo(): void {
     this.selectedRepo = null;
     sessionStorage.removeItem(SELECTED_REPO_KEY);
+  }
+  
+  /**
+   * Clear the selected branch
+   */
+  clearSelectedBranch(): void {
+    this.selectedBranch = null;
+    sessionStorage.removeItem(SELECTED_BRANCH_KEY);
   }
 
   /**

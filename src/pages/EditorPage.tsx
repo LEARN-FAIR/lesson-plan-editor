@@ -4,10 +4,12 @@ import {
   CircularProgress, Alert, AlertTitle, 
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
   Snackbar,
-  Stack
+  Stack,
+  Divider
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import DescriptionIcon from '@mui/icons-material/Description';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import { useNavigate, useParams } from 'react-router-dom';
 import { extractLessonPathParts, generateLessonPlanUrl, constructLessonPath } from '../utils/urlUtils';
 import githubRepoService, { Repository } from '../services/githubRepoService';
@@ -28,12 +30,12 @@ const EditorPage: React.FC = () => {
   const [setupComplete, setSetupComplete] = useState<boolean>(false);
   const navigate = useNavigate();
   const params = useParams();
-  const { owner, repo, category, lesson } = params;
+  const { owner, repo, branch, category, lesson } = params;
 
   useEffect(() => {
     const loadFromUrl = async () => {
-      // If we have URL parameters for repo and lesson, try to load them
-      if (owner && repo && category && lesson) {
+      // If we have URL parameters for repo, branch, and lesson, try to load them
+      if (owner && repo && branch && category && lesson) {
         try {
           setLoading(true);
           setError(null);
@@ -60,6 +62,11 @@ const EditorPage: React.FC = () => {
           
           // Set the selected repo
           githubRepoService.setSelectedRepo(selectedRepo);
+          
+          // Set the selected branch
+          if (branch) {
+            githubRepoService.setSelectedBranch(branch);
+          }
           
           // Construct the lesson path using the category and lesson from URL
           const fullLessonPath = constructLessonPath(category, lesson);
@@ -94,8 +101,11 @@ const EditorPage: React.FC = () => {
         if (storedRepo && storedLessonPlan) {
           setSetupComplete(true);
           
+          // Get the selected branch
+          const storedBranch = githubRepoService.getSelectedBranch() || undefined;
+          
           // Generate and navigate to the appropriate URL
-          const url = generateLessonPlanUrl(storedRepo, storedLessonPlan);
+          const url = generateLessonPlanUrl(storedRepo, storedLessonPlan, storedBranch);
           navigate(url, { replace: true });
           
           if (storedLessonPlan.decoded_content) {
@@ -142,7 +152,8 @@ const EditorPage: React.FC = () => {
     setSetupComplete(true);
     
     // Generate and navigate to the appropriate URL
-    const url = generateLessonPlanUrl(repo, lessonPlan);
+    const selectedBranch = githubRepoService.getSelectedBranch() || undefined;
+    const url = generateLessonPlanUrl(repo, lessonPlan, selectedBranch);
     navigate(url, { replace: true });
     
     if (lessonPlan.decoded_content) {
@@ -152,8 +163,9 @@ const EditorPage: React.FC = () => {
   };
   
   const handleReturnToSelection = () => {
-    // Clear selected repo and lesson plan in service layer
+    // Clear selected repo, branch, and lesson plan in service layer
     githubRepoService.clearSelectedRepo();
+    githubRepoService.clearSelectedBranch();
     lessonPlanService.clearSelectedLessonPlan();
     
     // Reset UI state
@@ -191,6 +203,13 @@ const EditorPage: React.FC = () => {
                     {`${githubRepoService.getSelectedRepo()?.owner.login}/${githubRepoService.getSelectedRepo()?.name}`}
                   </Typography>
                 </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <AccountTreeIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  <Typography variant="caption" color="inherit">
+                    {githubRepoService.getSelectedBranch() || githubRepoService.getSelectedRepo()?.default_branch || ''}
+                  </Typography>
+                </Box>
+                <Divider orientation="vertical" flexItem sx={{ bgcolor: 'rgba(255,255,255,0.3)' }} />
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <DescriptionIcon fontSize="small" sx={{ mr: 0.5 }} />
                   <Typography variant="caption" color="inherit">
