@@ -42,7 +42,7 @@ const steps = [
   },
   {
     label: 'Select Branch',
-    description: 'Choose a branch from the repository.'
+    description: 'Choose a branch from the repository to load lesson plans from.'
   },
   {
     label: 'Select Lesson Plan',
@@ -268,9 +268,6 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Paper elevation={3} sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          Setup Lesson Plan Editor
-        </Typography>
         <Stepper activeStep={activeStep} orientation="vertical">
           {steps.map((step, index) => (
             <Step key={step.label}>
@@ -282,7 +279,7 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
 
                 {/* Repository Selection Step */}
                 {index === 0 && (
-                  <Box>
+                  <Box sx={{ maxWidth: 600, mt: 2 }}>
                     {loadingRepos ? (
                       <Box display="flex" justifyContent="center" my={4}>
                         <CircularProgress />
@@ -293,20 +290,6 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
                       </Alert>
                     ) : (
                       <>
-                        <Typography variant="body1" paragraph>
-                          Select a repository to work with. You can use the original repository or your own fork.
-                        </Typography>
-
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                          <Button
-                            variant="outlined"
-                            startIcon={<ForkRightIcon />}
-                            onClick={handleCreateFork}
-                          >
-                            Create Fork
-                          </Button>
-                        </Box>
-
                         <List>
                           {repositories.map((repo) => (
                             <ListItem key={repo.id} disablePadding>
@@ -319,20 +302,6 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
                                 </ListItemAvatar>
                                 <ListItemText
                                   primary={repo.full_name}
-                                  secondary={
-                                    <>
-                                      {repo.description || 'No description'}
-                                      {repo.fork && (
-                                        <Chip
-                                          label="Fork"
-                                          size="small"
-                                          color="primary"
-                                          variant="outlined"
-                                          sx={{ ml: 1 }}
-                                        />
-                                      )}
-                                    </>
-                                  }
                                 />
                               </ListItemButton>
                             </ListItem>

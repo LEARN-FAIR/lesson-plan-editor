@@ -28,8 +28,8 @@ const SetupPage: React.FC = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <StyledAppBar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Lesson Plan Editor - Setup
+        <Typography variant="h6" component="div" color="white" sx={{ flexGrow: 1 }}>
+          Lesson Plan Editor
         </Typography>
         <UserMenu />
       </StyledAppBar>

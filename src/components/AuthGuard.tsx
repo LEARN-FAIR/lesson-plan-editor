@@ -61,7 +61,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   return (
     <Container maxWidth="sm" sx={{ mt: 8 }}>
       <Paper elevation={3} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Typography variant="h4" component="h1" gutterBottom>
+        <Typography variant="h4" component="h1" color="white" gutterBottom>
           FAIR Lesson Plan Editor
         </Typography>
         <Typography variant="body1" paragraph>

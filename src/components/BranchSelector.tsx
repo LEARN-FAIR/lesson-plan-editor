@@ -231,11 +231,7 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchSelected, onBac
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', mt: 2 }}>
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Choose a branch from the repository to load lesson plans from.
-      </Typography>
-      
+    <Box sx={{ maxWidth: 600, mt: 2 }}>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       
       {loading ? (
