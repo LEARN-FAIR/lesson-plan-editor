@@ -85,19 +85,27 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchSelected, onBac
       await checkRepositoryAccess();
       
       const branchList = await githubRepoService.getBranches(repo.owner.login, repo.name);
-      setBranches(branchList);
       
-      // If we have a previously selected branch, use it
+      // Filter out the main branch - we don't want to allow direct edits to main
+      const filteredBranches = branchList.filter(branch => branch.name !== 'main');
+      setBranches(filteredBranches);
+      
+      if (filteredBranches.length === 0) {
+        setError('No available branches. The main branch is protected and cannot be used. Please create a new branch.');
+        setLoading(false);
+        return;
+      }
+      
+      // If we have a previously selected branch, use it (but not if it's main)
       const previousBranch = githubRepoService.getSelectedBranch();
       
-      if (previousBranch && branchList.some(b => b.name === previousBranch)) {
+      if (previousBranch && previousBranch !== 'main' && filteredBranches.some(b => b.name === previousBranch)) {
         setSelectedBranch(previousBranch);
         onBranchSelected(previousBranch);
-      } else if (branchList.length > 0) {
-        // Otherwise use the default branch or the first one
-        const defaultBranch = branchList.find(b => b.name === repo.default_branch) || branchList[0];
-        setSelectedBranch(defaultBranch.name);
-        onBranchSelected(defaultBranch.name);
+      } else if (filteredBranches.length > 0) {
+        // Otherwise use the first available branch
+        setSelectedBranch(filteredBranches[0].name);
+        onBranchSelected(filteredBranches[0].name);
       }
     } catch (err) {
       console.error('Error fetching branches:', err);

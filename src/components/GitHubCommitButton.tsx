@@ -223,7 +223,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
       >
         <MenuItem onClick={handleExport}>
           <FileDownloadIcon fontSize="small" sx={{ mr: 1 }} />
-          Export
+          Download file
         </MenuItem>
       </Menu>
 
