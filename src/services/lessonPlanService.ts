@@ -3,7 +3,6 @@
  */
 
 import githubRepoService, { Repository } from './githubRepoService';
-import { Octokit } from '@octokit/rest';
 
 // Session storage keys
 const SELECTED_LESSON_PLAN_KEY = 'selected_lesson_plan';
@@ -54,77 +53,22 @@ class LessonPlanService {
     }
 
     try {
-      const octokit = new Octokit({
-        auth: sessionStorage.getItem('github_oauth_token')
-      });
-
       // Get the selected branch or fall back to default branch
       const selectedBranch = githubRepoService.getSelectedBranch() || selectedRepo.default_branch;
       
-      // Get the contents of the _lesson-plans folder
-      const response = await octokit.repos.getContent({
-        owner: selectedRepo.owner.login,
-        repo: selectedRepo.name,
-        path: LESSON_PLANS_FOLDER,
-        ref: selectedBranch
-      });
-
-      if (!Array.isArray(response.data)) {
-        throw new Error('Expected a directory, got a file');
-      }
-
-      // This will store all our lesson plans
-      const lessonPlans: LessonPlan[] = [];
-      
-      // Process each category folder
-      for (const item of response.data) {
-        if (item.type === 'dir') {
-          // This is a category folder
-          const categoryInfo = await this.getCategoryInfo(octokit, selectedRepo.owner.login, selectedRepo.name, item.path);
-          
-          // Get the contents of the topics folder within this category
-          const topicsPath = `${item.path}/topics`;
-          try {
-            const topicsResponse = await octokit.repos.getContent({
-              owner: selectedRepo.owner.login,
-              repo: selectedRepo.name,
-              path: topicsPath,
-              ref: selectedBranch
-            });
-            
-            if (Array.isArray(topicsResponse.data)) {
-              // Process each lesson plan in the topics folder
-              for (const topicFile of topicsResponse.data) {
-                if (topicFile.type === 'file' && topicFile.name.endsWith('.md')) {
-                  lessonPlans.push({
-                    name: topicFile.name,
-                    path: topicFile.path,
-                    sha: topicFile.sha,
-                    content: topicFile.content || null,
-                    decoded_content: topicFile.content ? Buffer.from(topicFile.content, 'base64').toString('utf-8') : null,
-                    html_url: topicFile.html_url || '',
-                    category: categoryInfo
-                  });
-                }
-              }
-            }
-          } catch (error) {
-            console.warn(`Topics folder not found in ${item.path} or error accessing it:`, error);
-            // Continue with other categories even if one fails
-          }
-        } else if (item.type === 'file' && item.name.endsWith('.md') && item.name !== 'index.md') {
-          // Also include any markdown files directly in the _lesson-plans folder (except index.md)
-          lessonPlans.push({
-            name: item.name,
-            path: item.path,
-            sha: item.sha,
-            content: item.content || null,
-            decoded_content: item.content ? Buffer.from(item.content, 'base64').toString('utf-8') : null,
-            html_url: item.html_url || ''
-          });
+      // Get lesson plans from the backend API
+      const response = await fetch(`http://localhost:4000/api/lesson-plans?owner=${encodeURIComponent(selectedRepo.owner.login)}&repo=${encodeURIComponent(selectedRepo.name)}&branch=${encodeURIComponent(selectedBranch)}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('github_oauth_token')}`
         }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch lesson plans');
       }
       
+      const lessonPlans = await response.json();
       return lessonPlans;
     } catch (error) {
       console.error('Error fetching lesson plans:', error);
@@ -138,45 +82,7 @@ class LessonPlanService {
     }
   }
 
-  /**
-   * Parse category information from index.md file
-   */
-  private async getCategoryInfo(
-    octokit: Octokit,
-    owner: string,
-    repo: string,
-    categoryPath: string
-  ): Promise<{ title: string; number: number } | undefined> {
-    try {
-      // Try to get the index.md file in the category folder
-      const indexResponse = await octokit.repos.getContent({
-        owner,
-        repo,
-        path: `${categoryPath}/index.md`,
-        ref: githubRepoService.getSelectedBranch() || githubRepoService.getSelectedRepo()?.default_branch
-      });
-      
-      if ('content' in indexResponse.data && typeof indexResponse.data.content === 'string') {
-        const content = Buffer.from(indexResponse.data.content, 'base64').toString('utf-8');
-        
-        // Parse the frontmatter
-        const titleMatch = content.match(/title:\s*([^\n]+)/i);
-        const numberMatch = content.match(/number:\s*(\d+)/i);
-        
-        if (titleMatch && numberMatch) {
-          return {
-            title: titleMatch[1].trim(),
-            number: parseInt(numberMatch[1].trim(), 10)
-          };
-        }
-      }
-      
-      return undefined;
-    } catch (error) {
-      console.warn(`No index.md found in ${categoryPath} or error parsing it:`, error);
-      return undefined;
-    }
-  }
+  // Category info is now handled by the backend
   
   /**
    * Get a specific lesson plan by path
@@ -193,37 +99,23 @@ class LessonPlanService {
     }
 
     try {
-      const octokit = new Octokit({ auth: sessionStorage.getItem('github_oauth_token') });
+      const branch = githubRepoService.getSelectedBranch() || repo.default_branch;
       
-      const response = await octokit.repos.getContent({
-        owner: repo.owner.login,
-        repo: repo.name,
-        path,
-        ref: githubRepoService.getSelectedBranch() || repo.default_branch
+      // Get lesson plan from the backend API
+      // Encode the path but keep the slashes intact for proper URL structure
+      const encodedPath = path.split('/').map(segment => encodeURIComponent(segment)).join('/');
+      const response = await fetch(`http://localhost:4000/api/lesson-plans/${encodedPath}?owner=${encodeURIComponent(repo.owner.login)}&repo=${encodeURIComponent(repo.name)}&branch=${encodeURIComponent(branch)}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('github_oauth_token')}`
+        }
       });
       
-      if (Array.isArray(response.data)) {
-        throw new Error('Expected a file, got a directory');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch lesson plan');
       }
       
-      const file = response.data;
-      // Handle the content safely with type checking
-      let fileContent: string | null = null;
-      if ('content' in file && typeof file.content === 'string') {
-        fileContent = file.content;
-      }
-      
-      const decodedContent = fileContent ? Buffer.from(fileContent, 'base64').toString('utf-8') : null;
-      
-      const lessonPlan: LessonPlan = {
-        name: file.name,
-        path: file.path,
-        sha: file.sha,
-        content: fileContent,
-        decoded_content: decodedContent,
-        html_url: file.html_url || ''
-      };
-      
+      const lessonPlan = await response.json();
       return lessonPlan;
     } catch (error) {
       console.error('Error fetching lesson plan:', error);

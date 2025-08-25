@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Box, Button, Typography, Paper, Container, CircularProgress, Avatar } from '@mui/material';
 import githubService from '../services/githubService';
+import Visual from '../components/images/home-visual.svg';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     const checkAuth = async () => {
       try {
         const isAuth = githubService.isAuthenticated();
+        console.log(isAuth);
         setIsAuthenticated(isAuth);
         
         if (isAuth) {
@@ -61,7 +63,8 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   return (
     <Container maxWidth="sm" sx={{ mt: 8 }}>
       <Paper elevation={3} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Typography variant="h4" component="h1" color="white" gutterBottom>
+        <img src={Visual} alt="FAIR Lesson Plan Editor" style={{ maxWidth: '60%', height: 'auto', marginBottom: '20px' }} />
+        <Typography variant="h4" component="h1" color="primary" gutterBottom>
           FAIR Lesson Plan Editor
         </Typography>
         <Typography variant="body1" paragraph>

@@ -4,7 +4,7 @@ import githubService from '../services/githubService';
 export const githubRouter = express.Router();
 
 // Middleware to verify token
-const verifyToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+export const verifyToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers.authorization;
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
