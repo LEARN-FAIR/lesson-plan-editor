@@ -201,7 +201,7 @@ const LearningOutcomesEditor: FC<LearningOutcomesEditorProps> = ({ document, onC
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <TableContainer component={Paper} sx={{ width: '100%' }}>
+          <TableContainer component={Box} sx={{ width: '100%' }}>
             <Table sx={{ width: '100%' }} aria-label="learning outcomes table">
               <TableHead>
                 <TableRow>

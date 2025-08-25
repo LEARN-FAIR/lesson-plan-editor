@@ -1,12 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Box, TextField, Button, List, ListItem, IconButton, Typography, Paper,
-  Autocomplete, CircularProgress,
-  Divider
+  Box, TextField, Button, IconButton, Typography, Paper,
+  Autocomplete, CircularProgress, Divider,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip
 } from '@mui/material';
 import { FairMarkdownDocument } from '../../types';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { fetchContributors, Contributor, getContributorDisplayName } from '../../services/contributorService';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+import SortableTableRow from '../common/SortableTableRow';
+import DragHandle from '../common/DragHandle';
 
 interface AuthorsEditorProps {
   document: FairMarkdownDocument;
@@ -20,6 +38,54 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
   const [loading, setLoading] = useState(false);
   const [selectedAuthor, setSelectedAuthor] = useState<Contributor | null>(null);
   const [selectedReviewer, setSelectedReviewer] = useState<Contributor | null>(null);
+  
+  // Set up sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Minimum distance before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+  
+  // Handle drag end event for authors
+  const handleAuthorsDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = parseInt(active.id.toString(), 10);
+      const newIndex = parseInt(over.id.toString(), 10);
+      
+      const updatedAuthors = arrayMove(
+        document.authors || [], 
+        oldIndex, 
+        newIndex
+      );
+      
+      onChange({ authors: updatedAuthors });
+    }
+  };
+  
+  // Handle drag end event for reviewers
+  const handleReviewersDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = parseInt(active.id.toString(), 10);
+      const newIndex = parseInt(over.id.toString(), 10);
+      
+      const updatedReviewers = arrayMove(
+        document.reviewers || [], 
+        oldIndex, 
+        newIndex
+      );
+      
+      onChange({ reviewers: updatedReviewers });
+    }
+  };
   
   useEffect(() => {
     const loadContributors = async () => {
@@ -139,29 +205,76 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
           </Button>
         </Box>
         
-        <List dense>
-          {document.authors?.map((authorId, index) => {
-            // Try to find the contributor by ID
-            const contributor = contributors.find(c => c.id === authorId);
-            const displayName = contributor 
-              ? getContributorDisplayName(contributor)
-              : authorId;
-              
-            return (
-              <ListItem 
-                key={index}
-                secondaryAction={
-                  <IconButton edge="end" onClick={() => handleRemoveAuthor(index)}>
-                    <DeleteIcon />
-                  </IconButton>
-                }
-                sx={{ bgcolor: 'background.paper', mb: 0.5, borderRadius: 1 }}
-              >
-                {displayName}
-              </ListItem>
-            );
-          })}
-        </List>
+        {document.authors && document.authors.length > 0 ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleAuthorsDragEnd}
+          >
+            <TableContainer component={Paper} sx={{ width: '100%', mb: 2 }}>
+              <Table sx={{ width: '100%' }} aria-label="authors table" size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell padding="none" width="40px"></TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell>ORCID</TableCell>
+                    <TableCell align="right" sx={{ minWidth: '100px' }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  <SortableContext
+                    items={document.authors.map((_, index) => index.toString())}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {document.authors.map((authorId, index) => {
+                      // Try to find the contributor by ID
+                      const contributor = contributors.find(c => c.id === authorId);
+                      
+                      // Extract name and ORCID
+                      let name = authorId;
+                      let orcid = '';
+                      
+                      if (contributor) {
+                        name = `${contributor.firstName} ${contributor.lastName}`;
+                        orcid = contributor.id || '';
+                      } else if (authorId.startsWith('0000-')) {
+                        // If it's an ORCID format but not found in contributors
+                        orcid = authorId;
+                      }
+                      
+                      return (
+                        <SortableTableRow key={index} id={index.toString()}>
+                          <DragHandle />
+                          <TableCell>{name}</TableCell>
+                          <TableCell>
+                            {orcid && (
+                              <Tooltip title={`ORCID: ${orcid}`} placement="top">
+                                <Box component="span">{orcid}</Box>
+                              </Tooltip>
+                            )}
+                          </TableCell>
+                          <TableCell align="right">
+                            <IconButton 
+                              size="small" 
+                              color="error"
+                              onClick={() => handleRemoveAuthor(index)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </SortableTableRow>
+                      );
+                    })}
+                  </SortableContext>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </DndContext>
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2, fontStyle: 'italic' }}>
+            No authors added yet.
+          </Typography>
+        )}
       </Box>
 
       <Divider sx={{ mb: 3 }} />
@@ -220,29 +333,76 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
           </Button>
         </Box>
         
-        <List dense>
-          {document.reviewers?.map((reviewerId, index) => {
-            // Try to find the contributor by ID
-            const contributor = contributors.find(c => c.id === reviewerId);
-            const displayName = contributor 
-              ? getContributorDisplayName(contributor)
-              : reviewerId;
-              
-            return (
-              <ListItem 
-                key={index}
-                secondaryAction={
-                  <IconButton edge="end" onClick={() => handleRemoveReviewer(index)}>
-                    <DeleteIcon />
-                  </IconButton>
-                }
-                sx={{ bgcolor: 'background.paper', mb: 0.5, borderRadius: 1 }}
-              >
-                {displayName}
-              </ListItem>
-            );
-          })}
-        </List>
+        {document.reviewers && document.reviewers.length > 0 ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleReviewersDragEnd}
+          >
+            <TableContainer component={Paper} sx={{ width: '100%', mb: 2 }}>
+              <Table sx={{ width: '100%' }} aria-label="reviewers table" size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell padding="none" width="40px"></TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell>ORCID</TableCell>
+                    <TableCell align="right" sx={{ minWidth: '100px' }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  <SortableContext
+                    items={document.reviewers.map((_, index) => index.toString())}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {document.reviewers.map((reviewerId, index) => {
+                      // Try to find the contributor by ID
+                      const contributor = contributors.find(c => c.id === reviewerId);
+                      
+                      // Extract name and ORCID
+                      let name = reviewerId;
+                      let orcid = '';
+                      
+                      if (contributor) {
+                        name = `${contributor.firstName} ${contributor.lastName}`;
+                        orcid = contributor.id || '';
+                      } else if (reviewerId.startsWith('0000-')) {
+                        // If it's an ORCID format but not found in contributors
+                        orcid = reviewerId;
+                      }
+                      
+                      return (
+                        <SortableTableRow key={index} id={index.toString()}>
+                          <DragHandle />
+                          <TableCell>{name}</TableCell>
+                          <TableCell>
+                            {orcid && (
+                              <Tooltip title={`ORCID: ${orcid}`} placement="top">
+                                <Box component="span">{orcid}</Box>
+                              </Tooltip>
+                            )}
+                          </TableCell>
+                          <TableCell align="right">
+                            <IconButton 
+                              size="small" 
+                              color="error"
+                              onClick={() => handleRemoveReviewer(index)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </SortableTableRow>
+                      );
+                    })}
+                  </SortableContext>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </DndContext>
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2, fontStyle: 'italic' }}>
+            No reviewers added yet.
+          </Typography>
+        )}
       </Box>
     </Box>
   );
