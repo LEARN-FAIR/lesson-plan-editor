@@ -71,6 +71,8 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
       const oldIndex = parseInt(active.id.toString());
       const newIndex = parseInt(over.id.toString());
       
+      // First update with the original items but in new order
+      // This allows the animation to complete properly
       const reorderedResources = arrayMove(
         [...(document.additionalResources || [])], 
         oldIndex, 
@@ -204,7 +206,7 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <TableContainer component={Paper} sx={{ width: '100%' }}>
+            <TableContainer component={Box} sx={{ width: '100%' }}>
               <Table sx={{ width: '100%' }} aria-label="resources table">
                 <TableHead>
                   <TableRow>

@@ -51,8 +51,10 @@ const PrerequisitesEditor: React.FC<PrerequisitesEditorProps> = ({ document, onC
       const oldIndex = parseInt(active.id.toString(), 10);
       const newIndex = parseInt(over.id.toString(), 10);
       
+      // Create a new array with the reordered items
+      // This allows the animation to complete properly
       const updatedPrerequisites = arrayMove(
-        document.prerequisites || [], 
+        [...(document.prerequisites || [])], 
         oldIndex, 
         newIndex
       );

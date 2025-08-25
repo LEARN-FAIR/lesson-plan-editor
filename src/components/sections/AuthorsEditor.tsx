@@ -59,8 +59,10 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
       const oldIndex = parseInt(active.id.toString(), 10);
       const newIndex = parseInt(over.id.toString(), 10);
       
+      // Create a new array with the reordered items
+      // This allows the animation to complete properly
       const updatedAuthors = arrayMove(
-        document.authors || [], 
+        [...(document.authors || [])], 
         oldIndex, 
         newIndex
       );
@@ -77,8 +79,10 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
       const oldIndex = parseInt(active.id.toString(), 10);
       const newIndex = parseInt(over.id.toString(), 10);
       
+      // Create a new array with the reordered items
+      // This allows the animation to complete properly
       const updatedReviewers = arrayMove(
-        document.reviewers || [], 
+        [...(document.reviewers || [])], 
         oldIndex, 
         newIndex
       );
@@ -211,7 +215,7 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
             collisionDetection={closestCenter}
             onDragEnd={handleAuthorsDragEnd}
           >
-            <TableContainer component={Paper} sx={{ width: '100%', mb: 2 }}>
+            <TableContainer component={Box} sx={{ width: '100%', mb: 2 }}>
               <Table sx={{ width: '100%' }} aria-label="authors table" size="small">
                 <TableHead>
                   <TableRow>
@@ -339,7 +343,7 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
             collisionDetection={closestCenter}
             onDragEnd={handleReviewersDragEnd}
           >
-            <TableContainer component={Paper} sx={{ width: '100%', mb: 2 }}>
+            <TableContainer component={Box} sx={{ width: '100%', mb: 2 }}>
               <Table sx={{ width: '100%' }} aria-label="reviewers table" size="small">
                 <TableHead>
                   <TableRow>

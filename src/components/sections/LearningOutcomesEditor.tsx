@@ -83,17 +83,17 @@ const LearningOutcomesEditor: FC<LearningOutcomesEditorProps> = ({ document, onC
       const oldIndex = sortedOutcomeKeys.findIndex(key => key === active.id.toString());
       const newIndex = sortedOutcomeKeys.findIndex(key => key === over.id.toString());
       
-      // Reorder the keys
-      const reorderedKeys = arrayMove(sortedOutcomeKeys, oldIndex, newIndex);
-      
-      // Create a new outcomes object with the reordered keys
+      // Create a new outcomes object with sequential keys
       const reorderedOutcomes: Record<string, LearningOutcome> = {};
+      const reorderedKeys = arrayMove([...sortedOutcomeKeys], oldIndex, newIndex);
+      
+      // Create new keys based on index + 1 to maintain sequential numbering
       reorderedKeys.forEach((key, index) => {
-        // Create new keys based on index + 1 to maintain sequential numbering
         const newKey = (index + 1).toString();
         reorderedOutcomes[newKey] = document.learning_outcomes[key];
       });
       
+      // Update with the reordered and re-keyed outcomes
       onChange({ learning_outcomes: reorderedOutcomes });
     }
   };

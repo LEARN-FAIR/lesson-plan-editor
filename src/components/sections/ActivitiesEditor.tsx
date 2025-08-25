@@ -73,6 +73,8 @@ function ActivitySection(props: ActivitySectionProps) {
       const oldIndex = parseInt(active.id.toString().split('-')[1]);
       const newIndex = parseInt(over.id.toString().split('-')[1]);
       
+      // Create a new array with the reordered items
+      // This allows the animation to complete properly
       const reorderedActivities = arrayMove([...activities], oldIndex, newIndex);
       onReorderActivities(section, reorderedActivities);
     }
@@ -112,7 +114,7 @@ function ActivitySection(props: ActivitySectionProps) {
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <TableContainer component={Paper}>
+          <TableContainer component={Box}>
             <Table sx={{ minWidth: 650 }} aria-label="activities table">
               <TableHead>
                 <TableRow>
