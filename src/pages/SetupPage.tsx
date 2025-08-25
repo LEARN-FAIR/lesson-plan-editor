@@ -50,7 +50,7 @@ const SetupPage: React.FC = () => {
     
     // Generate and navigate to the appropriate URL
     const url = generateLessonPlanUrl(repo, lessonPlan, selectedBranch);
-    navigate(url, { replace: true });
+    navigate(url);
   };
 
   return (

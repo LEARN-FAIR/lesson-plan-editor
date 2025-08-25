@@ -214,6 +214,13 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
       // Invalidate queries after successful commit
       queryClient.invalidateQueries({ queryKey: ['fileContent'] });
       queryClient.invalidateQueries({ queryKey: ['hasUncommittedChanges'] });
+      queryClient.invalidateQueries({ queryKey: ['hasCommitsOnBranch'] });
+      
+      // Invalidate lesson plan content if this is a lesson plan file
+      const selectedLessonPlan = lessonPlanService.getSelectedLessonPlan();
+      if (selectedLessonPlan && selectedLessonPlan.path) {
+        queryClient.invalidateQueries({ queryKey: ['lessonPlanContent', selectedLessonPlan.path] });
+      }
       
     } catch (err) {
       console.error('Commit error:', err);

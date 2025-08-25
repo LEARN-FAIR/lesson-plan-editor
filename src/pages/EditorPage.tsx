@@ -61,9 +61,22 @@ const EditorPage: React.FC = () => {
     (reposError ? (reposError as Error).message : null) || 
     (lessonPlanError ? (lessonPlanError as Error).message : null);
 
-  const [setupComplete, setSetupComplete] = useState(false);
+  // Initialize setupComplete based on stored data to prevent flashing
+  const [setupComplete, setSetupComplete] = useState(() => {
+    const storedRepo = githubRepoService.getSelectedRepo();
+    const storedLessonPlan = lessonPlanService.getSelectedLessonPlan();
+    return !!(storedRepo && storedLessonPlan);
+  });
+  
+  // Track if we've already processed the initial setup
+  const initialSetupDoneRef = React.useRef(false);
 
   useEffect(() => {
+    // Skip if we're still loading data
+    if (loading) {
+      return;
+    }
+    
     // If we have URL parameters for repo, branch, and lesson, try to load them
     if (owner && repo && branch && category && lesson) {
       // Check if we're authenticated
@@ -102,8 +115,11 @@ const EditorPage: React.FC = () => {
           setManualError('Could not load lesson plan content');
         }
       }
-    } else {
+    } else if (!initialSetupDoneRef.current) {
       // No URL parameters, check if we have selections in session storage
+      // Only do this once to prevent infinite redirects
+      initialSetupDoneRef.current = true;
+      
       const storedRepo = githubRepoService.getSelectedRepo();
       const storedLessonPlan = lessonPlanService.getSelectedLessonPlan();
       
@@ -115,7 +131,7 @@ const EditorPage: React.FC = () => {
         
         // Generate and navigate to the appropriate URL
         const url = generateLessonPlanUrl(storedRepo, storedLessonPlan, storedBranch);
-        navigate(url, { replace: true });
+        navigate(url);
         
         if (storedLessonPlan.decoded_content) {
           setMarkdownContent(storedLessonPlan.decoded_content);
@@ -124,10 +140,10 @@ const EditorPage: React.FC = () => {
         setSetupComplete(false);
       }
     }
-  }, [owner, repo, branch, category, lesson, navigate, repositories, lessonPlanData]);
+  }, [owner, repo, branch, category, lesson, navigate, repositories, lessonPlanData, loading]);
 
-  // Render setup page if setup is not complete
-  if (!setupComplete) {
+  // Render setup page if setup is not complete and we're not loading
+  if (!setupComplete && !loading) {
     // Invalidate queries to ensure fresh data when returning to setup
     queryClient.invalidateQueries({ queryKey: ['repositories'] });
     return <Navigate to="/" replace />;
