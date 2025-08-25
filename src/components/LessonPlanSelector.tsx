@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -28,6 +28,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
 import githubRepoService from '../services/githubRepoService';
+import { useLessonPlans } from '../services/lessonPlanQueryHooks';
 
 interface LessonPlanSelectorProps {
   open: boolean;
@@ -36,39 +37,21 @@ interface LessonPlanSelectorProps {
 }
 
 const LessonPlanSelector: React.FC<LessonPlanSelectorProps> = ({ open, onClose, onLessonPlanSelected }) => {
-  const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [creatingNew, setCreatingNew] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (open) {
-      fetchLessonPlans();
-    }
-  }, [open]);
-
-  const fetchLessonPlans = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Check if repository is selected
-      if (!githubRepoService.hasSelectedRepo()) {
-        setError('No repository selected. Please select a repository first.');
-        setLoading(false);
-        return;
-      }
-      
-      const plans = await lessonPlanService.getLessonPlans();
-      setLessonPlans(plans);
-    } catch (err) {
-      console.error('Error fetching lesson plans:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load lesson plans');
-    } finally {
-      setLoading(false);
-    }
-  };
+  
+  // Use React Query hook to fetch lesson plans
+  const { data: lessonPlans = [], isLoading: loading, error: queryError } = useLessonPlans();
+  
+  // Format error message
+  const errorMessage = queryError ? queryError.message : null;
+  
+  // Check if repository is selected
+  const hasRepo = githubRepoService.hasSelectedRepo();
+  const repoError = !hasRepo ? 'No repository selected. Please select a repository first.' : null;
+  
+  // Combined error message
+  const error = repoError || errorMessage;
 
   const handleSelectLessonPlan = async (lessonPlan: LessonPlan) => {
     try {
@@ -84,7 +67,8 @@ const LessonPlanSelector: React.FC<LessonPlanSelectorProps> = ({ open, onClose, 
       onClose();
     } catch (err) {
       console.error('Error selecting lesson plan:', err);
-      setError(err instanceof Error ? err.message : 'Failed to select lesson plan');
+      // We can't set error state anymore as we're using React Query
+      // Just log the error for now
     }
   };
 
@@ -159,7 +143,7 @@ const LessonPlanSelector: React.FC<LessonPlanSelectorProps> = ({ open, onClose, 
           <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
             <CircularProgress />
           </Box>
-        ) : lessonPlans.length === 0 ? (
+        ) : lessonPlans.length === 0 || !hasRepo ? (
           <Box sx={{ my: 3 }}>
             <Typography variant="body1" gutterBottom>
               No lesson plans found in the _lesson-plans folder.

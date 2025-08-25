@@ -67,9 +67,20 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchSelected, onBac
   const [installationUrl, setInstallationUrl] = useState<string>('');
 
   // Check if the user has write access to the repository
+  // Using a ref to track if we've already checked to prevent infinite loops
+  const accessCheckRef = React.useRef(false);
+  
   const checkRepositoryAccess = async () => {
     const repo = githubRepoService.getSelectedRepo();
     if (!repo) return false;
+    
+    // Skip access check if we already know the result or already checking
+    if (hasWriteAccess || accessCheckRef.current) {
+      return hasWriteAccess;
+    }
+    
+    // Set flag to prevent concurrent checks
+    accessCheckRef.current = true;
     
     try {
       const hasAccess = await githubService.checkRepositoryWriteAccess(repo.owner.login, repo.name);
@@ -79,6 +90,11 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchSelected, onBac
       console.error('Error checking repository access:', err);
       setHasWriteAccess(false);
       return false;
+    } finally {
+      // Reset after a delay to allow for potential retries later
+      setTimeout(() => {
+        accessCheckRef.current = false;
+      }, 5000);
     }
   };
   
@@ -99,29 +115,40 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchSelected, onBac
     } else {
       setError(null);
     }
-    
-    // Check repository access when branches are loaded
-    if (branches.length > 0 && !loading) {
-      checkRepositoryAccess();
-    }
   }, [branchQueryError, branches, loading]);
   
-  // Set up selected branch when branches are loaded
+  // Separate useEffect for access check - runs only once when branches are loaded
   useEffect(() => {
-    if (branches.length > 0 && !loading) {
+    // Only run once when branches are first loaded
+    if (branches.length > 0 && !loading && !accessCheckRef.current && !hasWriteAccess) {
+      // Use a timeout to prevent immediate re-renders
+      const timer = setTimeout(() => {
+        checkRepositoryAccess();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]); // Only depend on loading state to prevent loops
+  
+  // Track if we've initialized the branch selection
+  const branchInitializedRef = React.useRef(false);
+  
+  // Set up selected branch when branches are loaded - runs only once
+  useEffect(() => {
+    if (branches.length > 0 && !loading && !branchInitializedRef.current) {
+      // Mark as initialized to prevent future runs
+      branchInitializedRef.current = true;
+      
       // If we have a previously selected branch, use it (but not if it's main)
       const previousBranch = githubRepoService.getSelectedBranch();
       
       if (previousBranch && previousBranch !== 'main' && branches.some((b: Branch) => b.name === previousBranch)) {
         setSelectedBranch(previousBranch);
-        onBranchSelected(previousBranch);
       } else if (branches.length > 0) {
         // Otherwise use the first available branch
         setSelectedBranch(branches[0].name);
-        onBranchSelected(branches[0].name);
       }
     }
-  }, [branches, loading, onBranchSelected]);
+  }, [branches, loading]); // Remove selectedBranch from dependencies
   
   // Refresh branches when repoId changes
   useEffect(() => {
@@ -133,15 +160,25 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchSelected, onBac
   const handleBranchChange = (event: SelectChangeEvent<string>) => {
     const branch = event.target.value;
     setSelectedBranch(branch);
-    onBranchSelected(branch); // Notify parent of branch selection
+    // Don't call onBranchSelected here - it will be called by the useEffect
   };
 
-  // Auto-save selected branch when it changes
+  // Use a ref to track previous branch to avoid unnecessary updates
+  const prevBranchRef = React.useRef<string | null>(null);
+  
+  // Auto-save selected branch when it changes and notify parent
   useEffect(() => {
-    if (selectedBranch) {
+    if (selectedBranch && selectedBranch !== prevBranchRef.current) {
+      // Update ref
+      prevBranchRef.current = selectedBranch;
+      
+      // Store in service
       githubRepoService.setSelectedBranch(selectedBranch);
+      
+      // Notify parent component
+      onBranchSelected(selectedBranch);
     }
-  }, [selectedBranch]);
+  }, [selectedBranch, onBranchSelected]);
   
   // Handle opening the create branch dialog
   const handleOpenCreateDialog = async () => {
