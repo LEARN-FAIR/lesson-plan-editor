@@ -99,6 +99,7 @@ lessonPlansRouter.get('/', verifyToken, async (req, res) => {
 
 /**
  * Get a specific lesson plan by path
+ * This endpoint uses query parameters instead of path parameters to avoid path-to-regexp issues
  */
 lessonPlansRouter.get('/file', verifyToken, async (req, res) => {
   try {

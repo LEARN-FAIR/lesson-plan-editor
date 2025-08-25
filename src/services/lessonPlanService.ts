@@ -101,10 +101,9 @@ class LessonPlanService {
     try {
       const branch = githubRepoService.getSelectedBranch() || repo.default_branch;
       
-      // Get lesson plan from the backend API
-      // Encode the path but keep the slashes intact for proper URL structure
-      const encodedPath = path.split('/').map(segment => encodeURIComponent(segment)).join('/');
-      const response = await fetch(`http://localhost:4000/api/lesson-plans/${encodedPath}?owner=${encodeURIComponent(repo.owner.login)}&repo=${encodeURIComponent(repo.name)}&branch=${encodeURIComponent(branch)}`, {
+      // Get lesson plan from the backend API using the new /file endpoint
+      // We're using a query parameter approach to avoid path encoding issues
+      const response = await fetch(`http://localhost:4000/api/lesson-plans/file?path=${encodeURIComponent(path)}&owner=${encodeURIComponent(repo.owner.login)}&repo=${encodeURIComponent(repo.name)}&branch=${encodeURIComponent(branch)}`, {
         headers: {
           'Authorization': `Bearer ${sessionStorage.getItem('github_oauth_token')}`
         }
