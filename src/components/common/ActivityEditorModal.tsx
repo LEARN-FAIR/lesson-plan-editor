@@ -104,17 +104,17 @@ const ActivityEditorModal: React.FC<ActivityEditorModalProps> = ({
       maxWidth="md"
     >
       <DialogTitle>
-        {mode === 'add' ? 'Add New Activity' : 'Edit Activity'}
+        {mode === 'add' ? 'Add activity' : 'Edit activity'}
       </DialogTitle>
       
       <DialogContent>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2, mt: 2 }}>
           <Box>
             <FormControl fullWidth size="small">
-              <InputLabel>Learning Outcome</InputLabel>
+              <InputLabel>Learning outcome</InputLabel>
               <Select
                 value={formData.learning_outcome}
-                label="Learning Outcome"
+                label="Learning outcome"
                 onChange={handleFormChange('learning_outcome') as any}
               >
                 {Object.entries(learningOutcomes || {})

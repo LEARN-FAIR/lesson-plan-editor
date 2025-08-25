@@ -11,6 +11,9 @@ import AddIcon from '@mui/icons-material/Add';
 import { FairMarkdownDocument, Activity } from '../../types';
 import MdxEditorComponent from '../common/MdxEditorComponent';
 import ActivityEditorModal from '../common/ActivityEditorModal';
+import ReactMarkdown from 'react-markdown';
+import RestoreIcon from '@mui/icons-material/Restore';
+import UpdateIcon from '@mui/icons-material/Update';
 
 interface ActivitiesEditorProps {
   document: FairMarkdownDocument;
@@ -19,6 +22,7 @@ interface ActivitiesEditorProps {
 
 interface ActivitySectionProps {
   title: string;
+  icon: React.ReactNode;
   section: 'before' | 'during' | 'after';
   activities: Activity[];
   onAddActivity: (section: 'before' | 'during' | 'after') => void;
@@ -27,12 +31,32 @@ interface ActivitySectionProps {
 }
 
 function ActivitySection(props: ActivitySectionProps) {
-  const { title, section, activities, onAddActivity, onEditActivity, onRemoveActivity } = props;
+  const { title, icon, section, activities, onAddActivity, onEditActivity, onRemoveActivity } = props;
   
   return (
     <Box sx={{ mb: 4 }}>
-      <Typography variant="h5" gutterBottom>{title}</Typography>
-      
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          backgroundColor: '#e9ecef',
+          px: 1,
+          py: 0.5,
+          borderRadius: 2
+          }}>
+          { icon }
+          <Typography sx={{ ml: 0.5 }} variant="h6">{title}</Typography>
+        </Box>
+        <Button 
+          variant="contained" 
+          startIcon={<AddIcon />}
+          onClick={() => onAddActivity(section)}
+        >
+          Add activity
+        </Button>
+      </Box>
+
       {activities.length === 0 ? (
         <Typography variant="body2" sx={{ fontStyle: 'italic', my: 2 }}>
           No activities defined for this section.
@@ -54,19 +78,13 @@ function ActivitySection(props: ActivitySectionProps) {
               {activities.map((activity, index) => (
                 <TableRow key={index}>
                   <TableCell>{activity.learning_outcome}</TableCell>
-                  <TableCell>
-                    <Box sx={{ maxWidth: 400, maxHeight: 100, overflow: 'auto' }}>
-                      <MdxEditorComponent
-                        markdown={typeof activity.activities === 'string' 
+                  <TableCell sx={{ p: 1 }}>
+                    <Box sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                      <ReactMarkdown>
+                        {typeof activity.activities === 'string' 
                           ? activity.activities 
                           : activity.activities.join("\n")}
-                        onChange={() => {}} // Read-only in the list view
-                        minHeight="60px"
-                        maxHeight="100px"
-                        readOnly={true}
-                        showToolbar={false}
-                        showDiffToggle={false}
-                      />
+                      </ReactMarkdown>
                     </Box>
                   </TableCell>
                   <TableCell>{activity.time}</TableCell>
@@ -95,17 +113,6 @@ function ActivitySection(props: ActivitySectionProps) {
           </Table>
         </TableContainer>
       )}
-
-      
-      <Box sx={{ mt: 2 }}>
-        <Button 
-          variant="contained" 
-          startIcon={<AddIcon />}
-          onClick={() => onAddActivity(section)}
-        >
-          Add New Activity
-        </Button>
-      </Box>
       
     </Box>
   );
@@ -179,6 +186,7 @@ const ActivitiesEditor: React.FC<ActivitiesEditorProps> = ({ document, onChange 
     <Box>
         <ActivitySection 
           title="Before the lesson"
+          icon={<RestoreIcon color="primary" />}
           section="before"
           activities={document.activities?.before || []}
           onAddActivity={handleOpenAddModal}
@@ -186,10 +194,9 @@ const ActivitiesEditor: React.FC<ActivitiesEditorProps> = ({ document, onChange 
           onRemoveActivity={handleRemoveActivity}
         />
         
-        <Divider sx={{ my: 4 }} />
-        
         <ActivitySection 
           title="During the lesson"
+          icon={<UpdateIcon  color="primary" />}
           section="during"
           activities={document.activities?.during || []}
           onAddActivity={handleOpenAddModal}
@@ -197,10 +204,9 @@ const ActivitiesEditor: React.FC<ActivitiesEditorProps> = ({ document, onChange 
           onRemoveActivity={handleRemoveActivity}
         />
         
-        <Divider sx={{ my: 4 }} />
-        
         <ActivitySection 
           title="After the lesson"
+        icon={<UpdateIcon color="primary"/>}
           section="after"
           activities={document.activities?.after || []}
           onAddActivity={handleOpenAddModal}

@@ -7,6 +7,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { FairMarkdownDocument, Resource } from '../../types';
+import AddIcon from '@mui/icons-material/Add';
 
 interface ResourcesEditorProps {
   document: FairMarkdownDocument;
@@ -134,9 +135,10 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
     <Box>
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">
-            Additional Resources
+            Additional resources
           </Typography>
           <Button 
+            startIcon={<AddIcon />}
             variant="contained" 
             onClick={() => handleOpenDialog()}
           >

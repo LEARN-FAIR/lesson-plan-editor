@@ -98,14 +98,14 @@ const Editor: React.FC<EditorProps> = ({ initialMarkdown, onSave }) => {
             variant="scrollable"
             scrollButtons="auto"
           >
-            <Tab label="General Info" {...a11yProps(0)} />
+            <Tab label="General info" {...a11yProps(0)} />
             <Tab label="Authors" {...a11yProps(1)} />
-            <Tab label="Learning Outcomes" {...a11yProps(2)} />
+            <Tab label="Learning outcomes" {...a11yProps(2)} />
             <Tab label="Activities" {...a11yProps(3)} />
             <Tab label="Prerequisites" {...a11yProps(4)} />
-            <Tab label="Terms" {...a11yProps(5)} />
-            <Tab label="Resources" {...a11yProps(6)} />
-            <Tab label="Content" {...a11yProps(7)} />
+            {/* <Tab label="Terms" {...a11yProps(5)} /> */}
+            <Tab label="Resources" {...a11yProps(5)} />
+            <Tab label="Content" {...a11yProps(6)} />
 
           </Tabs>
         </Box>
@@ -145,21 +145,21 @@ const Editor: React.FC<EditorProps> = ({ initialMarkdown, onSave }) => {
           />
         </TabPanel>
         
-        <TabPanel value={tabValue} index={5}>
+        {/* <TabPanel value={tabValue} index={5}>
           <TermsEditor 
             document={document} 
             onChange={handleDocumentChange} 
           />
-        </TabPanel>
+        </TabPanel> */}
         
-        <TabPanel value={tabValue} index={6}>
+        <TabPanel value={tabValue} index={5}>
           <ResourcesEditor 
             document={document} 
             onChange={handleDocumentChange} 
           />
         </TabPanel>
         
-        <TabPanel value={tabValue} index={7}>
+        <TabPanel value={tabValue} index={6}>
           <ContentEditor 
             document={document} 
             onChange={handleDocumentChange} 
