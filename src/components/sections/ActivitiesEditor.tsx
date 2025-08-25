@@ -112,12 +112,12 @@ function ActivitySection(props: ActivitySectionProps) {
               <TableHead>
                 <TableRow>
                   <TableCell padding="none" width="40px"></TableCell>
-                  <TableCell>LO</TableCell>
+                  <TableCell width="50px">LO</TableCell>
                   <TableCell>Activity</TableCell>
-                  <TableCell>Time</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Level</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell width="100px">Time</TableCell>
+                  <TableCell width="140px">Type</TableCell>
+                  <TableCell width="120px">Level</TableCell>
+                  <TableCell width="100px"></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

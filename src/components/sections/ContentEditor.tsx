@@ -23,9 +23,6 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ document, onChange }) => 
           icon={<SubjectIcon color="primary" />}
           title="Content"
         />
-        <Typography variant="body2" sx={{ mb: 2 }}>
-          Edit the main content of the lesson plan.
-        </Typography>
         
         <Box sx={{ minHeight: '500px' }}>
           <MdxEditorComponent

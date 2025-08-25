@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Container, Paper, Tab, Tabs, Typography, Button, Stack } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import { FairMarkdownDocument } from '../types';
 import { parseMarkdown, serializeMarkdown } from '../utils/markdownUtils';
 import GeneralInfoEditor from './sections/GeneralInfoEditor';
@@ -10,6 +11,14 @@ import PrerequisitesEditor from './sections/PrerequisitesEditor';
 import TermsEditor from './sections/TermsEditor';
 import ResourcesEditor from './sections/ResourcesEditor';
 import ContentEditor from './sections/ContentEditor';
+import InfoOutlineIcon from '@mui/icons-material/InfoOutline';
+import AttributionIcon from '@mui/icons-material/Attribution';
+import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
+import ChecklistIcon from '@mui/icons-material/Checklist';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import TrackChangesIcon from '@mui/icons-material/TrackChanges';
+import AttachmentIcon from '@mui/icons-material/Attachment';
+import SubjectIcon from '@mui/icons-material/Subject';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -48,6 +57,20 @@ interface EditorProps {
   initialMarkdown: string;
   onSave: (markdown: string) => void;
 }
+
+interface StyledTabProps {
+  label: string;
+  icon?: React.ReactElement;
+  iconPosition?: 'start' | 'end' | 'top' | 'bottom';
+}
+
+const StyledTab = styled((props: StyledTabProps) => <Tab disableRipple {...props} />)(
+  ({ theme }) => ({
+    minHeight: '48px',
+    textTransform: 'none',
+  }),
+);
+
 
 const Editor: React.FC<EditorProps> = ({ initialMarkdown, onSave }) => {
   const [document, setDocument] = useState<FairMarkdownDocument | null>(null);
@@ -98,14 +121,14 @@ const Editor: React.FC<EditorProps> = ({ initialMarkdown, onSave }) => {
             variant="scrollable"
             scrollButtons="auto"
           >
-            <Tab label="General info" {...a11yProps(0)} />
-            <Tab label="Authors" {...a11yProps(1)} />
-            <Tab label="Learning outcomes" {...a11yProps(2)} />
-            <Tab label="Activities" {...a11yProps(3)} />
-            <Tab label="Prerequisites" {...a11yProps(4)} />
-            {/* <Tab label="Terms" {...a11yProps(5)} /> */}
-            <Tab label="Resources" {...a11yProps(5)} />
-            <Tab label="Content" {...a11yProps(6)} />
+            <StyledTab label="General info" icon={<InfoOutlineIcon />} iconPosition="start"  {...a11yProps(0)} />
+            <StyledTab label="Authors" icon={<AttributionIcon />} iconPosition="start" {...a11yProps(1)} />
+            <StyledTab label="Learning outcomes" icon={<TrackChangesIcon />} iconPosition="start" {...a11yProps(2)} />
+            <StyledTab label="Activities" icon={<EventNoteOutlinedIcon />} iconPosition="start" {...a11yProps(3)} />
+            <StyledTab label="Prerequisites" icon={<ChecklistIcon />} iconPosition="start" {...a11yProps(4)} />
+            {/* <StyledTab label="Terms" {...a11yProps(5)} /> */}
+            <StyledTab label="Resources" icon={<AttachmentIcon />} iconPosition="start" {...a11yProps(5)} />
+            <StyledTab label="Content" icon={<SubjectIcon />} iconPosition="start" {...a11yProps(6)} />
 
           </Tabs>
         </Box>

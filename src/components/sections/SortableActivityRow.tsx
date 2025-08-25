@@ -46,7 +46,7 @@ const SortableActivityRow: React.FC<SortableActivityRowProps> = ({
       style={style}
       hover
     >
-      <TableCell padding="none" width="40px">
+      <TableCell padding="none">
         <IconButton 
           size="small" 
           {...attributes} 

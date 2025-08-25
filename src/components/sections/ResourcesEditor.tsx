@@ -215,9 +215,9 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
                   <TableRow>
                     <TableCell padding="none" width="40px"></TableCell>
                     <TableCell>Title</TableCell>
-                    <TableCell>Author</TableCell>
-                    <TableCell>URL/DOI</TableCell>
-                    <TableCell align="right" sx={{ minWidth: '100px' }}>Actions</TableCell>
+                    <TableCell width="280px">Author</TableCell>
+                    <TableCell width="280px">URL/DOI</TableCell>
+                    <TableCell align="right" width="100px"></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -230,16 +230,16 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
                         <DragHandle />
                         <TableCell>{resource.title}</TableCell>
                         <TableCell>{resource.author || '-'}</TableCell>
-                        <TableCell sx={{ maxWidth: '250px', overflow: 'hidden' }}>
+                        <TableCell sx={{ overflow: 'hidden' }}>
                           <Tooltip title={resource.url} placement="top">
                             <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {shortenText(resource.url, 40)}
+                              {shortenText(resource.url, 30)}
                             </Box>
                           </Tooltip>
                           {resource.doi && (
                             <Tooltip title={`DOI: ${resource.doi}`} placement="top">
                               <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                DOI: {shortenText(resource.doi, 30)}
+                                {shortenText(resource.doi, 30)}
                               </Box>
                             </Tooltip>
                           )}

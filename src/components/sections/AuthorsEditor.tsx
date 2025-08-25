@@ -1,16 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Box, TextField, Button, IconButton, Typography, Paper,
-  Autocomplete, CircularProgress, Divider,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip
+  Box, Button, Typography, IconButton, Chip, Autocomplete,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  TextField, Grid, Tooltip
 } from '@mui/material';
-import { FairMarkdownDocument } from '../../types';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import SectionHeader from '../common/SectionHeader';
 import PeopleIcon from '@mui/icons-material/People';
 import RateReviewIcon from '@mui/icons-material/RateReview';
-import { fetchContributors, Contributor, getContributorDisplayName } from '../../services/contributorService';
+import SectionHeader from '../common/SectionHeader';
+import AuthorEditorModal from '../common/AuthorEditorModal';
+import ReviewerEditorModal from '../common/ReviewerEditorModal';
+import { 
+  FairMarkdownDocument 
+} from '../../types';
+import { 
+  fetchContributors, 
+  Contributor, 
+  getContributorDisplayName 
+} from '../../services/contributorService';
 import { 
   DndContext, 
   closestCenter, 
@@ -28,6 +37,7 @@ import {
 } from '@dnd-kit/sortable';
 import SortableTableRow from '../common/SortableTableRow';
 import DragHandle from '../common/DragHandle';
+import { AuthorData } from '../../types/authorTypes';
 
 interface AuthorsEditorProps {
   document: FairMarkdownDocument;
@@ -35,6 +45,8 @@ interface AuthorsEditorProps {
 }
 
 const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => {
+  const [authorModalOpen, setAuthorModalOpen] = useState(false);
+  const [reviewerModalOpen, setReviewerModalOpen] = useState(false);
   const [newAuthor, setNewAuthor] = useState('');
   const [newReviewer, setNewReviewer] = useState('');
   const [contributors, setContributors] = useState<Contributor[]>([]);
@@ -156,64 +168,66 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
     onChange({ reviewers: updatedReviewers });
   };
 
+  const handleSaveAuthor = (author: AuthorData) => {
+    const updatedAuthors = [...(document.authors || [])];
+    // Use the ORCID if available, otherwise use the name
+    const authorId = author.orcid || author.name;
+    updatedAuthors.push(authorId);
+    
+    onChange({ authors: updatedAuthors });
+  };
+
+  const handleSaveReviewer = (reviewer: AuthorData) => {
+    const updatedReviewers = [...(document.reviewers || [])];
+    // Use the ORCID if available, otherwise use the name
+    const reviewerId = reviewer.orcid || reviewer.name;
+    updatedReviewers.push(reviewerId);
+    
+    onChange({ reviewers: updatedReviewers });
+    setReviewerModalOpen(false);
+    setSelectedReviewer(null);
+    setNewReviewer('');
+  };
+
+  const handleOpenAuthorModal = () => {
+    setAuthorModalOpen(true);
+  };
+
+  const handleCloseAuthorModal = () => {
+    setAuthorModalOpen(false);
+  };
+
+  const handleOpenReviewerModal = () => {
+    setReviewerModalOpen(true);
+  };
+
+  const handleCloseReviewerModal = () => {
+    setReviewerModalOpen(false);
+  };
+
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
         <SectionHeader
           icon={<PeopleIcon color="primary" />}
           title="Authors"
+          actions={
+            <Button 
+              variant="contained" 
+              startIcon={<AddIcon />}
+              onClick={handleOpenAuthorModal}
+            >
+              Add author
+            </Button>
+          }
         />
-        <Typography variant="body2" gutterBottom>
-          Enter author ORCID IDs (e.g., "0000-0001-6675-4639") or names.
-        </Typography>
         
-        <Box sx={{ display: 'flex', mb: 2 }}>
-          <Autocomplete
-            fullWidth
-            freeSolo
-            options={contributors}
-            getOptionLabel={(option) => {
-              if (typeof option === 'string') return option;
-              return getContributorDisplayName(option);
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="New Author"
-                placeholder="Search by name or ORCID"
-                size="small"
-                value={newAuthor}
-                onChange={(e) => setNewAuthor(e.target.value)}
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <React.Fragment>
-                      {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                      {params.InputProps.endAdornment}
-                    </React.Fragment>
-                  ),
-                }}
-              />
-            )}
-            value={selectedAuthor}
-            onChange={(_, newValue) => {
-              if (typeof newValue === 'string') {
-                setNewAuthor(newValue);
-                setSelectedAuthor(null);
-              } else {
-                setSelectedAuthor(newValue);
-                setNewAuthor('');
-              }
-            }}
-            sx={{ mr: 1 }}
-          />
-          <Button 
-            variant="contained" 
-            onClick={handleAddAuthor}
-          >
-            Add
-          </Button>
-        </Box>
+        <AuthorEditorModal
+          open={authorModalOpen}
+          onClose={handleCloseAuthorModal}
+          onSave={handleSaveAuthor}
+          contributors={contributors}
+        />
         
         {document.authors && document.authors.length > 0 ? (
           <DndContext
@@ -222,13 +236,13 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
             onDragEnd={handleAuthorsDragEnd}
           >
             <TableContainer component={Box} sx={{ width: '100%', mb: 2 }}>
-              <Table sx={{ width: '100%' }} aria-label="authors table" size="small">
+              <Table sx={{ width: '100%' }} aria-label="authors table">
                 <TableHead>
                   <TableRow>
                     <TableCell padding="none" width="40px"></TableCell>
                     <TableCell>Name</TableCell>
                     <TableCell>ORCID</TableCell>
-                    <TableCell align="right" sx={{ minWidth: '100px' }}>Actions</TableCell>
+                    <TableCell align="right" width="100px"></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -257,11 +271,7 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
                           <DragHandle />
                           <TableCell>{name}</TableCell>
                           <TableCell>
-                            {orcid && (
-                              <Tooltip title={`ORCID: ${orcid}`} placement="top">
-                                <Box component="span">{orcid}</Box>
-                              </Tooltip>
-                            )}
+                            {orcid && orcid}
                           </TableCell>
                           <TableCell align="right">
                             <IconButton 
@@ -287,64 +297,27 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
         )}
       </Box>
 
-      <Divider sx={{ mb: 3 }} />
-
-      <Box>
+      <Box sx={{ mt: 4 }}>
         <SectionHeader
           icon={<RateReviewIcon color="primary" />}
           title="Reviewers"
-        />
-        <Typography variant="body2" gutterBottom>
-          Enter reviewer ORCID IDs (e.g., "0000-0002-7702-4495") or names.
-        </Typography>
-        
-        <Box sx={{ display: 'flex', mb: 2 }}>
-          <Autocomplete
-            fullWidth
-            freeSolo
-            options={contributors}
-            getOptionLabel={(option) => {
-              if (typeof option === 'string') return option;
-              return getContributorDisplayName(option);
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="New Reviewer"
-                placeholder="Search by name or ORCID"
-                size="small"
-                value={newReviewer}
-                onChange={(e) => setNewReviewer(e.target.value)}
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <React.Fragment>
-                      {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                      {params.InputProps.endAdornment}
-                    </React.Fragment>
-                  ),
-                }}
-              />
-            )}
-            value={selectedReviewer}
-            onChange={(_, newValue) => {
-              if (typeof newValue === 'string') {
-                setNewReviewer(newValue);
-                setSelectedReviewer(null);
-              } else {
-                setSelectedReviewer(newValue);
-                setNewReviewer('');
-              }
-            }}
-            sx={{ mr: 1 }}
-          />
-          <Button 
+          actions={
+            <Button 
             variant="contained" 
-            onClick={handleAddReviewer}
+            startIcon={<AddIcon />}
+            onClick={handleOpenReviewerModal}
           >
-            Add
+            Add reviewer
           </Button>
-        </Box>
+          }
+        />
+        
+        <ReviewerEditorModal
+          open={reviewerModalOpen}
+          onClose={handleCloseReviewerModal}
+          onSave={handleSaveReviewer}
+          contributors={contributors}
+        />
         
         {document.reviewers && document.reviewers.length > 0 ? (
           <DndContext
@@ -358,8 +331,8 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
                   <TableRow>
                     <TableCell padding="none" width="40px"></TableCell>
                     <TableCell>Name</TableCell>
-                    <TableCell>ORCID</TableCell>
-                    <TableCell align="right" sx={{ minWidth: '100px' }}>Actions</TableCell>
+                    <TableCell width="200px">ORCID</TableCell>
+                    <TableCell align="right" width="100px"></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -388,11 +361,7 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
                           <DragHandle />
                           <TableCell>{name}</TableCell>
                           <TableCell>
-                            {orcid && (
-                              <Tooltip title={`ORCID: ${orcid}`} placement="top">
-                                <Box component="span">{orcid}</Box>
-                              </Tooltip>
-                            )}
+                            {orcid && orcid}
                           </TableCell>
                           <TableCell align="right">
                             <IconButton 

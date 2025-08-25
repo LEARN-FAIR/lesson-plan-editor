@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Typography, Paper } from '@mui/material';
+import { Box, Button, List, ListItemText, ListItemSecondaryAction, IconButton, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import EditIcon from '@mui/icons-material/Edit';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import SectionHeader from '../common/SectionHeader';
+import PrerequisiteEditorModal from '../common/PrerequisiteEditorModal';
 import { FairMarkdownDocument } from '../../types';
 import { 
   DndContext, 
@@ -31,7 +32,9 @@ interface PrerequisitesEditorProps {
 }
 
 const PrerequisitesEditor: React.FC<PrerequisitesEditorProps> = ({ document, onChange }) => {
-  const [newPrerequisite, setNewPrerequisite] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   
   // Set up sensors for drag and drop
   const sensors = useSensors(
@@ -65,12 +68,37 @@ const PrerequisitesEditor: React.FC<PrerequisitesEditorProps> = ({ document, onC
     }
   };
 
-  const handleAddPrerequisite = () => {
-    if (!newPrerequisite.trim()) return;
+  const handleOpenAddModal = () => {
+    setIsEditing(false);
+    setEditingIndex(null);
+    setModalOpen(true);
+  };
+
+  const handleOpenEditModal = (index: number) => {
+    setIsEditing(true);
+    setEditingIndex(index);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setEditingIndex(null);
+  };
+
+  const handleSavePrerequisite = (prerequisite: string) => {
+    if (!prerequisite.trim()) return;
     
-    const updatedPrerequisites = [...(document.prerequisites || []), newPrerequisite.trim()];
+    const updatedPrerequisites = [...(document.prerequisites || [])];
+    
+    if (isEditing && editingIndex !== null) {
+      // Update existing prerequisite
+      updatedPrerequisites[editingIndex] = prerequisite;
+    } else {
+      // Add new prerequisite
+      updatedPrerequisites.push(prerequisite);
+    }
+    
     onChange({ prerequisites: updatedPrerequisites });
-    setNewPrerequisite('');
   };
 
   const handleRemovePrerequisite = (index: number) => {
@@ -79,40 +107,28 @@ const PrerequisitesEditor: React.FC<PrerequisitesEditorProps> = ({ document, onC
     onChange({ prerequisites: updatedPrerequisites });
   };
 
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      handleAddPrerequisite();
-    }
-  };
 
   return (
     <Box>
         <SectionHeader
           icon={<ChecklistIcon color="primary" />}
           title="Prerequisites"
+          actions={<Button 
+          variant="contained" 
+          startIcon={<AddIcon />}
+          onClick={handleOpenAddModal}
+        >
+          Add prerequisite
+        </Button>}
         />
-        <Typography variant="body2" gutterBottom>
-          Add topics or knowledge required before attending this lesson.
-        </Typography>
         
-        <Box sx={{ display: 'flex', mb: 2 }}>
-          <TextField
-            fullWidth
-            label="New Prerequisite"
-            value={newPrerequisite}
-            onChange={(e) => setNewPrerequisite(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="e.g., Basic knowledge of research data management"
-            size="small"
-            sx={{ mr: 1 }}
-          />
-          <Button 
-            variant="contained" 
-            onClick={handleAddPrerequisite}
-          >
-            Add
-          </Button>
-        </Box>
+        <PrerequisiteEditorModal
+          open={modalOpen}
+          onClose={handleCloseModal}
+          onSave={handleSavePrerequisite}
+          initialValue={isEditing && editingIndex !== null ? document.prerequisites[editingIndex] : ''}
+          isEditing={isEditing}
+        />
         
         {document.prerequisites && document.prerequisites.length > 0 ? (
           <DndContext
@@ -131,6 +147,9 @@ const PrerequisitesEditor: React.FC<PrerequisitesEditorProps> = ({ document, onC
                       primary={prerequisite}
                     />
                     <ListItemSecondaryAction>
+                      <IconButton edge="end" aria-label="edit" onClick={() => handleOpenEditModal(index)} sx={{ mr: 1 }}>
+                        <EditIcon />
+                      </IconButton>
                       <IconButton edge="end" aria-label="delete" onClick={() => handleRemovePrerequisite(index)}>
                         <DeleteIcon />
                       </IconButton>

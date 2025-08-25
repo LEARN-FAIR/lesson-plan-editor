@@ -212,10 +212,10 @@ const LearningOutcomesEditor: FC<LearningOutcomesEditorProps> = ({ document, onC
               <TableHead>
                 <TableRow>
                   <TableCell padding="none" width="40px"></TableCell>
-                  <TableCell>LO</TableCell>
+                  <TableCell width="50px">LO</TableCell>
                   <TableCell>Outcome</TableCell>
                   <TableCell>Verbs</TableCell>
-                  <TableCell align="right" sx={{ minWidth: '100px' }}></TableCell>
+                  <TableCell align="right" width="100px"></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
