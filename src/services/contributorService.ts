@@ -1,4 +1,4 @@
-import yaml from 'yaml';
+import githubRepoService from './githubRepoService';
 
 export interface Contributor {
   id: string;
@@ -8,22 +8,48 @@ export interface Contributor {
   git?: string;
 }
 
-const CONTRIBUTORS_URL = 'https://raw.githubusercontent.com/elixir-europe-training/ELIXIR-TrP-FAIR-Converge/refs/heads/main/_data/contributors.yaml';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
 
+/**
+ * Fetch contributors from the backend API
+ * Uses the currently selected repository and branch if available
+ */
 export const fetchContributors = async (): Promise<Contributor[]> => {
   try {
-    const response = await fetch(CONTRIBUTORS_URL);
+    // Get the selected repository and branch from the GitHub repo service
+    const selectedRepo = githubRepoService.getSelectedRepo();
+    const selectedBranch = githubRepoService.getSelectedBranch();
+    
+    // Build the URL with query parameters if repo and branch are selected
+    let url = `${API_URL}/contributors`;
+    const params = new URLSearchParams();
+    
+    if (selectedRepo) {
+      params.append('owner', selectedRepo.owner.login);
+      params.append('repo', selectedRepo.name);
+      
+      if (selectedBranch) {
+        params.append('branch', selectedBranch);
+      }
+    }
+    
+    // Add query parameters if any were set
+    if (params.toString()) {
+      url = `${url}?${params.toString()}`;
+    }
+    
+    console.log(`Fetching contributors from: ${url}`);
+    const response = await fetch(url);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch contributors: ${response.status} ${response.statusText}`);
     }
     
-    const yamlText = await response.text();
-    const contributors = yaml.parse(yamlText) as Contributor[];
-    
+    const contributors = await response.json() as Contributor[];
     return contributors;
   } catch (error) {
     console.error('Error fetching contributors:', error);
+    // Fallback to empty array if the API fails
     return [];
   }
 };

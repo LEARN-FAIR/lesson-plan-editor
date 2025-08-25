@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 const { authRouter } = require('./routes/auth');
 import { githubRouter } from './routes/github';
 import { lessonPlansRouter } from './routes/lessonPlans';
+import { contributorsRouter } from './routes/contributors';
 
 // Load environment variables
 dotenv.config();
@@ -23,6 +24,7 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 app.use('/api/github', githubRouter);
 app.use('/api/lesson-plans', lessonPlansRouter);
+app.use('/api/contributors', contributorsRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
