@@ -11,6 +11,11 @@ const verifyToken = (req: express.Request, res: express.Response, next: express.
     return res.status(401).json({ error: 'Authorization token is required' });
   }
   
+  // Initialize req.body if it doesn't exist (for GET requests)
+  if (!req.body) {
+    req.body = {};
+  }
+  
   req.body.token = authHeader.split(' ')[1];
   next();
 };
