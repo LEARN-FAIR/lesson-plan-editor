@@ -8,6 +8,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import TrackChangesIcon from '@mui/icons-material/TrackChanges';
+import SectionHeader from '../common/SectionHeader';
 import { FairMarkdownDocument, LearningOutcome, LearningVerbLevel } from '../../types';
 import LearningOutcomeEditorModal from '../common/LearningOutcomeEditorModal';
 import { 
@@ -181,15 +183,19 @@ const LearningOutcomesEditor: FC<LearningOutcomesEditorProps> = ({ document, onC
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'right' }}>
-        <Button 
-          variant="contained" 
-          startIcon={<AddIcon />}
-          onClick={handleAddOutcome}
-        >
-          Add outcome
-        </Button>
-      </Box>
+      <SectionHeader
+        icon={<TrackChangesIcon color="primary" />}
+        title="Learning outcomes"
+        actions={
+          <Button 
+            variant="contained" 
+            startIcon={<AddIcon />}
+            onClick={handleAddOutcome}
+          >
+            Add outcome
+          </Button>
+        }
+      />
       
       {Object.keys(document.learning_outcomes || {}).length === 0 ? (
         <Typography variant="body2" sx={{ fontStyle: 'italic', my: 2 }}>

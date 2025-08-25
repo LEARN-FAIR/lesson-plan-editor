@@ -3,6 +3,8 @@ import { Box, TextField, Button, List, ListItem, ListItemText, ListItemSecondary
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import ChecklistIcon from '@mui/icons-material/Checklist';
+import SectionHeader from '../common/SectionHeader';
 import { FairMarkdownDocument } from '../../types';
 import { 
   DndContext, 
@@ -85,7 +87,10 @@ const PrerequisitesEditor: React.FC<PrerequisitesEditorProps> = ({ document, onC
 
   return (
     <Box>
-        <Typography variant="h6" gutterBottom>Prerequisites</Typography>
+        <SectionHeader
+          icon={<ChecklistIcon color="primary" />}
+          title="Prerequisites"
+        />
         <Typography variant="body2" gutterBottom>
           Add topics or knowledge required before attending this lesson.
         </Typography>

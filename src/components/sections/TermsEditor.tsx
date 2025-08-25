@@ -1,6 +1,8 @@
 import React from 'react';
 import { Box, Typography, Paper, Alert, AlertTitle } from '@mui/material';
 import { FairMarkdownDocument } from '../../types';
+import SectionHeader from '../common/SectionHeader';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 
 interface TermsEditorProps {
   document: FairMarkdownDocument;
@@ -20,9 +22,10 @@ const TermsEditor: React.FC<TermsEditorProps> = ({ document, onChange }) => {
       </Alert>
       
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Terms for FAIR Skills
-        </Typography>
+        <SectionHeader
+          icon={<LocalOfferIcon color="primary" />}
+          title="Terms for FAIR Skills"
+        />
         
         <Typography variant="body1">
           {document.terms4FAIRskills && document.terms4FAIRskills.length > 0 ? (

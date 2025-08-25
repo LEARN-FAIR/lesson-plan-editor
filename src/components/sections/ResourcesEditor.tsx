@@ -9,6 +9,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { FairMarkdownDocument, Resource } from '../../types';
 import AddIcon from '@mui/icons-material/Add';
+import SectionHeader from '../common/SectionHeader';
 import { 
   DndContext, 
   closestCenter, 
@@ -26,6 +27,7 @@ import {
 } from '@dnd-kit/sortable';
 import SortableTableRow from '../common/SortableTableRow';
 import DragHandle from '../common/DragHandle';
+import AttachmentIcon from '@mui/icons-material/Attachment';
 
 interface ResourcesEditorProps {
   document: FairMarkdownDocument;
@@ -183,18 +185,19 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
 
   return (
     <Box>
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">
-            Additional resources
-          </Typography>
-          <Button 
-            startIcon={<AddIcon />}
-            variant="contained" 
-            onClick={() => handleOpenDialog()}
-          >
-            Add resource
-          </Button>
-        </Box>
+        <SectionHeader
+          title="Additional resources"
+          icon={<AttachmentIcon color="primary" />}
+          actions={
+            <Button 
+              startIcon={<AddIcon />}
+              variant="contained" 
+              onClick={() => handleOpenDialog()}
+            >
+              Add resource
+            </Button>
+          }
+        />
 
         {(!document.additionalResources || document.additionalResources.length === 0) ? (
           <Typography variant="body2" sx={{ fontStyle: 'italic', my: 2 }}>

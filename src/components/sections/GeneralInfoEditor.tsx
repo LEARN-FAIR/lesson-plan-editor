@@ -2,6 +2,8 @@ import React from 'react';
 import { Box, TextField, MenuItem, FormControl, FormLabel, FormGroup, Checkbox, FormControlLabel, Typography } from '@mui/material';
 import { FairMarkdownDocument } from '../../types';
 import MdxEditorComponent from '../common/MdxEditorComponent';
+import SectionHeader from '../common/SectionHeader';
+import InfoOutlineIcon from '@mui/icons-material/InfoOutline';
 
 interface GeneralInfoEditorProps {
   document: FairMarkdownDocument;
@@ -39,6 +41,10 @@ const GeneralInfoEditor: React.FC<GeneralInfoEditorProps> = ({ document, onChang
 
   return (
     <Box>
+      <SectionHeader
+        icon={<InfoOutlineIcon color="primary" />}
+        title="General information"
+      />
       <TextField
         fullWidth
         margin="normal"

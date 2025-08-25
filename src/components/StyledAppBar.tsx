@@ -10,7 +10,7 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
   alignItems: 'center',
   justifyContent: 'space-between',
   flexShrink: 0,
-  borderRadius: `calc(${theme.shape.borderRadius}px + 8px)`,
+  borderRadius: theme.shape.borderRadius,
   backdropFilter: 'blur(24px)',
   border: '1px solid',
   borderColor: (theme.vars || theme).palette.divider,

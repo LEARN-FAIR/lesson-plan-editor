@@ -7,6 +7,9 @@ import {
 import { FairMarkdownDocument } from '../../types';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import SectionHeader from '../common/SectionHeader';
+import PeopleIcon from '@mui/icons-material/People';
+import RateReviewIcon from '@mui/icons-material/RateReview';
 import { fetchContributors, Contributor, getContributorDisplayName } from '../../services/contributorService';
 import { 
   DndContext, 
@@ -156,7 +159,10 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" gutterBottom>Authors</Typography>
+        <SectionHeader
+          icon={<PeopleIcon color="primary" />}
+          title="Authors"
+        />
         <Typography variant="body2" gutterBottom>
           Enter author ORCID IDs (e.g., "0000-0001-6675-4639") or names.
         </Typography>
@@ -284,7 +290,10 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
       <Divider sx={{ mb: 3 }} />
 
       <Box>
-        <Typography variant="h6" gutterBottom>Reviewers</Typography>
+        <SectionHeader
+          icon={<RateReviewIcon color="primary" />}
+          title="Reviewers"
+        />
         <Typography variant="body2" gutterBottom>
           Enter reviewer ORCID IDs (e.g., "0000-0002-7702-4495") or names.
         </Typography>

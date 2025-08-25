@@ -2,6 +2,8 @@ import React from 'react';
 import { Box, Typography, Paper } from '@mui/material';
 import { FairMarkdownDocument } from '../../types';
 import MdxEditorComponent from '../common/MdxEditorComponent';
+import SectionHeader from '../common/SectionHeader';
+import SubjectIcon from '@mui/icons-material/Subject';
 
 interface ContentEditorProps {
   document: FairMarkdownDocument;
@@ -17,9 +19,10 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ document, onChange }) => 
 
   return (
     <Box>
-        <Typography variant="h6" gutterBottom>
-          Content
-        </Typography>
+        <SectionHeader
+          icon={<SubjectIcon color="primary" />}
+          title="Content"
+        />
         <Typography variant="body2" sx={{ mb: 2 }}>
           Edit the main content of the lesson plan.
         </Typography>

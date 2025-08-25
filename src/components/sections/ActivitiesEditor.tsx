@@ -12,6 +12,7 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { FairMarkdownDocument, Activity } from '../../types';
 import MdxEditorComponent from '../common/MdxEditorComponent';
 import ActivityEditorModal from '../common/ActivityEditorModal';
+import SectionHeader from '../common/SectionHeader';
 import ReactMarkdown from 'react-markdown';
 import RestoreIcon from '@mui/icons-material/Restore';
 import UpdateIcon from '@mui/icons-material/Update';
@@ -82,27 +83,19 @@ function ActivitySection(props: ActivitySectionProps) {
   
   return (
     <Box sx={{ mb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          backgroundColor: '#e9ecef',
-          px: 1,
-          py: 0.5,
-          borderRadius: 2
-          }}>
-          { icon }
-          <Typography sx={{ ml: 0.5 }} variant="h6">{title}</Typography>
-        </Box>
-        <Button 
-          variant="contained" 
-          startIcon={<AddIcon />}
-          onClick={() => onAddActivity(section)}
-        >
-          Add activity
-        </Button>
-      </Box>
+      <SectionHeader
+        icon={icon}
+        title={title}
+        actions={
+          <Button 
+            variant="contained" 
+            startIcon={<AddIcon />}
+            onClick={() => onAddActivity(section)}
+          >
+            Add activity
+          </Button>
+        }
+      />
 
       {activities.length === 0 ? (
         <Typography variant="body2" sx={{ fontStyle: 'italic', my: 2 }}>
@@ -226,7 +219,7 @@ const ActivitiesEditor: React.FC<ActivitiesEditorProps> = ({ document, onChange 
   return (
     <Box>
       <ActivitySection 
-        title="Before the lesson"
+        title="Activities before the lesson"
         icon={<RestoreIcon color="primary" />}
         section="before"
         activities={document.activities?.before || []}
@@ -237,7 +230,7 @@ const ActivitiesEditor: React.FC<ActivitiesEditorProps> = ({ document, onChange 
       />
       
       <ActivitySection 
-        title="During the lesson"
+        title="Activities during the lesson"
         icon={<UpdateIcon  color="primary" />}
         section="during"
         activities={document.activities?.during || []}
@@ -248,7 +241,7 @@ const ActivitiesEditor: React.FC<ActivitiesEditorProps> = ({ document, onChange 
       />
       
       <ActivitySection 
-        title="After the lesson"
+        title="Activities after the lesson"
         icon={<UpdateIcon color="primary"/>}
         section="after"
         activities={document.activities?.after || []}
