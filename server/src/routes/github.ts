@@ -138,3 +138,46 @@ githubRouter.post('/repo/:owner/:repo/branches', verifyToken, async (req, res) =
     return res.status(500).json({ error: 'Failed to create branch' });
   }
 });
+
+// Get commits on a branch
+githubRouter.get('/repo/:owner/:repo/commits', verifyToken, async (req, res) => {
+  try {
+    const { owner, repo } = req.params;
+    const { branch } = req.query;
+    
+    if (!branch || typeof branch !== 'string') {
+      return res.status(400).json({ error: 'Branch parameter is required' });
+    }
+    
+    const commits = await githubService.getCommitsOnBranch(owner, repo, branch, req.body.token);
+    return res.json(commits);
+  } catch (error) {
+    console.error('Error getting commits:', error);
+    return res.status(500).json({ error: 'Failed to get commits' });
+  }
+});
+
+// Get file content from a repository
+githubRouter.get('/repo/:owner/:repo/content', verifyToken, async (req, res) => {
+  try {
+    const { owner, repo } = req.params;
+    const { path, branch } = req.query;
+    
+    if (!path || typeof path !== 'string') {
+      return res.status(400).json({ error: 'Path parameter is required' });
+    }
+    
+    if (!branch || typeof branch !== 'string') {
+      return res.status(400).json({ error: 'Branch parameter is required' });
+    }
+    
+    const content = await githubService.getFileContent(owner, repo, path, branch, req.body.token);
+    return res.json({ content });
+  } catch (error) {
+    console.error('Error getting file content:', error);
+    if ((error as Error).message.includes('Not Found')) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    return res.status(500).json({ error: 'Failed to get file content' });
+  }
+});

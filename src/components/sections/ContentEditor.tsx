@@ -17,12 +17,11 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ document, onChange }) => 
 
   return (
     <Box>
-      <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
-          Markdown Content
+          Content
         </Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Edit the main content of the document. This is the content that appears after the frontmatter.
+          Edit the main content of the lesson plan.
         </Typography>
         
         <Box sx={{ minHeight: '500px' }}>
@@ -36,7 +35,6 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ document, onChange }) => 
             placeholder="Write your markdown content here..."
           />
         </Box>
-      </Paper>
     </Box>
   );
 };

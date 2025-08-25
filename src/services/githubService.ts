@@ -263,6 +263,77 @@ class GitHubService {
       throw error;
     }
   }
+
+  /**
+   * Check if there are commits on a branch
+   * @param owner Repository owner
+   * @param repo Repository name
+   * @param branch Branch name
+   * @returns True if there are commits on the branch, false otherwise
+   */
+  async hasCommitsOnBranch(owner: string, repo: string, branch: string): Promise<boolean> {
+    if (!this.token) {
+      throw new Error('Not authenticated with GitHub');
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/github/repo/${owner}/${repo}/commits?branch=${encodeURIComponent(branch)}`, {
+        headers: {
+          'Authorization': `Bearer ${this.token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to check branch commits');
+      }
+      
+      const commits = await response.json();
+      return Array.isArray(commits) && commits.length > 0;
+    } catch (error) {
+      console.error('Error checking branch commits:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if a file has uncommitted changes by comparing with the latest version on GitHub
+   */
+  async hasUncommittedChanges(owner: string, repo: string, path: string, content: string, branch: string): Promise<boolean> {
+    try {
+      // Get the current file content from GitHub
+      const githubContent = await this.getFileContent(owner, repo, path, branch);
+      
+      // Compare the content
+      return githubContent !== content;
+    } catch (error) {
+      console.error('Error checking for uncommitted changes:', error);
+      // If we can't get the file (e.g., it doesn't exist yet), consider it as having changes
+      return true;
+    }
+  }
+
+  /**
+   * Get file content from GitHub
+   */
+  async getFileContent(owner: string, repo: string, path: string, branch: string): Promise<string> {
+    try {
+      const response = await fetch(`${API_URL}/github/repo/${owner}/${repo}/content?path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`, {
+        headers: {
+          'Authorization': `Bearer ${this.token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to get file content from GitHub');
+      }
+      
+      const fileData = await response.json();
+      return fileData.content;
+    } catch (error) {
+      console.error('Error getting file content:', error);
+      throw error;
+    }
+  }
 }
 
 // Create singleton instance

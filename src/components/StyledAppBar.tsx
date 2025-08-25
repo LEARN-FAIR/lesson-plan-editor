@@ -24,24 +24,22 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
 
 const StyledAppBar: React.FC<StyledAppBarProps> = ({ children }) => {
   return (
-    <Box sx={{ mb: 8 }}> {/* Add margin to create space for the fixed AppBar */}
-      <AppBar 
-        position="fixed"
-        enableColorOnDark
-        sx={{ 
-          boxShadow: 0,
-          bgcolor: 'transparent',
-          backgroundImage: 'none',
-          mt: 'calc(var(--template-frame-height, 0px) + 28px)',
-        }}
-      >
-        <Container maxWidth="lg">
-          <StyledToolbar variant="dense" disableGutters>
-            {children}
-          </StyledToolbar>
-        </Container>
-      </AppBar>
-    </Box>
+    <AppBar 
+      enableColorOnDark
+      position="relative"
+      sx={{ 
+        boxShadow: 0,
+        bgcolor: 'transparent',
+        backgroundImage: 'none',
+        mt: 'calc(var(--template-frame-height, 0px) + 28px)',
+      }}
+    >
+      <Container maxWidth="lg">
+        <StyledToolbar variant="dense" disableGutters>
+          {children}
+        </StyledToolbar>
+      </Container>
+    </AppBar>
   );
 };
 

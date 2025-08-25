@@ -89,8 +89,7 @@ const Editor: React.FC<EditorProps> = ({ initialMarkdown, onSave }) => {
   }
 
   return (
-    <Container maxWidth="lg">
-      <Paper elevation={3} sx={{ mt: 4, mb: 4 }}>
+      <Paper elevation={3} sx={{ mb: 4 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs
             value={tabValue}
@@ -169,7 +168,6 @@ const Editor: React.FC<EditorProps> = ({ initialMarkdown, onSave }) => {
         
 
       </Paper>
-    </Container>
   );
 };
 

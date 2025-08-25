@@ -334,6 +334,73 @@ class GitHubService {
       throw error;
     }
   }
+
+  /**
+   * Check if there are commits on a branch
+   * @param owner Repository owner
+   * @param repo Repository name
+   * @param branch Branch name
+   * @param token GitHub access token
+   * @returns Array of commits on the branch
+   */
+  async getCommitsOnBranch(owner: string, repo: string, branch: string, token: string): Promise<any[]> {
+    try {
+      const octokit = new Octokit({ auth: token });
+      
+      const response = await octokit.repos.listCommits({
+        owner,
+        repo,
+        sha: branch,
+        per_page: 10 // Limit to 10 commits for performance
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error checking branch commits:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get file content from a repository
+   * @param owner Repository owner
+   * @param repo Repository name
+   * @param path File path
+   * @param branch Branch name
+   * @param token GitHub access token
+   * @returns File content as a string
+   */
+  async getFileContent(owner: string, repo: string, path: string, branch: string, token: string): Promise<string> {
+    try {
+      const octokit = new Octokit({ auth: token });
+      
+      const response = await octokit.repos.getContent({
+        owner,
+        repo,
+        path,
+        ref: branch
+      });
+      
+      // getContent returns either a file or an array of files
+      if (Array.isArray(response.data)) {
+        throw new Error('Path is a directory, not a file');
+      }
+      
+      // Check if response.data has the expected structure
+      if (!('content' in response.data)) {
+        throw new Error('Unexpected response format from GitHub API');
+      }
+      
+      // Get the content and decode from base64
+      const content = response.data.content;
+      const decoded = Buffer.from(content, 'base64').toString('utf-8');
+      
+      return decoded;
+    } catch (error) {
+      console.error('Error getting file content:', error);
+      throw error;
+    }
+  }
 }
 
 // Create singleton instance

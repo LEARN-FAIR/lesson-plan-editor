@@ -105,7 +105,6 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
 
   return (
     <Box>
-      <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6">
             Additional Resources
@@ -166,7 +165,6 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
             </TableBody>
           </Table>
         </TableContainer>
-      </Paper>
 
       {/* Resource Form Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>

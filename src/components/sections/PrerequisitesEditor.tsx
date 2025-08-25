@@ -34,7 +34,6 @@ const PrerequisitesEditor: React.FC<PrerequisitesEditorProps> = ({ document, onC
 
   return (
     <Box>
-      <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" gutterBottom>Prerequisites</Typography>
         <Typography variant="body2" gutterBottom>
           Add topics or knowledge required before attending this lesson.
@@ -64,19 +63,7 @@ const PrerequisitesEditor: React.FC<PrerequisitesEditorProps> = ({ document, onC
             {document.prerequisites.map((prerequisite, index) => (
               <ListItem key={index} divider={index < document.prerequisites.length - 1}>
                 <ListItemText 
-                  primary={prerequisite} 
-                  primaryTypographyProps={{ 
-                    component: 'div',
-                    sx: { display: 'flex', alignItems: 'center' }
-                  }}
-                  sx={{ 
-                    '&::before': { 
-                      content: '"•"', 
-                      marginRight: 1,
-                      color: 'primary.main',
-                      fontWeight: 'bold'
-                    } 
-                  }}
+                  primary={prerequisite}
                 />
                 <ListItemSecondaryAction>
                   <IconButton edge="end" aria-label="delete" onClick={() => handleRemovePrerequisite(index)}>
@@ -91,7 +78,6 @@ const PrerequisitesEditor: React.FC<PrerequisitesEditorProps> = ({ document, onC
             No prerequisites added yet.
           </Typography>
         )}
-      </Paper>
     </Box>
   );
 };

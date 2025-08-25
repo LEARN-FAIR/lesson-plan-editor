@@ -22,6 +22,7 @@ import {
 import GitHubIcon from '@mui/icons-material/GitHub';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import githubService, { CommitFileParams } from '../services/githubService';
 import githubRepoService from '../services/githubRepoService';
 import lessonPlanService from '../services/lessonPlanService';
@@ -51,11 +52,166 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(githubService.isAuthenticated());
   const [githubUser, setGithubUser] = useState(githubService.getUser());
   
+  // State for branch commits and uncommitted changes
+  const [hasCommits, setHasCommits] = useState<boolean>(false);
+  const [hasUncommittedChanges, setHasUncommittedChanges] = useState<boolean>(true);
+  const [isPrMode, setIsPrMode] = useState<boolean>(false);
+  
   // Check authentication status on mount
   useEffect(() => {
     setIsAuthenticated(githubService.isAuthenticated());
     setGithubUser(githubService.getUser());
   }, []);
+  
+  // State for tracking if GitHub info has been loaded
+  const [branchCommitsLoaded, setBranchCommitsLoaded] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [lastCheckedContent, setLastCheckedContent] = useState<string>("");
+
+  // Check for branch commits only on initial load or manual refresh
+  useEffect(() => {
+    const checkBranchCommits = async () => {
+      if (!isAuthenticated) return;
+      
+      const selectedRepo = githubRepoService.getSelectedRepo();
+      const selectedBranch = githubRepoService.getSelectedBranch();
+      
+      if (!selectedRepo || !selectedBranch) return;
+      
+      try {
+        setIsRefreshing(true);
+        
+        // Check if there are commits on the branch - this is expensive and we cache it
+        const branchHasCommits = await githubService.hasCommitsOnBranch(
+          selectedRepo.owner.login,
+          selectedRepo.name,
+          selectedBranch
+        );
+        
+        setHasCommits(branchHasCommits);
+        setBranchCommitsLoaded(true);
+        
+        // Also check for uncommitted changes while we're at it
+        await checkUncommittedChanges();
+      } catch (error) {
+        console.error('Error checking branch commits:', error);
+      } finally {
+        setIsRefreshing(false);
+      }
+    };
+    
+    // Only check branch commits if they haven't been loaded yet or if we're manually refreshing
+    if (!branchCommitsLoaded || isRefreshing) {
+      checkBranchCommits();
+    }
+  }, [isAuthenticated, filePath, branchCommitsLoaded, isRefreshing]);
+  
+  // Store timeout ID for debouncing
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
+  // Cache for GitHub file content
+  const [cachedGithubContent, setCachedGithubContent] = useState<{[key: string]: string}>({});
+  
+  // Separate effect to check for uncommitted changes whenever content changes with debouncing
+  useEffect(() => {
+    // Skip if content hasn't changed since last check
+    if (content === lastCheckedContent) return;
+    
+    // Clear any existing timeout
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+    
+    // Set a new timeout to delay the API call
+    const timeout = setTimeout(() => {
+      const checkUncommittedChanges = async () => {
+        if (!isAuthenticated) return;
+        
+        const selectedRepo = githubRepoService.getSelectedRepo();
+        const selectedBranch = githubRepoService.getSelectedBranch();
+        
+        if (!selectedRepo || !selectedBranch) return;
+        
+        try {
+          // Create a cache key for this file/branch combination
+          const cacheKey = `${selectedRepo.owner.login}/${selectedRepo.name}/${filePath}/${selectedBranch}`;
+          
+          // Check if we need to fetch the GitHub content or if we can use cached version
+          let githubContent = cachedGithubContent[cacheKey];
+          
+          // Only fetch from GitHub if we don't have cached content or if we're refreshing
+          if (!githubContent || isRefreshing) {
+            // This is the expensive API call we want to minimize
+            githubContent = await githubService.getFileContent(
+              selectedRepo.owner.login,
+              selectedRepo.name,
+              filePath,
+              selectedBranch
+            );
+            
+            // Cache the GitHub content
+            setCachedGithubContent(prev => ({
+              ...prev,
+              [cacheKey]: githubContent
+            }));
+          }
+          
+          // Compare local content with GitHub content
+          const fileHasChanges = content !== githubContent;
+          
+          setHasUncommittedChanges(fileHasChanges);
+          setLastCheckedContent(content);
+          
+          // Set PR mode if there are commits but no uncommitted changes
+          setIsPrMode(hasCommits && !fileHasChanges);
+        } catch (error) {
+          console.error('Error checking uncommitted changes:', error);
+        }
+      };
+      
+      checkUncommittedChanges();
+    }, 2000); // 2 second debounce delay
+    
+    setDebounceTimeout(timeout);
+    
+    // Clean up the timeout on unmount
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [content, isAuthenticated, filePath, hasCommits, isRefreshing, cachedGithubContent]);
+  
+  // Function to check for uncommitted changes
+  const checkUncommittedChanges = async () => {
+    if (!isAuthenticated) return;
+    
+    const selectedRepo = githubRepoService.getSelectedRepo();
+    const selectedBranch = githubRepoService.getSelectedBranch();
+    
+    if (!selectedRepo || !selectedBranch) return;
+    
+    try {
+      // Check if there are uncommitted changes
+      const fileHasChanges = await githubService.hasUncommittedChanges(
+        selectedRepo.owner.login,
+        selectedRepo.name,
+        filePath,
+        content,
+        selectedBranch
+      );
+      
+      setHasUncommittedChanges(fileHasChanges);
+      setLastCheckedContent(content);
+      
+      // Set PR mode if there are commits but no uncommitted changes
+      setIsPrMode(hasCommits && !fileHasChanges);
+    } catch (error) {
+      console.error('Error checking uncommitted changes:', error);
+    }
+  };
+  
+  // Function to manually refresh GitHub information
+  const refreshGitHubInfo = () => {
+    setBranchCommitsLoaded(false); // This will trigger the useEffect to run again
+  };
 
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
@@ -187,14 +343,35 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
     }
   };
 
+  // Handle creating a pull request
+  const handleCreatePullRequest = async () => {
+    if (!isAuthenticated) {
+      setError('Please authenticate with GitHub first');
+      return;
+    }
+
+    // Get the selected repository and branch from the service
+    const selectedRepo = githubRepoService.getSelectedRepo();
+    const selectedBranch = githubRepoService.getSelectedBranch();
+
+    if (!selectedRepo || !selectedBranch) {
+      setError('Repository or branch not selected');
+      return;
+    }
+
+    // Open GitHub pull request page in a new tab
+    const prUrl = `https://github.com/${selectedRepo.owner.login}/${selectedRepo.name}/pull/new/${selectedBranch}`;
+    window.open(prUrl, '_blank');
+  };
+
   return (
     <>
       <Button
         variant="contained"
-        startIcon={<GitHubIcon />}
-        onClick={handleOpenDialog}
-        disabled={disabled}
-        color={color || "primary"}
+        startIcon={isRefreshing ? <CircularProgress size={16} color="inherit" /> : <GitHubIcon />}
+        onClick={isPrMode ? handleCreatePullRequest : handleOpenDialog}
+        disabled={disabled || !isAuthenticated || isRefreshing}
+        color={isPrMode ? "success" : (color || "primary")}
         sx={{ ml: 1 }}
         endIcon={
           <IconButton 
@@ -208,12 +385,13 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
               color: 'inherit',
               '&:hover': { backgroundColor: 'transparent' } 
             }}
+            disabled={isRefreshing}
           >
             <ArrowDropDownIcon />
           </IconButton>
         }
       >
-        Commit to GitHub
+        {isRefreshing ? "Refreshing..." : (isPrMode ? "Create Pull Request" : "Commit to GitHub")}
       </Button>
       
       <Menu
@@ -225,6 +403,15 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
           <FileDownloadIcon fontSize="small" sx={{ mr: 1 }} />
           Download file
         </MenuItem>
+        {isAuthenticated && (
+          <MenuItem onClick={() => {
+            refreshGitHubInfo();
+            handleMenuClose();
+          }}>
+            <RefreshIcon fontSize="small" sx={{ mr: 1 }} />
+            Refresh GitHub status
+          </MenuItem>
+        )}
       </Menu>
 
       <Dialog open={isDialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Box, TextField, Button, List, ListItem, IconButton, Typography, Paper,
-  Autocomplete, CircularProgress
+  Autocomplete, CircularProgress,
+  Divider
 } from '@mui/material';
 import { FairMarkdownDocument } from '../../types';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -84,7 +85,7 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
 
   return (
     <Box>
-      <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
+      <Box sx={{ mb: 3 }}>
         <Typography variant="h6" gutterBottom>Authors</Typography>
         <Typography variant="body2" gutterBottom>
           Enter author ORCID IDs (e.g., "0000-0001-6675-4639") or names.
@@ -161,9 +162,11 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
             );
           })}
         </List>
-      </Paper>
+      </Box>
 
-      <Paper elevation={2} sx={{ p: 2 }}>
+      <Divider sx={{ mb: 3 }} />
+
+      <Box>
         <Typography variant="h6" gutterBottom>Reviewers</Typography>
         <Typography variant="body2" gutterBottom>
           Enter reviewer ORCID IDs (e.g., "0000-0002-7702-4495") or names.
@@ -240,7 +243,7 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
             );
           })}
         </List>
-      </Paper>
+      </Box>
     </Box>
   );
 };
