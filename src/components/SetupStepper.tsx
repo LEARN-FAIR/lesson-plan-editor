@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Stepper,
@@ -33,6 +34,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 // No longer importing modal components
 import githubRepoService, { Repository } from '../services/githubRepoService';
 import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
+import { useRepositoriesAndForks } from '../services/githubRepoQueryHooks';
+import { useLessonPlans } from '../services/lessonPlanQueryHooks';
 import BranchSelector from '../components/BranchSelector';
 
 const steps = [
@@ -55,20 +58,33 @@ interface SetupStepperProps {
 }
 
 const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
+  const queryClient = useQueryClient();
   const [activeStep, setActiveStep] = useState<number>(0);
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [selectedLessonPlan, setSelectedLessonPlan] = useState<LessonPlan | null>(null);
 
-  // Repository step state
-  const [repositories, setRepositories] = useState<Repository[]>([]);
-  const [loadingRepos, setLoadingRepos] = useState<boolean>(true);
+  // Use React Query to fetch repositories
+  const { 
+    data: repositories = [], 
+    isLoading: loadingRepos,
+    error: repoQueryError
+  } = useRepositoriesAndForks();
+  
+  // Custom error state for repositories
   const [repoError, setRepoError] = useState<string | null>(null);
-
-  // Lesson plan step state
-  const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
-  const [loadingLessonPlans, setLoadingLessonPlans] = useState<boolean>(true);
+  
+  // Use React Query to fetch lesson plans
+  const {
+    data: lessonPlans = [],
+    isLoading: loadingLessonPlans,
+    error: lessonPlanQueryError
+  } = useLessonPlans();
+  
+  // Custom error state for lesson plans
   const [lessonPlanError, setLessonPlanError] = useState<string | null>(null);
+  
+  // Other state
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,17 +101,28 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
     if (branch) {
       setSelectedBranch(branch);
     }
-
-    // Load repositories regardless
-    fetchRepositories();
-  }, []);
-
-  // Load lesson plans when a repository and branch are selected
-  useEffect(() => {
-    if (selectedRepo && selectedBranch) {
-      fetchLessonPlans();
+    
+    // Set error state if React Query had errors
+    if (repoQueryError) {
+      setRepoError((repoQueryError as Error).message);
     }
-  }, [selectedRepo, selectedBranch]);
+  }, [repoQueryError]);
+
+  // Set up lesson plans when data is loaded
+  useEffect(() => {
+    if (lessonPlans.length > 0) {
+      // If there are categories, expand the first one
+      const categories = groupLessonPlansByCategory(lessonPlans);
+      if (categories.length > 0) {
+        setExpandedCategory(categories[0].category);
+      }
+    }
+    
+    // Set error state if React Query had errors
+    if (lessonPlanQueryError) {
+      setLessonPlanError((lessonPlanQueryError as Error).message);
+    }
+  }, [lessonPlans, lessonPlanQueryError]);
 
   const handleNext = () => {
     if (activeStep === 0) {
@@ -137,6 +164,8 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
     // Reset branch and lesson plan when repo changes
     setSelectedBranch(null);
     setSelectedLessonPlan(null);
+    // Invalidate lesson plans to ensure they're refetched with the new repo
+    queryClient.invalidateQueries({ queryKey: ['lessonPlans'] });
   };
   
   const handleBranchSelected = (branch: string) => {
@@ -144,6 +173,8 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
     githubRepoService.setSelectedBranch(branch);
     // Reset lesson plan when branch changes
     setSelectedLessonPlan(null);
+    // Invalidate lesson plans to ensure they're refetched with the new branch
+    queryClient.invalidateQueries({ queryKey: ['lessonPlans'] });
   };
 
   const handleLessonPlanSelected = (lessonPlan: LessonPlan) => {
@@ -152,18 +183,9 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
   };
 
   // Repository step functions
-  const fetchRepositories = async () => {
-    try {
-      setLoadingRepos(true);
-      setRepoError(null);
-      const repos = await githubRepoService.getTargetRepoAndForks();
-      setRepositories(repos);
-    } catch (err) {
-      console.error('Error fetching repositories:', err);
-      setRepoError(err instanceof Error ? err.message : 'Failed to load repositories');
-    } finally {
-      setLoadingRepos(false);
-    }
+  const refreshRepositories = () => {
+    // Invalidate and refetch repositories
+    queryClient.invalidateQueries({ queryKey: ['repositories'] });
   };
 
   const handleCreateFork = () => {
@@ -172,36 +194,15 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
 
     // Show a message to the user about refreshing after forking
     setRepoError('After creating your fork on GitHub, please refresh this page to see your new fork.');
+    
+    // Invalidate repositories query to prompt a refetch
+    queryClient.invalidateQueries({ queryKey: ['repositories'] });
   };
 
   // Lesson plan step functions
-  const fetchLessonPlans = async () => {
-    try {
-      setLoadingLessonPlans(true);
-      setLessonPlanError(null);
-      if (!selectedRepo) {
-        throw new Error('No repository selected');
-      }
-      if (!selectedBranch) {
-        throw new Error('No branch selected');
-      }
-      // Update lessonPlanService to use the selected branch
-      const plans = await lessonPlanService.getLessonPlans();
-      setLessonPlans(plans);
-
-      // If there are categories, expand the first one
-      if (plans.length > 0) {
-        const categories = groupLessonPlansByCategory(plans);
-        if (categories.length > 0) {
-          setExpandedCategory(categories[0].category);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching lesson plans:', err);
-      setLessonPlanError(err instanceof Error ? err.message : 'Failed to load lesson plans');
-    } finally {
-      setLoadingLessonPlans(false);
-    }
+  const refreshLessonPlans = () => {
+    // Invalidate and refetch lesson plans
+    queryClient.invalidateQueries({ queryKey: ['lessonPlans'] });
   };
 
   // Group lesson plans by category

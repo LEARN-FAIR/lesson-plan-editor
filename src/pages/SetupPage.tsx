@@ -4,21 +4,49 @@ import {
   CircularProgress, Alert, AlertTitle
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { generateLessonPlanUrl } from '../utils/urlUtils';
 import githubRepoService, { Repository } from '../services/githubRepoService';
 import { LessonPlan } from '../services/lessonPlanService';
+import { useRepositoriesAndForks } from '../services/githubRepoQueryHooks';
+import { useLessonPlans } from '../services/lessonPlanQueryHooks';
 import UserMenu from '../components/UserMenu';
 import SetupStepper from '../components/SetupStepper';
 import StyledAppBar from '../components/StyledAppBar';
 
 const SetupPage: React.FC = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = React.useState<boolean>(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const queryClient = useQueryClient();
+  
+  // Use React Query to fetch repositories
+  const { 
+    isLoading: isLoadingRepos,
+    error: reposError
+  } = useRepositoriesAndForks();
+  
+  // Use React Query to fetch lesson plans
+  const {
+    isLoading: isLoadingLessonPlans,
+    error: lessonPlansError
+  } = useLessonPlans();
+  
+  // Combine loading states
+  const loading = isLoadingRepos || isLoadingLessonPlans;
+  
+  // Combine error states
+  const error = 
+    (reposError ? (reposError as Error).message : null) || 
+    (lessonPlansError ? (lessonPlansError as Error).message : null);
 
   const handleSetupComplete = (repo: Repository, lessonPlan: LessonPlan) => {
     // Get the selected branch
     const selectedBranch = githubRepoService.getSelectedBranch() || undefined;
+    
+    // Prefetch the lesson plan content to have it ready when navigating
+    queryClient.prefetchQuery({
+      queryKey: ['lessonPlanContent', lessonPlan.path],
+      queryFn: () => Promise.resolve(lessonPlan)
+    });
     
     // Generate and navigate to the appropriate URL
     const url = generateLessonPlanUrl(repo, lessonPlan, selectedBranch);

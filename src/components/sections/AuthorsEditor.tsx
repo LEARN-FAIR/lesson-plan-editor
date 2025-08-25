@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Box, Button, Typography, IconButton, Chip, Autocomplete,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -16,10 +16,10 @@ import {
   FairMarkdownDocument 
 } from '../../types';
 import { 
-  fetchContributors, 
   Contributor, 
   getContributorDisplayName 
 } from '../../services/contributorService';
+import { useContributors } from '../../services/contributorQueryHooks';
 import { 
   DndContext, 
   closestCenter, 
@@ -49,8 +49,8 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
   const [reviewerModalOpen, setReviewerModalOpen] = useState(false);
   const [newAuthor, setNewAuthor] = useState('');
   const [newReviewer, setNewReviewer] = useState('');
-  const [contributors, setContributors] = useState<Contributor[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Use React Query to fetch contributors
+  const { data: contributors = [], isLoading: loading } = useContributors();
   const [selectedAuthor, setSelectedAuthor] = useState<Contributor | null>(null);
   const [selectedReviewer, setSelectedReviewer] = useState<Contributor | null>(null);
   
@@ -106,21 +106,7 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({ document, onChange }) => 
     }
   };
   
-  useEffect(() => {
-    const loadContributors = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchContributors();
-        setContributors(data);
-      } catch (error) {
-        console.error('Failed to load contributors:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadContributors();
-  }, []);
+  // No need for useEffect to fetch contributors - React Query handles it
 
   const handleAddAuthor = () => {
     if (selectedAuthor) {

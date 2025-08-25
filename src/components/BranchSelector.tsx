@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
   Box,
@@ -26,6 +27,7 @@ import AddIcon from '@mui/icons-material/Add';
 import WarningIcon from '@mui/icons-material/Warning';
 import githubRepoService, { Branch } from '../services/githubRepoService';
 import githubService from '../services/githubService';
+import { useBranches } from '../services/githubRepoQueryHooks';
 
 interface BranchSelectorProps {
   onBranchSelected: (branch: string) => void;
@@ -34,10 +36,23 @@ interface BranchSelectorProps {
 }
 
 const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchSelected, onBack, repoId }) => {
-  const [branches, setBranches] = useState<Branch[]>([]);
+  const queryClient = useQueryClient();
   const [selectedBranch, setSelectedBranch] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Get the selected repository
+  const repo = githubRepoService.getSelectedRepo();
+  
+  // Use React Query to fetch branches
+  const {
+    data: branchesData = [],
+    isLoading: loading,
+    error: branchQueryError,
+    refetch: refetchBranches
+  } = useBranches(repo?.owner.login, repo?.name);
+  
+  // Filter out the main branch - we don't want to allow direct edits to main
+  const branches = branchesData.filter((branch: Branch) => branch.name !== 'main');
   
   // New branch creation state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState<boolean>(false);
@@ -67,57 +82,53 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchSelected, onBac
     }
   };
   
-  // Define fetchBranches outside useEffect so we can call it manually if needed
-  const fetchBranches = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const repo = githubRepoService.getSelectedRepo();
-      
-      if (!repo) {
-        setError('No repository selected');
-        setLoading(false);
-        return;
-      }
-      
-      // Check repository access
-      await checkRepositoryAccess();
-      
-      const branchList = await githubRepoService.getBranches(repo.owner.login, repo.name);
-      
-      // Filter out the main branch - we don't want to allow direct edits to main
-      const filteredBranches = branchList.filter(branch => branch.name !== 'main');
-      setBranches(filteredBranches);
-      
-      if (filteredBranches.length === 0) {
-        setError('No available branches. The main branch is protected and cannot be used. Please create a new branch.');
-        setLoading(false);
-        return;
-      }
-      
-      // If we have a previously selected branch, use it (but not if it's main)
-      const previousBranch = githubRepoService.getSelectedBranch();
-      
-      if (previousBranch && previousBranch !== 'main' && filteredBranches.some(b => b.name === previousBranch)) {
-        setSelectedBranch(previousBranch);
-        onBranchSelected(previousBranch);
-      } else if (filteredBranches.length > 0) {
-        // Otherwise use the first available branch
-        setSelectedBranch(filteredBranches[0].name);
-        onBranchSelected(filteredBranches[0].name);
-      }
-    } catch (err) {
-      console.error('Error fetching branches:', err);
-      setError(`Failed to fetch branches: ${(err as Error).message}`);
-    } finally {
-      setLoading(false);
+  // Handle branch refresh
+  const refreshBranches = () => {
+    if (repo) {
+      queryClient.invalidateQueries({ queryKey: ['branches', repo.owner.login, repo.name] });
+      refetchBranches();
     }
   };
 
+  // Set error from React Query error
   useEffect(() => {
-    fetchBranches();
-  }, [repoId]); // Refresh branches when repoId changes
+    if (branchQueryError) {
+      setError(`Failed to fetch branches: ${(branchQueryError as Error).message}`);
+    } else if (branches.length === 0 && !loading) {
+      setError('No available branches. The main branch is protected and cannot be used. Please create a new branch.');
+    } else {
+      setError(null);
+    }
+    
+    // Check repository access when branches are loaded
+    if (branches.length > 0 && !loading) {
+      checkRepositoryAccess();
+    }
+  }, [branchQueryError, branches, loading]);
+  
+  // Set up selected branch when branches are loaded
+  useEffect(() => {
+    if (branches.length > 0 && !loading) {
+      // If we have a previously selected branch, use it (but not if it's main)
+      const previousBranch = githubRepoService.getSelectedBranch();
+      
+      if (previousBranch && previousBranch !== 'main' && branches.some((b: Branch) => b.name === previousBranch)) {
+        setSelectedBranch(previousBranch);
+        onBranchSelected(previousBranch);
+      } else if (branches.length > 0) {
+        // Otherwise use the first available branch
+        setSelectedBranch(branches[0].name);
+        onBranchSelected(branches[0].name);
+      }
+    }
+  }, [branches, loading, onBranchSelected]);
+  
+  // Refresh branches when repoId changes
+  useEffect(() => {
+    if (repo) {
+      refreshBranches();
+    }
+  }, [repoId]);
 
   const handleBranchChange = (event: SelectChangeEvent<string>) => {
     const branch = event.target.value;
@@ -174,7 +185,7 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchSelected, onBac
     }
     
     // Check if branch already exists
-    if (branches.some(b => b.name === newBranchName)) {
+    if (branches.some((b: Branch) => b.name === newBranchName)) {
       setCreateError(`Branch '${newBranchName}' already exists`);
       return;
     }
@@ -198,8 +209,8 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchSelected, onBac
       
       const newBranch = await githubRepoService.createBranch(newBranchName, sourceBranch);
       
-      // Add the new branch to the list and select it
-      setBranches(prevBranches => [...prevBranches, newBranch]);
+      // Refresh branches to include the new one
+      refreshBranches();
       setSelectedBranch(newBranch.name);
       onBranchSelected(newBranch.name);
       
@@ -260,7 +271,7 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchSelected, onBac
                   onChange={handleBranchChange}
                   startAdornment={<AccountTreeIcon sx={{ mr: 1, color: 'action.active' }} />}
                 >
-                  {branches.map((branch) => (
+                  {branches.map((branch: Branch) => (
                     <MenuItem key={branch.name} value={branch.name}>
                       {branch.name}
                     </MenuItem>
@@ -329,11 +340,15 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({ onBranchSelected, onBac
                   label="Source Branch"
                   onChange={(e) => setSourceBranch(e.target.value)}
                 >
-                  {branches.map((branch) => (
+                  {branches.map((branch: Branch) => (
                     <MenuItem key={branch.name} value={branch.name}>
                       {branch.name}
                     </MenuItem>
                   ))}
+                  {/* Include main branch as a source option */}
+                  {!branches.some((b: Branch) => b.name === 'main') && (
+                    <MenuItem value="main">main</MenuItem>
+                  )}
                 </Select>
               </FormControl>
             </DialogContent>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   Avatar, 
@@ -8,33 +8,22 @@ import {
   MenuItem, 
   IconButton,
   Tooltip,
-  Divider
+  Divider,
+  CircularProgress
 } from '@mui/material';
 import githubService from '../services/githubService';
+import { useGitHubUser } from '../services/githubQueryHooks';
 
 interface UserMenuProps {
   onLogout?: () => void;
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
-  const [user, setUser] = useState<any>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        if (githubService.isAuthenticated()) {
-          const userData = await githubService.getCurrentUser();
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
-    };
-
-    fetchUser();
-  }, []);
+  
+  // Use React Query hook to fetch GitHub user data
+  const { data: user, isLoading, error } = useGitHubUser();
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -54,7 +43,15 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
     window.location.href = '/';
   };
 
-  if (!user) {
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
+  }
+  
+  if (error || !user) {
     return null;
   }
 
