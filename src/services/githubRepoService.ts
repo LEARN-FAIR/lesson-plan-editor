@@ -1,9 +1,9 @@
 /**
  * GitHub repository service for repository operations
+ * All GitHub API calls are now routed through the backend
  */
 
 import githubService from './githubService';
-import { Octokit } from '@octokit/rest';
 
 // Target repository and its forks
 const TARGET_REPO = 'ELIXIR-TrP-FAIR-Converge';
@@ -12,6 +12,9 @@ const TARGET_OWNER = 'elixir-europe-training';
 // Session storage keys
 const SELECTED_REPO_KEY = 'selected_github_repo';
 const SELECTED_BRANCH_KEY = 'selected_github_branch';
+
+// Backend API URL - Update this if your backend is running on a different port/host
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
 
 // Extended interface for GitHub repository with additional properties we need
 export interface Repository {
@@ -104,54 +107,22 @@ class GitHubRepoService {
     }
 
     try {
-      const octokit = new Octokit({ auth: sessionStorage.getItem('github_oauth_token') });
-      
-      // First check if the user has access to the target repository
-      let repos: Repository[] = [];
-      
-      try {
-        // Check if user has access to the original repository
-        const targetRepoResponse = await octokit.repos.get({
-          owner: TARGET_OWNER,
-          repo: TARGET_REPO
-        });
-        
-        repos.push(targetRepoResponse.data as Repository);
-      } catch (error) {
-        console.log('User does not have access to the original repository');
+      const token = sessionStorage.getItem('github_oauth_token');
+      if (!token) {
+        throw new Error('GitHub token not found');
       }
       
-      // Get user's repositories
-      const userReposResponse = await octokit.repos.listForAuthenticatedUser({
-        per_page: 100
-      });
-      
-      // Filter to only include forks of the target repository
-      const userForks = userReposResponse.data.filter(repo => {
-        // Check if it's a fork and then check if it's a fork of our target
-        if (repo.fork) {
-          // For direct API response, we need to check the source property
-          if ((repo as any).source) {
-            const sourceRepo = (repo as any).source;
-            return sourceRepo && sourceRepo.full_name === `${TARGET_OWNER}/${TARGET_REPO}`;
-          }
-          
-          // For repos without source info in the initial response, check the name pattern
-          // This is a heuristic and not 100% reliable
-          if (repo.name === TARGET_REPO) {
-            return true;
-          }
-          
-          // We could make an additional API call to get detailed fork info if needed
-          // but for now this basic check should work for most cases
+      const response = await fetch(`${API_URL}/github/repos/target-and-forks`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-        return false;
       });
       
-      console.log('Found user forks:', userForks.length);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch repositories: ${response.status}`);
+      }
       
-      repos = [...repos, ...userForks as Repository[]];
-      
+      const repos = await response.json();
       return repos;
     } catch (error) {
       console.error('Error fetching repositories:', error);
@@ -168,19 +139,23 @@ class GitHubRepoService {
         throw new Error('Not authenticated with GitHub');
       }
       
-      const response = await fetch(`https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=10`, {
+      const token = sessionStorage.getItem('github_oauth_token');
+      if (!token) {
+        throw new Error('GitHub token not found');
+      }
+      
+      const response = await fetch(`${API_URL}/github/repos/search?q=${encodeURIComponent(query)}`, {
         headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('github_oauth_token')}`,
-          'Accept': 'application/vnd.github.v3+json'
+          'Authorization': `Bearer ${token}`
         }
       });
       
       if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.status}`);
+        throw new Error(`Failed to search repositories: ${response.status}`);
       }
       
       const data = await response.json();
-      return data.items;
+      return data;
     } catch (error) {
       console.error('Error searching repositories:', error);
       throw error;
@@ -196,20 +171,25 @@ class GitHubRepoService {
         throw new Error('Not authenticated with GitHub');
       }
       
+      const token = sessionStorage.getItem('github_oauth_token');
+      if (!token) {
+        throw new Error('GitHub token not found');
+      }
+      
       console.log(`Fetching branches for ${owner}/${repo}`);
-      console.log('Auth token exists:', !!sessionStorage.getItem('github_oauth_token'));
       
-      // Use Octokit instead of fetch for better error handling
-      const octokit = new Octokit({ auth: sessionStorage.getItem('github_oauth_token') });
-      
-      const response = await octokit.repos.listBranches({
-        owner,
-        repo,
-        per_page: 100
+      const response = await fetch(`${API_URL}/github/repo/${owner}/${repo}/branches`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       
-      console.log('Branches response:', response.status, response.data.length);
-      return response.data as Branch[];
+      if (!response.ok) {
+        throw new Error(`Failed to fetch branches: ${response.status}`);
+      }
+      
+      const branches = await response.json();
+      return branches;
     } catch (error) {
       console.error('Error fetching branches:', error);
       throw error;
@@ -317,14 +297,24 @@ class GitHubRepoService {
     }
 
     try {
-      const octokit = new Octokit({ auth: sessionStorage.getItem('github_oauth_token') });
+      const token = sessionStorage.getItem('github_oauth_token');
+      if (!token) {
+        throw new Error('GitHub token not found');
+      }
       
-      const forkResponse = await octokit.repos.createFork({
-        owner: TARGET_OWNER,
-        repo: TARGET_REPO
+      const response = await fetch(`${API_URL}/github/repos/fork`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       
-      const newFork = forkResponse.data as Repository;
+      if (!response.ok) {
+        throw new Error(`Failed to create fork: ${response.status}`);
+      }
+      
+      const newFork = await response.json();
       this.setSelectedRepo(newFork);
       
       return newFork;
@@ -351,37 +341,31 @@ class GitHubRepoService {
     }
 
     try {
-      const octokit = new Octokit({ auth: sessionStorage.getItem('github_oauth_token') });
+      const token = sessionStorage.getItem('github_oauth_token');
+      if (!token) {
+        throw new Error('GitHub token not found');
+      }
       
       // If no source branch is provided, use the current branch or default branch
       const sourceRef = sourceBranch || this.getSelectedBranch() || repo.default_branch;
       
-      // Get the SHA of the latest commit on the source branch
-      const refResponse = await octokit.git.getRef({
-        owner: repo.owner.login,
-        repo: repo.name,
-        ref: `heads/${sourceRef}`
-      });
-      
-      const sha = refResponse.data.object.sha;
-      
-      // Create the new branch
-      const createRefResponse = await octokit.git.createRef({
-        owner: repo.owner.login,
-        repo: repo.name,
-        ref: `refs/heads/${branchName}`,
-        sha
-      });
-      
-      // Format the response to match our Branch interface
-      const newBranch: Branch = {
-        name: branchName,
-        commit: {
-          sha,
-          url: createRefResponse.data.object.url
+      const response = await fetch(`${API_URL}/github/repo/${repo.owner.login}/${repo.name}/branches`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        protected: false
-      };
+        body: JSON.stringify({
+          branchName,
+          sourceBranch: sourceRef
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to create branch: ${response.status}`);
+      }
+      
+      const newBranch = await response.json();
       
       // Set this as the selected branch
       this.setSelectedBranch(branchName);

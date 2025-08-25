@@ -1,10 +1,8 @@
 /**
  * GitHub service for handling GitHub API operations
  * Uses OAuth flow for authentication
+ * All GitHub API calls are now routed through the backend
  */
-
-import { Octokit } from '@octokit/rest';
-import githubRepoService from './githubRepoService';
 
 // Session storage keys
 const TOKEN_STORAGE_KEY = 'github_oauth_token';
@@ -36,7 +34,6 @@ interface GitHubUser {
 }
 
 class GitHubService {
-  private octokit: Octokit | null = null;
   private token: string | null = null;
   private user: GitHubUser | null = null;
 
@@ -51,11 +48,6 @@ class GitHubService {
         console.error('Failed to parse stored user:', e);
       }
     }
-
-    // Initialize Octokit if token exists
-    if (this.token) {
-      this.octokit = new Octokit({ auth: this.token });
-    }
   }
 
   /**
@@ -64,7 +56,6 @@ class GitHubService {
    */
   initialize(params: { token: string }) {
     this.token = params.token;
-    this.octokit = new Octokit({ auth: params.token });
     sessionStorage.setItem(TOKEN_STORAGE_KEY, params.token);
   }
 
@@ -113,9 +104,6 @@ class GitHubService {
         console.log('Token saved to session storage');
       }
       
-      // Initialize Octokit with the token
-      this.octokit = new Octokit({ auth: this.token });
-      
       // Get user data from GitHub API
       await this.getCurrentUser();
       
@@ -146,7 +134,6 @@ class GitHubService {
   logout() {
     this.token = null;
     this.user = null;
-    this.octokit = null;
     sessionStorage.removeItem(TOKEN_STORAGE_KEY);
     sessionStorage.removeItem(USER_STORAGE_KEY);
   }
@@ -165,69 +152,32 @@ class GitHubService {
         return this.user;
       }
       
-      // Try to get user data from our backend first (more secure)
-      try {
-        if (!this.token) {
-          throw new Error('Token is not available');
+      // Get user data from our backend
+      const userResponse = await fetch(`${API_URL}/github/user`, {
+        headers: {
+          'Authorization': `Bearer ${this.token}`
         }
-        
-        const userResponse = await fetch(`${API_URL}/auth/github/user`, {
-          headers: {
-            'Authorization': `Bearer ${this.token}`
-          }
-        });
-        
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          this.user = {
-            login: userData.login,
-            name: userData.name || undefined,
-            avatar_url: userData.avatar_url,
-            email: userData.email || undefined
-          };
-          
-          // Save to session storage
-          sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user));
-          return this.user;
-        }
-      } catch (backendError) {
-        console.warn('Failed to get user from backend, falling back to direct API call:', backendError);
+      });
+      
+      if (!userResponse.ok) {
+        throw new Error('Failed to get user information from backend');
       }
       
-      // Fallback to direct GitHub API call if backend fails
-      if (!this.octokit) {
-        this.octokit = new Octokit({ auth: this.token });
-      }
-      
-      const response = await this.octokit.users.getAuthenticated();
+      const userData = await userResponse.json();
       this.user = {
-        login: response.data.login,
-        name: response.data.name || undefined,
-        avatar_url: response.data.avatar_url,
-        email: response.data.email || undefined
+        login: userData.login,
+        name: userData.name || undefined,
+        avatar_url: userData.avatar_url,
+        email: userData.email || undefined
       };
       
       // Save to session storage
       sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user));
-      
       return this.user;
     } catch (error) {
       console.error('Failed to get user information:', error);
       throw error;
     }
-  }
-
-  /**
-   * Generate a random string of specified length
-   */
-  private generateRandomString(length: number): string {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    const charactersLength = characters.length;
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
   }
 
   /**
@@ -237,20 +187,23 @@ class GitHubService {
    * @returns True if the user has write access, false otherwise
    */
   async checkRepositoryWriteAccess(owner: string, repo: string): Promise<boolean> {
-    if (!this.octokit) {
-      throw new Error('GitHub client not initialized. Call initialize() first.');
+    if (!this.token) {
+      throw new Error('Not authenticated with GitHub');
     }
     
     try {
-      // Get repository permissions for the authenticated user
-      const repoResponse = await this.octokit.repos.get({
-        owner,
-        repo
+      const response = await fetch(`${API_URL}/github/repo/${owner}/${repo}/access`, {
+        headers: {
+          'Authorization': `Bearer ${this.token}`
+        }
       });
       
-      // Check if the user has push access
-      const permissions = repoResponse.data.permissions;
-      return permissions?.push === true;
+      if (!response.ok) {
+        throw new Error('Failed to check repository access');
+      }
+      
+      const data = await response.json();
+      return data.hasAccess === true;
     } catch (error) {
       console.error('Error checking repository permissions:', error);
       return false;
@@ -261,15 +214,13 @@ class GitHubService {
    * Get the GitHub App installation URL for a repository
    * @param owner Repository owner
    * @param repo Repository name
+   * @param repoId Repository ID (optional)
    * @returns The installation URL for the GitHub App
    */
-  getAppInstallationUrl(owner: string, repo: string): string {
-    // Get the repository object to access its ID
-    const selectedRepo = githubRepoService.getSelectedRepo();
-    
-    if (selectedRepo && selectedRepo.id) {
+  getAppInstallationUrl(owner: string, repo: string, repoId?: number): string {
+    if (repoId) {
       // Use the specific GitHub App installation URL with the repository ID preselected
-      return `https://github.com/apps/lesson-plan-editor/installations/new?target_id=${selectedRepo.id}`;
+      return `https://github.com/apps/lesson-plan-editor/installations/new?target_id=${repoId}`;
     } else {
       // Fallback to the basic installation URL if no repository ID is available
       return 'https://github.com/apps/lesson-plan-editor/installations/new';
@@ -280,50 +231,35 @@ class GitHubService {
    * Commit a file to a GitHub repository
    */
   async commitFile(params: CommitFileParams) {
-    if (!this.octokit) {
-      throw new Error('GitHub client not initialized. Call initialize() first.');
+    if (!this.token) {
+      throw new Error('Not authenticated with GitHub');
     }
     
     const { owner, repo, path, message, content, branch = 'main' } = params;
 
     try {
-      // First, check if the file already exists to get its SHA
-      let fileSha: string | undefined;
-      try {
-        const fileResponse = await this.octokit.repos.getContent({
-          owner,
-          repo,
+      const response = await fetch(`${API_URL}/github/repo/${owner}/${repo}/commit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.token}`
+        },
+        body: JSON.stringify({
           path,
-          ref: branch
-        });
-        
-        // getContent returns either a file or an array of files
-        if (!Array.isArray(fileResponse.data)) {
-          fileSha = fileResponse.data.sha;
-        }
-      } catch (err) {
-        // File doesn't exist, which is fine for creating a new file
-        console.log('File does not exist yet, will create new:', path);
-      }
-
-      // Prepare the content by Base64 encoding it with Unicode support
-      // Use a Unicode-safe base64 encoding to handle non-Latin1 characters
-      const contentEncoded = btoa(unescape(encodeURIComponent(content)));
-      
-      // Create or update the file
-      const response = await this.octokit.repos.createOrUpdateFileContents({
-        owner,
-        repo,
-        path,
-        message,
-        content: contentEncoded,
-        sha: fileSha, // Include SHA if updating an existing file
-        branch
+          message,
+          content,
+          branch
+        })
       });
       
-      return response.data;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to commit file');
+      }
+      
+      return await response.json();
     } catch (error) {
-      console.error('Error loading GitHub session:', error);
+      console.error('Error committing file:', error);
       throw error;
     }
   }

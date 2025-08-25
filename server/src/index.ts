@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 // Import from the JavaScript version of the auth router
 const { authRouter } = require('./routes/auth');
+import { githubRouter } from './routes/github';
 
 // Load environment variables
 dotenv.config();
@@ -19,6 +20,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRouter);
+app.use('/api/github', githubRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
