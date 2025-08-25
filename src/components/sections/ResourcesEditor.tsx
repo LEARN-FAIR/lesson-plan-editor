@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Box, Typography, Paper, TextField, Button, IconButton, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Dialog, DialogActions, DialogContent, DialogTitle
+  Dialog, DialogActions, DialogContent, DialogTitle, Tooltip
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -31,6 +31,33 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
     doi: '',
     additionalInformation: ''
   });
+  
+  // Function to shorten URLs and DOIs for display
+  const shortenText = (text: string, maxLength: number = 40): string => {
+    if (!text || text.length <= maxLength) return text;
+    
+    // For URLs, try to show the domain and part of the path
+    try {
+      const url = new URL(text);
+      const domain = url.hostname;
+      const path = url.pathname;
+      
+      if (domain.length + 10 >= maxLength) {
+        // If domain itself is too long
+        return domain.substring(0, maxLength - 3) + '...';
+      } else {
+        // Show domain and part of the path
+        const remainingChars = maxLength - domain.length - 5;
+        const shortenedPath = path.length > remainingChars 
+          ? path.substring(0, remainingChars) + '...' 
+          : path;
+        return `${domain}${shortenedPath}`;
+      }
+    } catch (e) {
+      // Not a valid URL, just truncate
+      return text.substring(0, maxLength - 3) + '...';
+    }
+  };
 
   const handleOpenDialog = (index?: number) => {
     if (index !== undefined) {
@@ -105,7 +132,7 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
 
   return (
     <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">
             Additional Resources
           </Typography>
@@ -113,18 +140,23 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
             variant="contained" 
             onClick={() => handleOpenDialog()}
           >
-            Add Resource
+            Add resource
           </Button>
         </Box>
 
-        <TableContainer>
-          <Table size="small">
+        {(!document.additionalResources || document.additionalResources.length === 0) ? (
+          <Typography variant="body2" sx={{ fontStyle: 'italic', my: 2 }}>
+            No resources have been added yet.
+          </Typography>
+        ) : (
+          <TableContainer component={Paper} sx={{ width: '100%' }}>
+            <Table sx={{ width: '100%' }} aria-label="resources table">
             <TableHead>
               <TableRow>
                 <TableCell>Title</TableCell>
                 <TableCell>Author</TableCell>
                 <TableCell>URL/DOI</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableCell align="right" sx={{ minWidth: '100px' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -132,14 +164,26 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
                 <TableRow key={index}>
                   <TableCell>{resource.title}</TableCell>
                   <TableCell>{resource.author || '-'}</TableCell>
-                  <TableCell>
-                    {resource.url}
-                    {resource.doi && <Box>DOI: {resource.doi}</Box>}
+                  <TableCell sx={{ maxWidth: '250px', overflow: 'hidden' }}>
+                    <Tooltip title={resource.url} placement="top">
+                      <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {shortenText(resource.url, 40)}
+                      </Box>
+                    </Tooltip>
+                    {resource.doi && (
+                      <Tooltip title={`DOI: ${resource.doi}`} placement="top">
+                        <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          DOI: {shortenText(resource.doi, 30)}
+                        </Box>
+                      </Tooltip>
+                    )}
                   </TableCell>
                   <TableCell align="right">
                     <IconButton 
                       size="small" 
+                      color="primary"
                       onClick={() => handleOpenDialog(index)}
+                      sx={{ mr: 1 }}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>
@@ -153,18 +197,10 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
                   </TableCell>
                 </TableRow>
               ))}
-              {(!document.additionalResources || document.additionalResources.length === 0) && (
-                <TableRow>
-                  <TableCell colSpan={4} align="center">
-                    <Typography variant="body2" sx={{ fontStyle: 'italic', py: 1 }}>
-                      No resources have been added yet.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
             </TableBody>
           </Table>
         </TableContainer>
+        )}
 
       {/* Resource Form Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>

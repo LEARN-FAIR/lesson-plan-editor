@@ -1,11 +1,14 @@
 import React, { FC, useState, useEffect } from 'react';
 import { 
-  Box, TextField, Button, Typography, Paper, IconButton, Chip, MenuItem, 
-  Select, FormControl, InputLabel, Checkbox, FormControlLabel, Grid, Divider
+  Box, TextField, Button, Typography, Paper, IconButton, Chip,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  FormControl, InputLabel, Checkbox, FormControlLabel, Grid, Divider
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import { FairMarkdownDocument, LearningOutcome, LearningVerbLevel } from '../../types';
+import LearningOutcomeEditorModal from '../common/LearningOutcomeEditorModal';
 
 interface LearningOutcomesEditorProps {
   document: FairMarkdownDocument;
@@ -28,379 +31,182 @@ interface LevelVerbs {
 }
 
 const LearningOutcomesEditor: FC<LearningOutcomesEditorProps> = ({ document, onChange }) => {
-  const [newOutcomeText, setNewOutcomeText] = useState('');
-  const [selectedOutcomeKey, setSelectedOutcomeKey] = useState<string | null>(null);
-  const [newVerb, setNewVerb] = useState('');
-  const [newVerbLevel, setNewVerbLevel] = useState<LevelString>('beginner');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editMode, setEditMode] = useState<'add' | 'edit'>('add');
+  const [currentOutcome, setCurrentOutcome] = useState<LearningOutcome | undefined>(undefined);
+  const [currentOutcomeKey, setCurrentOutcomeKey] = useState<string>('');
   
-  // Level selections for each outcome
-  const [levelSelections, setLevelSelections] = useState<Record<string, LevelSelections>>({});
-  
-  // Verb inputs for each level
-  const [levelVerbs, setLevelVerbs] = useState<Record<string, LevelVerbs>>({});
-  
-  // State initialization is simplified - no longer need includeVerbs state
-
-  // Initialize level selections for a new outcome
-  const initializeLevelSelections = (key: string) => {
-    setLevelSelections(prev => ({
-      ...prev,
-      [key]: {
-        beginner: false,
-        intermediate: false,
-        expert: false
-      }
-    }));
-    
-    setLevelVerbs(prev => ({
-      ...prev,
-      [key]: {
-        beginner: '',
-        intermediate: '',
-        expert: ''
-      }
-    }));
-  };
-
+  // Handle opening the modal for adding a new outcome
   const handleAddOutcome = () => {
-    if (!newOutcomeText.trim()) return;
-    
-    // Auto-generate the next outcome ID number
-    const currentIds = Object.keys(document.learning_outcomes || {});
-    let nextId = 1;
-    
-    if (currentIds.length > 0) {
-      // Find the highest numeric ID and increment by 1
-      const numericIds = currentIds
-        .map(id => parseInt(id, 10))
-        .filter(id => !isNaN(id));
-      
-      if (numericIds.length > 0) {
-        nextId = Math.max(...numericIds) + 1;
-      }
-    }
-    
-    const newKey = nextId.toString();
-    
-    const updatedOutcomes: Record<string, LearningOutcome> = {
-      ...document.learning_outcomes,
-      [newKey]: {
-        outcome: newOutcomeText,
-        verbs: []
-      }
-    };
-    
-    onChange({ learning_outcomes: updatedOutcomes });
-    setNewOutcomeText('');
-    
-    // Initialize level selections for the new outcome
-    initializeLevelSelections(newKey);
+    setCurrentOutcome(undefined);
+    setCurrentOutcomeKey('');
+    setEditMode('add');
+    setModalOpen(true);
   };
 
+  // Handle opening the modal for editing an existing outcome
+  const handleEditOutcome = (outcome: LearningOutcome, key: string) => {
+    setCurrentOutcome(outcome);
+    setCurrentOutcomeKey(key);
+    setEditMode('edit');
+    setModalOpen(true);
+  };
+
+  // Handle removing an outcome
   const handleRemoveOutcome = (key: string) => {
     const { [key]: _, ...updatedOutcomes } = document.learning_outcomes;
     onChange({ learning_outcomes: updatedOutcomes });
-    
-    if (selectedOutcomeKey === key) {
-      setSelectedOutcomeKey(null);
+  };
+
+  // Handle saving an outcome (new or edited)
+  const handleSaveOutcome = (outcome: LearningOutcome, outcomeKey: string) => {
+    if (editMode === 'add') {
+      // Auto-generate the next outcome ID number for new outcomes
+      const currentIds = Object.keys(document.learning_outcomes || {});
+      let nextId = 1;
+      
+      if (currentIds.length > 0) {
+        // Find the highest numeric ID and increment by 1
+        const numericIds = currentIds
+          .map(id => parseInt(id, 10))
+          .filter(id => !isNaN(id));
+        
+        if (numericIds.length > 0) {
+          nextId = Math.max(...numericIds) + 1;
+        }
+      }
+      
+      const newKey = nextId.toString();
+      
+      const updatedOutcomes: Record<string, LearningOutcome> = {
+        ...document.learning_outcomes,
+        [newKey]: outcome
+      };
+      
+      onChange({ learning_outcomes: updatedOutcomes });
+    } else {
+      // Update existing outcome
+      const updatedOutcomes: Record<string, LearningOutcome> = {
+        ...document.learning_outcomes,
+        [outcomeKey]: outcome
+      };
+      
+      onChange({ learning_outcomes: updatedOutcomes });
     }
     
-    // Clean up state for the removed outcome
-    setLevelSelections(prev => {
-      const { [key]: _, ...rest } = prev;
-      return rest;
-    });
-    
-    setLevelVerbs(prev => {
-      const { [key]: _, ...rest } = prev;
-      return rest;
-    });
+    setModalOpen(false);
   };
 
-  const handleUpdateOutcomeText = (key: string, text: string) => {
-    if (!text.trim()) return;
-    
-    const updatedOutcomes: Record<string, LearningOutcome> = {
-      ...document.learning_outcomes,
-      [key]: {
-        ...document.learning_outcomes[key],
-        outcome: text
-      }
-    };
-    
-    onChange({ learning_outcomes: updatedOutcomes });
-  };
-
-  // Handle level checkbox changes
-  const handleLevelChange = (outcomeKey: string, level: LevelString, checked: boolean) => {
-    setLevelSelections(prev => ({
-      ...prev,
-      [outcomeKey]: {
-        ...prev[outcomeKey],
-        [level]: checked
-      }
-    }));
-    
-    // Update the verbs in the document based on selections and verb inputs
-    updateOutcomeVerbs(outcomeKey);
+  // Format verbs for display in table
+  const formatVerbs = (verbs: LearningVerbLevel[]) => {
+    return verbs.map(v => v.verb ? `${v.verb} (${v.level})` : v.level).join(', ');
   };
   
-  // Handle verb input changes
-  const handleVerbChange = (outcomeKey: string, level: LevelString, verb: string) => {
-    setLevelVerbs(prev => ({
-      ...prev,
-      [outcomeKey]: {
-        ...prev[outcomeKey],
-        [level]: verb
-      }
-    }));
+  // Get color for level display
+  const getLevelColor = (verbs: LearningVerbLevel[]) => {
+    if (verbs.some(v => v.level === 'expert')) return 'error.main';
+    if (verbs.some(v => v.level === 'intermediate')) return 'secondary.main';
+    return 'primary.main';
   };
   
-  // Update the outcome verbs in the document
-  const updateOutcomeVerbs = (outcomeKey: string) => {
-    const currentOutcome = document.learning_outcomes?.[outcomeKey];
-    if (!currentOutcome) return;
-    
-    const selections = levelSelections[outcomeKey] || { beginner: false, intermediate: false, expert: false };
-    const verbs = levelVerbs[outcomeKey] || { beginner: '', intermediate: '', expert: '' };
-    
-    // Create new verbs array based on selections
-    const updatedVerbs = Object.entries(selections)
-      .filter(([level, isSelected]) => isSelected)
-      .map(([level, _]) => {
-        const typedLevel = level as LevelString;
-        return {
-          verb: verbs[typedLevel] || '',
-          level: typedLevel
-        };
-      });
-    
-    const updatedOutcomes: Record<string, LearningOutcome> = {
-      ...document.learning_outcomes,
-      [outcomeKey]: {
-        ...currentOutcome,
-        verbs: updatedVerbs
-      }
-    };
-    
-    onChange({ learning_outcomes: updatedOutcomes });
-  };
-
-  const handleAddVerb = () => {
-    if (!selectedOutcomeKey || !newVerb.trim()) return;
-    
-    const currentOutcome = document.learning_outcomes[selectedOutcomeKey];
-    const updatedVerbs = [
-      ...currentOutcome.verbs,
-      { verb: newVerb, level: newVerbLevel }
-    ];
-    
-    const updatedOutcomes = {
-      ...document.learning_outcomes,
-      [selectedOutcomeKey]: {
-        ...currentOutcome,
-        verbs: updatedVerbs
-      }
-    };
-    
-    onChange({ learning_outcomes: updatedOutcomes });
-    setNewVerb('');
-    setNewVerbLevel('beginner');
-  };
-
-  const handleRemoveVerb = (outcomeKey: string, verbIndex: number) => {
-    const currentOutcome = document.learning_outcomes?.[outcomeKey];
-    if (!currentOutcome) return;
-    
-    const updatedVerbs = [...currentOutcome.verbs];
-    updatedVerbs.splice(verbIndex, 1);
-    
-    const updatedOutcomes = {
-      ...document.learning_outcomes,
-      [outcomeKey]: {
-        ...currentOutcome,
-        verbs: updatedVerbs
-      }
-    };
-    
-    onChange({ learning_outcomes: updatedOutcomes });
-  };
-
-  // Initialize level selections and verbs when learning outcomes change
-  useEffect(() => {
-    if (!document.learning_outcomes) return;
-    
-    Object.entries(document.learning_outcomes).forEach(([key, outcome]) => {
-      // Initialize level selections based on existing verbs
-      const selectedLevels: LevelSelections = {
-        beginner: false,
-        intermediate: false,
-        expert: false
-      };
-      
-      // Initialize verb inputs based on existing verbs
-      const verbInputs: LevelVerbs = {
-        beginner: '',
-        intermediate: '',
-        expert: ''
-      };
-      
-      outcome.verbs.forEach((verbObj: LearningVerbLevel) => {
-        if (verbObj.level === 'beginner' || verbObj.level === 'intermediate' || verbObj.level === 'expert') {
-          selectedLevels[verbObj.level] = true;
-          verbInputs[verbObj.level] = verbObj.verb || '';
-        }
-      });
-      
-      if (!levelSelections.hasOwnProperty(key)) {
-        setLevelSelections(prev => ({
-          ...prev,
-          [key]: selectedLevels
-        }));
-      }
-      
-      if (!levelVerbs.hasOwnProperty(key)) {
-        setLevelVerbs(prev => ({
-          ...prev,
-          [key]: verbInputs
-        }));
-      }
-    });
-  }, [document.learning_outcomes]);
-
-  // Render level checkboxes and verb inputs for an outcome
-  const renderLevelOptions = (outcomeKey: string) => {
-    const outcome = document.learning_outcomes?.[outcomeKey];
-    if (!outcome) return null;
-    
-    const selections = levelSelections[outcomeKey] || { beginner: false, intermediate: false, expert: false };
-    const verbs = levelVerbs[outcomeKey] || { beginner: '', intermediate: '', expert: '' };
-    
-    return (
-      <Box sx={{ mt: 2 }}>
-        <Divider sx={{ my: 1 }} />
-        
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2, mt: 1 }}>
-          {(['beginner', 'intermediate', 'expert'] as const).map(level => (
-            <Box key={level}>
-              <Box sx={{ border: 1, borderColor: 'divider', p: 1, borderRadius: 1 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={selections[level]}
-                      onChange={(e) => handleLevelChange(outcomeKey, level, e.target.checked)}
-                    />
-                  }
-                  label={level.charAt(0).toUpperCase() + level.slice(1)}
-                />
-                
-                {selections[level] && (
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={`${level.charAt(0).toUpperCase() + level.slice(1)} verb`}
-                    value={verbs[level]}
-                    onChange={(e) => handleVerbChange(outcomeKey, level, e.target.value)}
-                    placeholder="Enter verb"
-                    margin="dense"
-                  />
-                )}
-              </Box>
-            </Box>
-          ))}
-        </Box>
-      </Box>
-    );
+  // Get highest level from verbs
+  const getHighestLevel = (verbs: LearningVerbLevel[]) => {
+    if (verbs.some(v => v.level === 'expert')) return 'Expert';
+    if (verbs.some(v => v.level === 'intermediate')) return 'Intermediate';
+    if (verbs.some(v => v.level === 'beginner')) return 'Beginner';
+    return '';
   };
 
   return (
     <Box>
-      <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Add New Learning Outcome
-        </Typography>
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
-          <TextField
-            fullWidth
-            label="Outcome Description"
-            value={newOutcomeText}
-            onChange={(e) => setNewOutcomeText(e.target.value)}
-            size="small"
-            placeholder="Learning outcome will be automatically numbered"
-          />
-          
-          <Button 
-            variant="contained" 
-            onClick={handleAddOutcome}
-          >
-            Add
-          </Button>
-        </Box>
-      </Paper>
-      
-      <Typography variant="h6" gutterBottom>
-        Learning Outcomes
-      </Typography>
-      
-      {Object.entries(document.learning_outcomes || {})
-        // Sort by numeric ID to ensure consistent display order
-        .sort(([keyA], [keyB]) => {
-          const numA = parseInt(keyA, 10);
-          const numB = parseInt(keyB, 10);
-          return numA - numB;
-        })
-        .map(([key, outcome]) => (
-        <Paper 
-          key={key} 
-          elevation={2} 
-          sx={{ 
-            p: 2, 
-            mb: 2,
-            bgcolor: selectedOutcomeKey === key ? 'action.selected' : 'background.paper'
-          }}
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'right' }}>
+        <Button 
+          variant="contained" 
+          startIcon={<AddIcon />}
+          onClick={handleAddOutcome}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <Typography variant="subtitle1" sx={{ mr: 2 }}>
-              Outcome {key}:
-            </Typography>
-            <TextField
-              fullWidth
-              value={outcome.outcome}
-              onChange={(e) => handleUpdateOutcomeText(key, e.target.value)}
-              size="small"
-              sx={{ flexGrow: 1 }}
-            />
-            <IconButton 
-              color="error"
-              onClick={() => handleRemoveOutcome(key)}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-          
-          {/* Level checkboxes and verb inputs */}
-          {renderLevelOptions(key)}
-          
-          {/* Display existing verbs as chips */}
-          {outcome.verbs.length > 0 && (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
-              <Typography variant="subtitle2" sx={{ mr: 1 }}>Current verbs:</Typography>
-              {outcome.verbs.map((verb, index) => (
-                <Chip
-                  key={index}
-                  label={verb.verb ? `${verb.verb} (${verb.level})` : verb.level}
-                  size="small"
-                  color={
-                    verb.level === 'beginner' ? 'primary' : 
-                    verb.level === 'intermediate' ? 'secondary' : 'error'
-                  }
-                />
+          Add outcome
+        </Button>
+      </Box>
+      
+      {Object.keys(document.learning_outcomes || {}).length === 0 ? (
+        <Typography variant="body2" sx={{ fontStyle: 'italic', my: 2 }}>
+          No learning outcomes defined yet.
+        </Typography>
+      ) : (
+        <TableContainer component={Paper} sx={{ width: '100%' }}>
+          <Table sx={{ width: '100%' }} aria-label="learning outcomes table">
+            <TableHead>
+              <TableRow>
+                <TableCell>LO</TableCell>
+                <TableCell>Outcome</TableCell>
+                <TableCell>Verbs</TableCell>
+                <TableCell align="right" sx={{ minWidth: '100px' }}></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {Object.entries(document.learning_outcomes || {})
+                // Sort by numeric ID to ensure consistent display order
+                .sort(([keyA], [keyB]) => {
+                  const numA = parseInt(keyA, 10);
+                  const numB = parseInt(keyB, 10);
+                  return numA - numB;
+                })
+                .map(([key, outcome]) => (
+                <TableRow key={key}>
+                  <TableCell>{key}</TableCell>
+                  <TableCell>{outcome.outcome}</TableCell>
+                  <TableCell>
+                    {outcome.verbs.length > 0 ? (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {outcome.verbs.map((verb, index) => (
+                          <Chip
+                            key={index}
+                            label={verb.verb ? `${verb.verb}` : verb.level}
+                            size="small"
+                            color={
+                              verb.level === 'beginner' ? 'primary' : 
+                              verb.level === 'intermediate' ? 'secondary' : 'error'
+                            }
+                          />
+                        ))}
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">No verbs defined</Typography>
+                    )}
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton 
+                      size="small" 
+                      color="primary"
+                      onClick={() => handleEditOutcome(outcome, key)}
+                      sx={{ mr: 1 }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton 
+                      size="small" 
+                      color="error"
+                      onClick={() => handleRemoveOutcome(key)}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
               ))}
-            </Box>
-          )}
-        </Paper>
-      ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+      
+      <LearningOutcomeEditorModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSaveOutcome}
+        outcome={currentOutcome}
+        outcomeKey={currentOutcomeKey}
+        mode={editMode}
+      />
     </Box>
   );
 };

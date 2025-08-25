@@ -68,30 +68,19 @@ const GeneralInfoEditor: React.FC<GeneralInfoEditorProps> = ({ document, onChang
         <MenuItem value="published">Published</MenuItem>
       </TextField>
       
-      <TextField
-        fullWidth
-        margin="normal"
-        label="Layout"
-        value="lesson-plan"
-        disabled
-        helperText="Layout is fixed to 'lesson-plan'"
-      />
-      
       <Box sx={{ mt: 2, mb: 2 }}>
         <Typography variant="subtitle1" gutterBottom>
           Description
         </Typography>
-        <Box sx={{ border: '1px solid #ccc', borderRadius: '4px', mt: 1 }}>
-          <MdxEditorComponent
-            markdown={document.description || ''}
-            onChange={handleDescriptionChange}
-            minHeight="150px"
-            maxHeight="300px"
-            placeholder="Enter a description for this lesson plan..."
-            showToolbar={true}
-            showDiffToggle={false}
-          />
-        </Box>
+        <MdxEditorComponent
+          markdown={document.description || ''}
+          onChange={handleDescriptionChange}
+          minHeight="150px"
+          maxHeight="300px"
+          placeholder="Enter a description for this lesson plan..."
+          showToolbar={true}
+          showDiffToggle={false}
+        />
       </Box>
       
       <FormControl component="fieldset" margin="normal">

@@ -85,9 +85,6 @@ const MdxEditorComponent: React.FC<MdxEditorComponentProps> = ({
                 <InsertTable />
                 <InsertThematicBreak />
                 <InsertCodeBlock />
-                {showDiffToggle && <DiffSourceToggleWrapper>
-                  <button>Toggle Source</button>
-                </DiffSourceToggleWrapper>}
               </>
             )
           })] : [])
