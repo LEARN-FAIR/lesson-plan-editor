@@ -38,8 +38,8 @@ function ActivitySection(props: ActivitySectionProps) {
           No activities defined for this section.
         </Typography>
       ) : (
-        <TableContainer component={Paper} sx={{ width: '100%' }}>
-          <Table sx={{ width: '100%' }} aria-label="activities table">
+        <TableContainer component={Paper}>
+          <Table sx={{ minWidth: 650 }} aria-label="activities table">
             <TableHead>
               <TableRow>
                 <TableCell>LO</TableCell>
@@ -47,7 +47,7 @@ function ActivitySection(props: ActivitySectionProps) {
                 <TableCell>Time</TableCell>
                 <TableCell>Type</TableCell>
                 <TableCell>Level</TableCell>
-                <TableCell align="right" sx={{ minWidth: '100px' }}>Actions</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

@@ -7,23 +7,14 @@ import {
   Button,
   TextField,
   Box,
-  FormControl,
-  FormControlLabel,
-  Checkbox,
   Divider,
   Typography,
-  Chip
+  Grid
 } from '@mui/material';
 import { LearningOutcome, LearningVerbLevel } from '../../types';
 
 // Define a type for the level strings
 type LevelString = 'beginner' | 'intermediate' | 'expert';
-
-interface LevelSelections {
-  beginner: boolean;
-  intermediate: boolean;
-  expert: boolean;
-}
 
 interface LevelVerbs {
   beginner: string;
@@ -49,11 +40,6 @@ const LearningOutcomeEditorModal: React.FC<LearningOutcomeEditorModalProps> = ({
   mode
 }) => {
   const [outcomeText, setOutcomeText] = useState('');
-  const [levelSelections, setLevelSelections] = useState<LevelSelections>({
-    beginner: false,
-    intermediate: false,
-    expert: false
-  });
   const [levelVerbs, setLevelVerbs] = useState<LevelVerbs>({
     beginner: '',
     intermediate: '',
@@ -65,13 +51,6 @@ const LearningOutcomeEditorModal: React.FC<LearningOutcomeEditorModalProps> = ({
     if (outcome) {
       setOutcomeText(outcome.outcome || '');
       
-      // Initialize level selections based on existing verbs
-      const selectedLevels: LevelSelections = {
-        beginner: false,
-        intermediate: false,
-        expert: false
-      };
-      
       // Initialize verb inputs based on existing verbs
       const verbInputs: LevelVerbs = {
         beginner: '',
@@ -81,21 +60,14 @@ const LearningOutcomeEditorModal: React.FC<LearningOutcomeEditorModalProps> = ({
       
       outcome.verbs.forEach((verbObj: LearningVerbLevel) => {
         if (verbObj.level === 'beginner' || verbObj.level === 'intermediate' || verbObj.level === 'expert') {
-          selectedLevels[verbObj.level] = true;
           verbInputs[verbObj.level] = verbObj.verb || '';
         }
       });
       
-      setLevelSelections(selectedLevels);
       setLevelVerbs(verbInputs);
     } else {
       // Reset form for new outcome
       setOutcomeText('');
-      setLevelSelections({
-        beginner: false,
-        intermediate: false,
-        expert: false
-      });
       setLevelVerbs({
         beginner: '',
         intermediate: '',
@@ -104,14 +76,6 @@ const LearningOutcomeEditorModal: React.FC<LearningOutcomeEditorModalProps> = ({
     }
   }, [outcome, open]);
 
-  // Handle level checkbox changes
-  const handleLevelChange = (level: LevelString, checked: boolean) => {
-    setLevelSelections(prev => ({
-      ...prev,
-      [level]: checked
-    }));
-  };
-  
   // Handle verb input changes
   const handleVerbChange = (level: LevelString, verb: string) => {
     setLevelVerbs(prev => ({
@@ -123,13 +87,13 @@ const LearningOutcomeEditorModal: React.FC<LearningOutcomeEditorModalProps> = ({
   const handleSave = () => {
     if (!outcomeText.trim()) return;
     
-    // Create verbs array based on selections
-    const verbs = Object.entries(levelSelections)
-      .filter(([level, isSelected]) => isSelected)
-      .map(([level, _]) => {
+    // Create verbs array based on non-empty verb inputs
+    const verbs = Object.entries(levelVerbs)
+      .filter(([_, verb]) => verb.trim())
+      .map(([level, verb]) => {
         const typedLevel = level as LevelString;
         return {
-          verb: levelVerbs[typedLevel] || '',
+          verb: verb.trim(),
           level: typedLevel
         };
       });
@@ -145,18 +109,18 @@ const LearningOutcomeEditorModal: React.FC<LearningOutcomeEditorModalProps> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        {mode === 'add' ? 'Add New Learning Outcome' : 'Edit Learning Outcome'}
+        {mode === 'add' ? 'Add Learning Outcome' : 'Edit Learning Outcome'}
       </DialogTitle>
       <DialogContent>
         <Box sx={{ mt: 2 }}>
           <TextField
             fullWidth
-            label="Outcome Description"
+            label="Learning Outcome"
             value={outcomeText}
             onChange={(e) => setOutcomeText(e.target.value)}
             placeholder="Enter learning outcome description"
             multiline
-            rows={2}
+            rows={3}
           />
         </Box>
         
@@ -165,56 +129,54 @@ const LearningOutcomeEditorModal: React.FC<LearningOutcomeEditorModalProps> = ({
         </Typography>
         <Divider sx={{ mb: 2 }} />
         
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
-          {(['beginner', 'intermediate', 'expert'] as const).map(level => (
-            <Box key={level} sx={{ border: 1, borderColor: 'divider', p: 2, borderRadius: 1 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={levelSelections[level]}
-                    onChange={(e) => handleLevelChange(level, e.target.checked)}
-                  />
-                }
-                label={level.charAt(0).toUpperCase() + level.slice(1)}
-              />
-              
-              {levelSelections[level] && (
-                <TextField
-                  fullWidth
-                  size="small"
-                  label={`${level.charAt(0).toUpperCase() + level.slice(1)} verb`}
-                  value={levelVerbs[level]}
-                  onChange={(e) => handleVerbChange(level, e.target.value)}
-                  placeholder="Enter verb"
-                  margin="dense"
-                />
-              )}
-            </Box>
-          ))}
-        </Box>
-        
-        {/* Display selected verbs as chips */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 3 }}>
-          <Typography variant="subtitle2" sx={{ mr: 1 }}>Selected verbs:</Typography>
-          {Object.entries(levelSelections)
-            .filter(([_, isSelected]) => isSelected)
-            .map(([level, _]) => {
-              const typedLevel = level as LevelString;
-              const verb = levelVerbs[typedLevel];
-              return verb ? (
-                <Chip
-                  key={level}
-                  label={`${verb} (${level})`}
-                  size="small"
-                  color={
-                    level === 'beginner' ? 'primary' : 
-                    level === 'intermediate' ? 'secondary' : 'error'
-                  }
-                />
-              ) : null;
-            })
-            .filter(Boolean)
-          }
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+          {/* Beginner Level */}
+          <Box sx={{ flex: 1, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: 'primary.main' }}>
+              Beginner Level
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              label="Beginner verb"
+              value={levelVerbs.beginner}
+              onChange={(e) => handleVerbChange('beginner', e.target.value)}
+              placeholder="e.g., Identify, List, Describe"
+              margin="dense"
+            />
+          </Box>
+          
+          {/* Intermediate Level */}
+          <Box sx={{ flex: 1, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: 'secondary.main' }}>
+              Intermediate Level
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              label="Intermediate verb"
+              value={levelVerbs.intermediate}
+              onChange={(e) => handleVerbChange('intermediate', e.target.value)}
+              placeholder="e.g., Apply, Analyze, Compare"
+              margin="dense"
+            />
+          </Box>
+          
+          {/* Expert Level */}
+          <Box sx={{ flex: 1, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold', color: 'error.main' }}>
+              Expert Level
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              label="Expert verb"
+              value={levelVerbs.expert}
+              onChange={(e) => handleVerbChange('expert', e.target.value)}
+              placeholder="e.g., Evaluate, Create, Design"
+              margin="dense"
+            />
+          </Box>
         </Box>
       </DialogContent>
       <DialogActions>
