@@ -7,8 +7,26 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { FairMarkdownDocument, LearningOutcome, LearningVerbLevel } from '../../types';
 import LearningOutcomeEditorModal from '../common/LearningOutcomeEditorModal';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+import SortableTableRow from '../common/SortableTableRow';
+import DragHandle from '../common/DragHandle';
 
 interface LearningOutcomesEditorProps {
   document: FairMarkdownDocument;
@@ -35,6 +53,50 @@ const LearningOutcomesEditor: FC<LearningOutcomesEditorProps> = ({ document, onC
   const [editMode, setEditMode] = useState<'add' | 'edit'>('add');
   const [currentOutcome, setCurrentOutcome] = useState<LearningOutcome | undefined>(undefined);
   const [currentOutcomeKey, setCurrentOutcomeKey] = useState<string>('');
+  
+  // Set up sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Minimum distance before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+  
+  // Handle drag end event
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      // Get the outcome keys in sorted order
+      const sortedOutcomeKeys = Object.keys(document.learning_outcomes || {})
+        .sort((keyA, keyB) => {
+          const numA = parseInt(keyA, 10);
+          const numB = parseInt(keyB, 10);
+          return numA - numB;
+        });
+      
+      // Find the indices of the dragged and target items
+      const oldIndex = sortedOutcomeKeys.findIndex(key => key === active.id.toString());
+      const newIndex = sortedOutcomeKeys.findIndex(key => key === over.id.toString());
+      
+      // Reorder the keys
+      const reorderedKeys = arrayMove(sortedOutcomeKeys, oldIndex, newIndex);
+      
+      // Create a new outcomes object with the reordered keys
+      const reorderedOutcomes: Record<string, LearningOutcome> = {};
+      reorderedKeys.forEach((key, index) => {
+        // Create new keys based on index + 1 to maintain sequential numbering
+        const newKey = (index + 1).toString();
+        reorderedOutcomes[newKey] = document.learning_outcomes[key];
+      });
+      
+      onChange({ learning_outcomes: reorderedOutcomes });
+    }
+  };
   
   // Handle opening the modal for adding a new outcome
   const handleAddOutcome = () => {
@@ -134,69 +196,82 @@ const LearningOutcomesEditor: FC<LearningOutcomesEditorProps> = ({ document, onC
           No learning outcomes defined yet.
         </Typography>
       ) : (
-        <TableContainer component={Paper} sx={{ width: '100%' }}>
-          <Table sx={{ width: '100%' }} aria-label="learning outcomes table">
-            <TableHead>
-              <TableRow>
-                <TableCell>LO</TableCell>
-                <TableCell>Outcome</TableCell>
-                <TableCell>Verbs</TableCell>
-                <TableCell align="right" sx={{ minWidth: '100px' }}></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {Object.entries(document.learning_outcomes || {})
-                // Sort by numeric ID to ensure consistent display order
-                .sort(([keyA], [keyB]) => {
-                  const numA = parseInt(keyA, 10);
-                  const numB = parseInt(keyB, 10);
-                  return numA - numB;
-                })
-                .map(([key, outcome]) => (
-                <TableRow key={key}>
-                  <TableCell>{key}</TableCell>
-                  <TableCell>{outcome.outcome}</TableCell>
-                  <TableCell>
-                    {outcome.verbs.length > 0 ? (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {outcome.verbs.map((verb, index) => (
-                          <Chip
-                            key={index}
-                            label={verb.verb ? `${verb.verb}` : verb.level}
-                            size="small"
-                            color={
-                              verb.level === 'beginner' ? 'primary' : 
-                              verb.level === 'intermediate' ? 'secondary' : 'error'
-                            }
-                          />
-                        ))}
-                      </Box>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">No verbs defined</Typography>
-                    )}
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton 
-                      size="small" 
-                      color="primary"
-                      onClick={() => handleEditOutcome(outcome, key)}
-                      sx={{ mr: 1 }}
-                    >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton 
-                      size="small" 
-                      color="error"
-                      onClick={() => handleRemoveOutcome(key)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <TableContainer component={Paper} sx={{ width: '100%' }}>
+            <Table sx={{ width: '100%' }} aria-label="learning outcomes table">
+              <TableHead>
+                <TableRow>
+                  <TableCell padding="none" width="40px"></TableCell>
+                  <TableCell>LO</TableCell>
+                  <TableCell>Outcome</TableCell>
+                  <TableCell>Verbs</TableCell>
+                  <TableCell align="right" sx={{ minWidth: '100px' }}></TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                <SortableContext
+                  items={Object.keys(document.learning_outcomes || {})}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {Object.entries(document.learning_outcomes || {})
+                    // Sort by numeric ID to ensure consistent display order
+                    .sort(([keyA], [keyB]) => {
+                      const numA = parseInt(keyA, 10);
+                      const numB = parseInt(keyB, 10);
+                      return numA - numB;
+                    })
+                    .map(([key, outcome]) => (
+                    <SortableTableRow key={key} id={key}>
+                      <DragHandle />
+                      <TableCell>{key}</TableCell>
+                      <TableCell>{outcome.outcome}</TableCell>
+                      <TableCell>
+                        {outcome.verbs.length > 0 ? (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            {outcome.verbs.map((verb, index) => (
+                              <Chip
+                                key={index}
+                                label={verb.verb ? `${verb.verb}` : verb.level}
+                                size="small"
+                                color={
+                                  verb.level === 'beginner' ? 'primary' : 
+                                  verb.level === 'intermediate' ? 'secondary' : 'error'
+                                }
+                              />
+                            ))}
+                          </Box>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">No verbs defined</Typography>
+                        )}
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton 
+                          size="small" 
+                          color="primary"
+                          onClick={() => handleEditOutcome(outcome, key)}
+                          sx={{ mr: 1 }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          color="error"
+                          onClick={() => handleRemoveOutcome(key)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </SortableTableRow>
+                  ))}
+                </SortableContext>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DndContext>
       )}
       
       <LearningOutcomeEditorModal

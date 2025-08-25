@@ -6,8 +6,26 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { FairMarkdownDocument, Resource } from '../../types';
 import AddIcon from '@mui/icons-material/Add';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+import SortableTableRow from '../common/SortableTableRow';
+import DragHandle from '../common/DragHandle';
 
 interface ResourcesEditorProps {
   document: FairMarkdownDocument;
@@ -32,6 +50,36 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
     doi: '',
     additionalInformation: ''
   });
+  
+  // Set up sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Minimum distance before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end event
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = parseInt(active.id.toString());
+      const newIndex = parseInt(over.id.toString());
+      
+      const reorderedResources = arrayMove(
+        [...(document.additionalResources || [])], 
+        oldIndex, 
+        newIndex
+      );
+      
+      onChange({ additionalResources: reorderedResources });
+    }
+  };
   
   // Function to shorten URLs and DOIs for display
   const shortenText = (text: string, maxLength: number = 40): string => {
@@ -151,57 +199,70 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
             No resources have been added yet.
           </Typography>
         ) : (
-          <TableContainer component={Paper} sx={{ width: '100%' }}>
-            <Table sx={{ width: '100%' }} aria-label="resources table">
-            <TableHead>
-              <TableRow>
-                <TableCell>Title</TableCell>
-                <TableCell>Author</TableCell>
-                <TableCell>URL/DOI</TableCell>
-                <TableCell align="right" sx={{ minWidth: '100px' }}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {document.additionalResources?.map((resource, index) => (
-                <TableRow key={index}>
-                  <TableCell>{resource.title}</TableCell>
-                  <TableCell>{resource.author || '-'}</TableCell>
-                  <TableCell sx={{ maxWidth: '250px', overflow: 'hidden' }}>
-                    <Tooltip title={resource.url} placement="top">
-                      <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {shortenText(resource.url, 40)}
-                      </Box>
-                    </Tooltip>
-                    {resource.doi && (
-                      <Tooltip title={`DOI: ${resource.doi}`} placement="top">
-                        <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          DOI: {shortenText(resource.doi, 30)}
-                        </Box>
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton 
-                      size="small" 
-                      color="primary"
-                      onClick={() => handleOpenDialog(index)}
-                      sx={{ mr: 1 }}
-                    >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton 
-                      size="small" 
-                      color="error"
-                      onClick={() => handleRemoveResource(index)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <TableContainer component={Paper} sx={{ width: '100%' }}>
+              <Table sx={{ width: '100%' }} aria-label="resources table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell padding="none" width="40px"></TableCell>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Author</TableCell>
+                    <TableCell>URL/DOI</TableCell>
+                    <TableCell align="right" sx={{ minWidth: '100px' }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  <SortableContext
+                    items={document.additionalResources?.map((_, index) => `${index}`) || []}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {document.additionalResources?.map((resource, index) => (
+                      <SortableTableRow key={index} id={`${index}`}>
+                        <DragHandle />
+                        <TableCell>{resource.title}</TableCell>
+                        <TableCell>{resource.author || '-'}</TableCell>
+                        <TableCell sx={{ maxWidth: '250px', overflow: 'hidden' }}>
+                          <Tooltip title={resource.url} placement="top">
+                            <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {shortenText(resource.url, 40)}
+                            </Box>
+                          </Tooltip>
+                          {resource.doi && (
+                            <Tooltip title={`DOI: ${resource.doi}`} placement="top">
+                              <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                DOI: {shortenText(resource.doi, 30)}
+                              </Box>
+                            </Tooltip>
+                          )}
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton 
+                            size="small" 
+                            color="primary"
+                            onClick={() => handleOpenDialog(index)}
+                            sx={{ mr: 1 }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton 
+                            size="small" 
+                            color="error"
+                            onClick={() => handleRemoveResource(index)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </SortableTableRow>
+                    ))}
+                  </SortableContext>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </DndContext>
         )}
 
       {/* Resource Form Dialog */}

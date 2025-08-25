@@ -2,7 +2,26 @@ import React, { useState } from 'react';
 import { Box, TextField, Button, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Typography, Paper } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { FairMarkdownDocument } from '../../types';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import SortableListItem from '../common/SortableListItem';
 
 interface PrerequisitesEditorProps {
   document: FairMarkdownDocument;
@@ -11,6 +30,36 @@ interface PrerequisitesEditorProps {
 
 const PrerequisitesEditor: React.FC<PrerequisitesEditorProps> = ({ document, onChange }) => {
   const [newPrerequisite, setNewPrerequisite] = useState('');
+  
+  // Set up sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Minimum distance before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+  
+  // Handle drag end event
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = parseInt(active.id.toString(), 10);
+      const newIndex = parseInt(over.id.toString(), 10);
+      
+      const updatedPrerequisites = arrayMove(
+        document.prerequisites || [], 
+        oldIndex, 
+        newIndex
+      );
+      
+      onChange({ prerequisites: updatedPrerequisites });
+    }
+  };
 
   const handleAddPrerequisite = () => {
     if (!newPrerequisite.trim()) return;
@@ -59,20 +108,31 @@ const PrerequisitesEditor: React.FC<PrerequisitesEditorProps> = ({ document, onC
         </Box>
         
         {document.prerequisites && document.prerequisites.length > 0 ? (
-          <List sx={{ bgcolor: 'background.paper', border: '1px solid #e0e0e0', borderRadius: 1 }}>
-            {document.prerequisites.map((prerequisite, index) => (
-              <ListItem key={index} divider={index < document.prerequisites.length - 1}>
-                <ListItemText 
-                  primary={prerequisite}
-                />
-                <ListItemSecondaryAction>
-                  <IconButton edge="end" aria-label="delete" onClick={() => handleRemovePrerequisite(index)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <List sx={{ bgcolor: 'background.paper', border: '1px solid #e0e0e0', borderRadius: 1 }}>
+              <SortableContext
+                items={document.prerequisites.map((_, index) => index.toString())}
+                strategy={verticalListSortingStrategy}
+              >
+                {document.prerequisites.map((prerequisite, index) => (
+                  <SortableListItem key={index} id={index.toString()}>
+                    <ListItemText 
+                      primary={prerequisite}
+                    />
+                    <ListItemSecondaryAction>
+                      <IconButton edge="end" aria-label="delete" onClick={() => handleRemovePrerequisite(index)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  </SortableListItem>
+                ))}
+              </SortableContext>
+            </List>
+          </DndContext>
         ) : (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
             No prerequisites added yet.

@@ -8,12 +8,31 @@ import { Grid } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { FairMarkdownDocument, Activity } from '../../types';
 import MdxEditorComponent from '../common/MdxEditorComponent';
 import ActivityEditorModal from '../common/ActivityEditorModal';
 import ReactMarkdown from 'react-markdown';
 import RestoreIcon from '@mui/icons-material/Restore';
 import UpdateIcon from '@mui/icons-material/Update';
+import SortableActivityRow from './SortableActivityRow';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ActivitiesEditorProps {
   document: FairMarkdownDocument;
@@ -28,10 +47,36 @@ interface ActivitySectionProps {
   onAddActivity: (section: 'before' | 'during' | 'after') => void;
   onEditActivity: (activity: Activity, index: number, section: 'before' | 'during' | 'after') => void;
   onRemoveActivity: (section: 'before' | 'during' | 'after', index: number) => void;
+  onReorderActivities: (section: 'before' | 'during' | 'after', activities: Activity[]) => void;
 }
 
 function ActivitySection(props: ActivitySectionProps) {
-  const { title, icon, section, activities, onAddActivity, onEditActivity, onRemoveActivity } = props;
+  const { title, icon, section, activities, onAddActivity, onEditActivity, onRemoveActivity, onReorderActivities } = props;
+  
+  // Set up sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Minimum distance before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end event
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = parseInt(active.id.toString().split('-')[1]);
+      const newIndex = parseInt(over.id.toString().split('-')[1]);
+      
+      const reorderedActivities = arrayMove([...activities], oldIndex, newIndex);
+      onReorderActivities(section, reorderedActivities);
+    }
+  };
   
   return (
     <Box sx={{ mb: 4 }}>
@@ -62,58 +107,45 @@ function ActivitySection(props: ActivitySectionProps) {
           No activities defined for this section.
         </Typography>
       ) : (
-        <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} aria-label="activities table">
-            <TableHead>
-              <TableRow>
-                <TableCell>LO</TableCell>
-                <TableCell>Activity</TableCell>
-                <TableCell>Time</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Level</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {activities.map((activity, index) => (
-                <TableRow key={index}>
-                  <TableCell>{activity.learning_outcome}</TableCell>
-                  <TableCell sx={{ p: 1 }}>
-                    <Box sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                      <ReactMarkdown>
-                        {typeof activity.activities === 'string' 
-                          ? activity.activities 
-                          : activity.activities.join("\n")}
-                      </ReactMarkdown>
-                    </Box>
-                  </TableCell>
-                  <TableCell>{activity.time}</TableCell>
-                  <TableCell>{activity.type}</TableCell>
-                  <TableCell>{activity.level}</TableCell>
-                  <TableCell align="right">
-                    <IconButton 
-                      size="small" 
-                      color="primary"
-                      onClick={() => onEditActivity(activity, index, section)}
-                      sx={{ mr: 1 }}
-                    >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton 
-                      size="small" 
-                      color="error"
-                      onClick={() => onRemoveActivity(section, index)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <TableContainer component={Paper}>
+            <Table sx={{ minWidth: 650 }} aria-label="activities table">
+              <TableHead>
+                <TableRow>
+                  <TableCell padding="none" width="40px"></TableCell>
+                  <TableCell>LO</TableCell>
+                  <TableCell>Activity</TableCell>
+                  <TableCell>Time</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Level</TableCell>
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                <SortableContext
+                  items={activities.map((_, index) => `${section}-${index}`)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {activities.map((activity, index) => (
+                    <SortableActivityRow
+                      key={`${section}-${index}`}
+                      id={`${section}-${index}`}
+                      activity={activity}
+                      index={index}
+                      onEdit={(activity, index) => onEditActivity(activity, index, section)}
+                      onRemove={(index) => onRemoveActivity(section, index)}
+                    />
+                  ))}
+                </SortableContext>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DndContext>
       )}
-      
     </Box>
   );
 }
@@ -124,6 +156,13 @@ const ActivitiesEditor: React.FC<ActivitiesEditorProps> = ({ document, onChange 
   const [currentActivity, setCurrentActivity] = useState<Activity | undefined>(undefined);
   const [currentActivityIndex, setCurrentActivityIndex] = useState<number>(-1);
   const [currentSection, setCurrentSection] = useState<'before' | 'during' | 'after'>('before');
+  
+  // Handle reordering of activities
+  const handleReorderActivities = (section: 'before' | 'during' | 'after', reorderedActivities: Activity[]) => {
+    const updatedActivities = { ...document.activities };
+    updatedActivities[section] = reorderedActivities;
+    onChange({ activities: updatedActivities });
+  };
 
   const handleOpenAddModal = (section: 'before' | 'during' | 'after') => {
     setEditMode('add');
@@ -184,35 +223,38 @@ const ActivitiesEditor: React.FC<ActivitiesEditorProps> = ({ document, onChange 
 
   return (
     <Box>
-        <ActivitySection 
-          title="Before the lesson"
-          icon={<RestoreIcon color="primary" />}
-          section="before"
-          activities={document.activities?.before || []}
-          onAddActivity={handleOpenAddModal}
-          onEditActivity={handleOpenEditModal}
-          onRemoveActivity={handleRemoveActivity}
-        />
-        
-        <ActivitySection 
-          title="During the lesson"
-          icon={<UpdateIcon  color="primary" />}
-          section="during"
-          activities={document.activities?.during || []}
-          onAddActivity={handleOpenAddModal}
-          onEditActivity={handleOpenEditModal}
-          onRemoveActivity={handleRemoveActivity}
-        />
-        
-        <ActivitySection 
-          title="After the lesson"
+      <ActivitySection 
+        title="Before the lesson"
+        icon={<RestoreIcon color="primary" />}
+        section="before"
+        activities={document.activities?.before || []}
+        onAddActivity={handleOpenAddModal}
+        onEditActivity={handleOpenEditModal}
+        onRemoveActivity={handleRemoveActivity}
+        onReorderActivities={handleReorderActivities}
+      />
+      
+      <ActivitySection 
+        title="During the lesson"
+        icon={<UpdateIcon  color="primary" />}
+        section="during"
+        activities={document.activities?.during || []}
+        onAddActivity={handleOpenAddModal}
+        onEditActivity={handleOpenEditModal}
+        onRemoveActivity={handleRemoveActivity}
+        onReorderActivities={handleReorderActivities}
+      />
+      
+      <ActivitySection 
+        title="After the lesson"
         icon={<UpdateIcon color="primary"/>}
-          section="after"
-          activities={document.activities?.after || []}
-          onAddActivity={handleOpenAddModal}
-          onEditActivity={handleOpenEditModal}
-          onRemoveActivity={handleRemoveActivity}
-        />
+        section="after"
+        activities={document.activities?.after || []}
+        onAddActivity={handleOpenAddModal}
+        onEditActivity={handleOpenEditModal}
+        onRemoveActivity={handleRemoveActivity}
+        onReorderActivities={handleReorderActivities}
+      />
       
       <ActivityEditorModal
         open={modalOpen}
