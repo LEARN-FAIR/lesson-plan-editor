@@ -46,492 +46,518 @@ import ResourcesEditor from '../components/sections/ResourcesEditor';
 import ContentEditor from '../components/sections/ContentEditor';
 
 interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
+    children?: React.ReactNode;
+    index: number;
+    value: number;
 }
 
 function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+    const {children, value, index, ...other} = props;
 
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`editor-tabpanel-${index}`}
-      aria-labelledby={`editor-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`editor-tabpanel-${index}`}
+            aria-labelledby={`editor-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box sx={{p: 3}}>
+                    {children}
+                </Box>
+            )}
+        </div>
+    );
 }
 
 function a11yProps(index: number) {
-  return {
-    id: `editor-tab-${index}`,
-    'aria-controls': `editor-tabpanel-${index}`,
-  };
+    return {
+        id: `editor-tab-${index}`,
+        'aria-controls': `editor-tabpanel-${index}`,
+    };
 }
 
 interface StyledTabProps {
-  label: string;
-  icon?: React.ReactElement;
-  iconPosition?: 'start' | 'end' | 'top' | 'bottom';
+    label: string;
+    icon?: React.ReactElement;
+    iconPosition?: 'start' | 'end' | 'top' | 'bottom';
 }
 
 const StyledTab = styled((props: StyledTabProps) => <Tab disableRipple {...props} />)(
-  ({ theme }) => ({
-    minHeight: '48px',
-    textTransform: 'none',
-  }),
+    ({theme}) => ({
+        minHeight: '48px',
+        textTransform: 'none',
+    }),
 );
 
 const EditorPage: React.FC = () => {
-  const [markdownContent, setMarkdownContent] = useState<string | null>(null);
-  const [manualError, setManualError] = useState<string | null>(null);
-  const [document, setDocument] = useState<FairMarkdownDocument | null>(null);
-  const [tabValue, setTabValue] = useState(0);
-  const navigate = useNavigate();
-  const params = useParams();
-  const { owner, repo, branch, category, lesson } = params;
-  
-  // React Query client for invalidation
-  const queryClient = useQueryClient();
-  
-  // Construct the lesson path using the category and lesson from URL
-  const fullLessonPath = category && lesson ? constructLessonPath(category, lesson) : '';
-  
-  // Use Repository Context to access repositories
-  const { 
-    repositories = [], 
-    isLoading: isLoadingRepos,
-    error: reposError
-  } = useRepositories();
-  
-  // Use React Query to fetch lesson plan content
-  const {
-    data: lessonPlanData,
-    isLoading: isLoadingLessonPlan,
-    error: lessonPlanError
-  } = useLessonPlanContent(fullLessonPath);
-  
-  // Track loading states for repositories and lesson plan content
-  const [isLoadingRepository, setIsLoadingRepository] = useState<boolean>(false);
-  const [isLoadingLessonPlanContent, setIsLoadingLessonPlanContent] = useState<boolean>(false);
-  
-  // Combine loading states
-  const loading = isLoadingRepos || isLoadingLessonPlan || isLoadingRepository || isLoadingLessonPlanContent;
-  
-  // Combine error states - only show errors if we're not loading
-  const error = !loading ? (
-    manualError || 
-    (reposError ? (reposError as Error).message : null) || 
-    (lessonPlanError ? (lessonPlanError as Error).message : null)
-  ) : null;
+    const [markdownContent, setMarkdownContent] = useState<string | null>(null);
+    const [manualError, setManualError] = useState<string | null>(null);
+    const [document, setDocument] = useState<FairMarkdownDocument | null>(null);
+    const [tabValue, setTabValue] = useState(0);
+    const navigate = useNavigate();
+    const params = useParams();
+    const {owner, repo, branch, category, lesson} = params;
 
-  // Access stored data for use in component
-  const storedRepo = githubRepoService.getSelectedRepo();
-  const storedLessonPlan = lessonPlanService.getSelectedLessonPlan();
+    // React Query client for invalidation
+    const queryClient = useQueryClient();
 
-  // Handle tab change
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
+    // Construct the lesson path using the category and lesson from URL
+    const fullLessonPath = category && lesson ? constructLessonPath(category, lesson) : '';
 
-  // Handle document change
-  const handleDocumentChange = (updatedDocument: Partial<FairMarkdownDocument>) => {
-    if (document) {
-      const newDocument = { ...document, ...updatedDocument };
-      setDocument(newDocument);
-      
-      // Serialize and save
-      try {
-        const markdown = serializeMarkdown(newDocument);
-        setMarkdownContent(markdown);
-        // The content update will be handled by the useEffect that watches markdownContent
-      } catch (error) {
-        console.error('Error serializing markdown:', error);
-        // Handle error state
-      }
-    }
-  };
+    // Use Repository Context to access repositories
+    const {
+        repositories = [],
+        isLoading: isLoadingRepos,
+        error: reposError
+    } = useRepositories();
 
-  // Main effect to handle all loading scenarios
-  const loadRepositoryAndLessonPlan = async () => {
-      try {
-        // Debug URL parameters
-        console.log('URL parameters:', { owner, repo, branch, category, lesson });
-        console.log('Current path:', window.location.pathname);
-        
-        // First check if we have URL parameters
-        if (owner && repo && branch && category && lesson) {
-          setIsLoadingRepository(true);
-          
-          // 1. Load repositories if needed
-          let selectedRepo;
-          if (repositories.length > 0) {
-            // Find the repository that matches the URL parameters
-            selectedRepo = repositories.find((r: Repository) => 
-              r.owner.login.toLowerCase() === owner.toLowerCase() && 
-              r.name.toLowerCase() === repo.toLowerCase()
-            );
-            
-            if (!selectedRepo) {
-              // If we can't find the repository in the loaded repositories,
-              // create a temporary repository object to use for API calls
-              selectedRepo = {
-                owner: { login: owner },
-                name: repo,
-                default_branch: branch
-              } as Repository;
-              
-              // Note: We're not setting an error here anymore, as we're creating a temporary repo object
-              console.log(`Creating temporary repository object for ${owner}/${repo}`);
-            }
-          } else {
-            // If repositories haven't loaded yet, create a temporary repository object
-            selectedRepo = {
-              owner: { login: owner },
-              name: repo,
-              default_branch: branch
-            } as Repository;
-            console.log(`Creating temporary repository object for ${owner}/${repo} (no repositories loaded yet)`);
-          }
-          
-          // 2. Set the selected repository and branch
-          githubRepoService.setSelectedRepo(selectedRepo);
-          githubRepoService.setSelectedBranch(branch);
-          setIsLoadingRepository(false);
-          
-          // 3. Load lesson plan content
-          setIsLoadingLessonPlanContent(true);
-          if (lessonPlanData) {
-            if (lessonPlanData.decoded_content) {
-              setMarkdownContent(lessonPlanData.decoded_content);
-              lessonPlanService.setSelectedLessonPlan(lessonPlanData);
-            } else {
-              // If we have lesson plan data but no decoded content, fetch it directly
-              try {
-                const fullLessonPlan = await lessonPlanService.getLessonPlan(fullLessonPath);
-                if (fullLessonPlan.decoded_content) {
-                  setMarkdownContent(fullLessonPlan.decoded_content);
-                  lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
-                } else {
-                  throw new Error('Could not load lesson plan content');
-                }
-              } catch (error) {
-                setManualError('Could not load lesson plan content');
-              }
-            }
-          } else if (!isLoadingLessonPlan) {
-            // If lesson plan data isn't loading but we don't have it, fetch it directly
-            try {
-              const fullLessonPlan = await lessonPlanService.getLessonPlan(fullLessonPath);
-              if (fullLessonPlan.decoded_content) {
-                setMarkdownContent(fullLessonPlan.decoded_content);
-                lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
-              } else {
-                throw new Error('Could not load lesson plan content');
-              }
-            } catch (error) {
-              setManualError('Could not load lesson plan content');
-            }
-          }
-          setIsLoadingLessonPlanContent(false);
-        } else {
-          // No URL parameters, check if we have selections in session storage
-          // Note: We're using the storedRepo and storedLessonPlan variables defined at the component level
-          // to avoid inconsistencies between initial render and effect execution
-          
-          if (storedRepo && storedLessonPlan) {
-            // Check if the stored lesson plan has decoded content
-            if (storedLessonPlan.decoded_content) {
-              setMarkdownContent(storedLessonPlan.decoded_content);
-            } else {
-              // If we have a stored lesson plan but no decoded content, fetch it
-              setIsLoadingLessonPlanContent(true);
-              try {
-                const fullLessonPlan = await lessonPlanService.getLessonPlan(storedLessonPlan.path);
-                if (fullLessonPlan.decoded_content) {
-                  setMarkdownContent(fullLessonPlan.decoded_content);
-                  lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
-                } else {
-                  throw new Error('Could not load lesson plan content');
-                }
-              } catch (error) {
-                setManualError('Could not load lesson plan content');
-              }
-              setIsLoadingLessonPlanContent(false);
-            }
-          } else if (!isLoadingRepos) {
-            // Only redirect if repositories have finished loading and we still don't have data
-            // This prevents premature redirects when repositories are still being fetched
-            console.log('No stored data and repositories finished loading, redirecting to setup');
-            navigate('/');
-          }
-        }
-      } catch (error) {
-        setManualError(error instanceof Error ? error.message : 'Unknown error occurred');
-        setIsLoadingRepository(false);
-        setIsLoadingLessonPlanContent(false);
-      }
+    // Use React Query to fetch lesson plan content
+    const {
+        data: lessonPlanData,
+        isLoading: isLoadingLessonPlan,
+        error: lessonPlanError
+    } = useLessonPlanContent(fullLessonPath);
+
+    // Track loading states for repositories and lesson plan content
+    const [isLoadingRepository, setIsLoadingRepository] = useState<boolean>(false);
+    const [isLoadingLessonPlanContent, setIsLoadingLessonPlanContent] = useState<boolean>(false);
+
+    // Combine loading states
+    const loading = isLoadingRepos || isLoadingLessonPlan || isLoadingRepository || isLoadingLessonPlanContent;
+
+    // Combine error states - only show errors if we're not loading
+    const error = !loading ? (
+        manualError ||
+        (reposError ? (reposError as Error).message : null) ||
+        (lessonPlanError ? (lessonPlanError as Error).message : null)
+    ) : null;
+
+    // Access stored data for use in component
+    const storedRepo = githubRepoService.getSelectedRepo();
+    const storedLessonPlan = lessonPlanService.getSelectedLessonPlan();
+
+    // Handle tab change
+    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+        setTabValue(newValue);
     };
-    
-  useEffect(() => {
-    loadRepositoryAndLessonPlan();
-  }, [owner, repo, branch, category, lesson, repositories, lessonPlanData, isLoadingLessonPlan, fullLessonPath, navigate]);
 
-  // Parse markdown when content is loaded
-  useEffect(() => {
-    if (markdownContent) {
-      try {
-        const parsedDocument = parseMarkdown(markdownContent);
-        setDocument(parsedDocument);
-      } catch (error) {
-        console.error('Error parsing markdown:', error);
-        // Handle error state
-      }
-    }
-  }, [markdownContent]);
-  
-  // Check for stored data on component mount
-  useEffect(() => {
-    // If we already have stored data with content, set the markdown content
-    if (storedRepo && storedLessonPlan && storedLessonPlan.decoded_content) {
-      console.log('Found stored data with content on mount, setting markdown content');
-      setMarkdownContent(storedLessonPlan.decoded_content);
-    }
-  }, []);
+    // Handle document change
+    const handleDocumentChange = (updatedDocument: Partial<FairMarkdownDocument>) => {
+        if (document) {
+            const newDocument = {...document, ...updatedDocument};
+            setDocument(newDocument);
 
-  // Show loading state
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-  
-  // Show error state
-  if (error) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error">
-          <AlertTitle>Error</AlertTitle>
-          {error}
-          <Box sx={{ mt: 2 }}>
-            <Button variant="contained" onClick={() => navigate('/')}>
-              Go to Repository Selection
-            </Button>
-          </Box>
-        </Alert>
-      </Box>
-    );
-  }
+            // Serialize and save
+            try {
+                const markdown = serializeMarkdown(newDocument);
+                setMarkdownContent(markdown);
+                // The content update will be handled by the useEffect that watches markdownContent
+            } catch (error) {
+                console.error('Error serializing markdown:', error);
+                // Handle error state
+            }
+        }
+    };
 
-  // Handle markdown content update
-  const handleContentUpdate = (updatedContent: string) => {
-    setMarkdownContent(updatedContent);
-    // Invalidate the lesson plan content query to ensure it's updated when refetched
-    queryClient.setQueryData(['lessonPlanContent', fullLessonPath], (oldData: any) => {
-      if (oldData) {
-        return {
-          ...oldData,
-          decoded_content: updatedContent
-        };
-      }
-      return oldData;
-    });
-  };
+    // Main effect to handle all loading scenarios
+    const loadRepositoryAndLessonPlan = async () => {
+        try {
+            // Debug URL parameters
+            console.log('URL parameters:', {owner, repo, branch, category, lesson});
+            console.log('Current path:', window.location.pathname);
 
-  const handleExportMarkdown = () => {
-    if (markdownContent) {
-      exportMarkdownFile(markdownContent);
-    }
-  };
+            // First check if we have URL parameters
+            if (owner && repo && branch && category && lesson) {
+                setIsLoadingRepository(true);
 
-  const handleReturnToSelection = () => {
-    // Clear selected repo, branch, and lesson plan in service layer
-    githubRepoService.clearSelectedRepo();
-    githubRepoService.clearSelectedBranch();
-    lessonPlanService.clearSelectedLessonPlan();
-    
-    // Reset UI state
-    setMarkdownContent(null);
-    setManualError(null);
-    
-    // Invalidate queries to force refetch when returning
-    queryClient.invalidateQueries({ queryKey: ['lessonPlanContent'] });
-    
-    // Navigate to setup page
-    navigate('/');
-  };
+                // 1. Load repositories if needed
+                let selectedRepo;
+                if (repositories.length > 0) {
+                    // Find the repository that matches the URL parameters
+                    selectedRepo = repositories.find((r: Repository) =>
+                        r.owner.login.toLowerCase() === owner.toLowerCase() &&
+                        r.name.toLowerCase() === repo.toLowerCase()
+                    );
 
-  if (loading) {
-    // If we have URL parameters, show a more informative loading message
-    const isDirectNavigation = owner && repo && branch && category && lesson;
-    
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <CircularProgress />
-        {isDirectNavigation && (
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            Loading editor for {owner}/{repo}/{branch}/{category}/{lesson}...
-          </Typography>
-        )}
-      </Box>
-    );
-  }
+                    if (!selectedRepo) {
+                        // If we can't find the repository in the loaded repositories,
+                        // create a temporary repository object to use for API calls
+                        selectedRepo = {
+                            owner: {login: owner},
+                            name: repo,
+                            default_branch: branch
+                        } as Repository;
 
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      <StyledAppBar>
-        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-          <Typography variant="h6" component="div" color="white">
-            Lesson Plan Editor
-          </Typography>
-          {githubRepoService.getSelectedRepo() && lessonPlanService.getSelectedLessonPlan() && (
-            <Box 
-              component="button" 
-              onClick={handleReturnToSelection}
-              sx={{ 
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                p: 0,
+                        // Note: We're not setting an error here anymore, as we're creating a temporary repo object
+                        console.log(`Creating temporary repository object for ${owner}/${repo}`);
+                    }
+                } else {
+                    // If repositories haven't loaded yet, create a temporary repository object
+                    selectedRepo = {
+                        owner: {login: owner},
+                        name: repo,
+                        default_branch: branch
+                    } as Repository;
+                    console.log(`Creating temporary repository object for ${owner}/${repo} (no repositories loaded yet)`);
+                }
+
+                // 2. Set the selected repository and branch
+                githubRepoService.setSelectedRepo(selectedRepo);
+                githubRepoService.setSelectedBranch(branch);
+                setIsLoadingRepository(false);
+
+                // 3. Load lesson plan content
+                setIsLoadingLessonPlanContent(true);
+                if (lessonPlanData) {
+                    if (lessonPlanData.decoded_content) {
+                        setMarkdownContent(lessonPlanData.decoded_content);
+                        lessonPlanService.setSelectedLessonPlan(lessonPlanData);
+                    } else {
+                        // If we have lesson plan data but no decoded content, fetch it directly
+                        try {
+                            const fullLessonPlan = await lessonPlanService.getLessonPlan(fullLessonPath);
+                            if (fullLessonPlan.decoded_content) {
+                                setMarkdownContent(fullLessonPlan.decoded_content);
+                                lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
+                            } else {
+                                throw new Error('Could not load lesson plan content');
+                            }
+                        } catch (error) {
+                            setManualError('Could not load lesson plan content');
+                        }
+                    }
+                } else if (!isLoadingLessonPlan) {
+                    // If lesson plan data isn't loading but we don't have it, fetch it directly
+                    try {
+                        const fullLessonPlan = await lessonPlanService.getLessonPlan(fullLessonPath);
+                        if (fullLessonPlan.decoded_content) {
+                            setMarkdownContent(fullLessonPlan.decoded_content);
+                            lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
+                        } else {
+                            throw new Error('Could not load lesson plan content');
+                        }
+                    } catch (error) {
+                        setManualError('Could not load lesson plan content');
+                    }
+                }
+                setIsLoadingLessonPlanContent(false);
+            } else {
+                // No URL parameters, check if we have selections in session storage
+                // Note: We're using the storedRepo and storedLessonPlan variables defined at the component level
+                // to avoid inconsistencies between initial render and effect execution
+
+                if (storedRepo && storedLessonPlan) {
+                    // Check if the stored lesson plan has decoded content
+                    if (storedLessonPlan.decoded_content) {
+                        setMarkdownContent(storedLessonPlan.decoded_content);
+                    } else {
+                        // If we have a stored lesson plan but no decoded content, fetch it
+                        setIsLoadingLessonPlanContent(true);
+                        try {
+                            const fullLessonPlan = await lessonPlanService.getLessonPlan(storedLessonPlan.path);
+                            if (fullLessonPlan.decoded_content) {
+                                setMarkdownContent(fullLessonPlan.decoded_content);
+                                lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
+                            } else {
+                                throw new Error('Could not load lesson plan content');
+                            }
+                        } catch (error) {
+                            setManualError('Could not load lesson plan content');
+                        }
+                        setIsLoadingLessonPlanContent(false);
+                    }
+                } else if (!isLoadingRepos) {
+                    // Only redirect if repositories have finished loading and we still don't have data
+                    // This prevents premature redirects when repositories are still being fetched
+                    console.log('No stored data and repositories finished loading, redirecting to setup');
+                    navigate('/');
+                }
+            }
+        } catch (error) {
+            setManualError(error instanceof Error ? error.message : 'Unknown error occurred');
+            setIsLoadingRepository(false);
+            setIsLoadingLessonPlanContent(false);
+        }
+    };
+
+    useEffect(() => {
+        loadRepositoryAndLessonPlan();
+    }, [owner, repo, branch, category, lesson, repositories, lessonPlanData, isLoadingLessonPlan, fullLessonPath, navigate]);
+
+    // Parse markdown when content is loaded
+    useEffect(() => {
+        if (markdownContent) {
+            try {
+                const parsedDocument = parseMarkdown(markdownContent);
+                setDocument(parsedDocument);
+            } catch (error) {
+                console.error('Error parsing markdown:', error);
+                // Handle error state
+            }
+        }
+    }, [markdownContent]);
+
+    // Check for stored data on component mount
+    useEffect(() => {
+        // If we already have stored data with content, set the markdown content
+        if (storedRepo && storedLessonPlan && storedLessonPlan.decoded_content) {
+            console.log('Found stored data with content on mount, setting markdown content');
+            setMarkdownContent(storedLessonPlan.decoded_content);
+        }
+    }, []);
+
+    // Show loading state
+    if (loading) {
+        return (
+            <Box sx={{
                 display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              <Stack direction="row" spacing={2} sx={{ opacity: 0.8, color: 'white' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <GitHubIcon fontSize="small" sx={{ mr: 0.5 }} />
-                  <Typography variant="caption" color="inherit">
-                    {`${githubRepoService.getSelectedRepo()?.owner.login}/${githubRepoService.getSelectedRepo()?.name}`}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <AccountTreeIcon fontSize="small" sx={{ mr: 0.5 }} />
-                  <Typography variant="caption" color="inherit">
-                    {githubRepoService.getSelectedBranch() || githubRepoService.getSelectedRepo()?.default_branch || ''}
-                  </Typography>
-                </Box>
-                <Divider orientation="vertical" flexItem sx={{ bgcolor: 'rgba(255,255,255,0.3)' }} />
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <DescriptionIcon fontSize="small" sx={{ mr: 0.5 }} />
-                  <Typography variant="caption" color="inherit">
-                    {lessonPlanService.getSelectedLessonPlan()?.name || ''}
-                  </Typography>
-                </Box>
-              </Stack>
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh'
+            }}>
+                <CircularProgress/>
             </Box>
-          )}
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          {markdownContent && (
-            <GitHubCommitButton 
-              content={markdownContent} 
-              filePath={getCurrentFilename()} 
-              color="inherit"
-              onExport={handleExportMarkdown}
-            />
-          )}
-          <UserMenu />
-        </Box>
-      </StyledAppBar>
+        );
+    }
 
-      <Container maxWidth="lg" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', py: 2 }}>
-        {loading ? (
-          <Container maxWidth="lg" sx={{ mt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh' }}>
-            <CircularProgress size={60} />
-          </Container>
-        ) : error ? (
-          <Alert severity="error" sx={{ mt: 2 }}>
-            <AlertTitle>Error</AlertTitle>
-            {error}
-          </Alert>
-        ) : (
-          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-            {markdownContent !== null && document && (
-              <Paper elevation={3} sx={{ mb: 4 }}>
-                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                  <Tabs
-                    value={tabValue}
-                    onChange={handleTabChange}
-                    aria-label="editor tabs"
-                    variant="scrollable"
-                    scrollButtons="auto"
-                  >
-                    <StyledTab label="General info" icon={<InfoOutlineIcon />} iconPosition="start"  {...a11yProps(0)} />
-                    <StyledTab label="Authors" icon={<AttributionIcon />} iconPosition="start" {...a11yProps(1)} />
-                    <StyledTab label="Learning outcomes" icon={<TrackChangesIcon />} iconPosition="start" {...a11yProps(2)} />
-                    <StyledTab label="Activities" icon={<EventNoteOutlinedIcon />} iconPosition="start" {...a11yProps(3)} />
-                    <StyledTab label="Prerequisites" icon={<ChecklistIcon />} iconPosition="start" {...a11yProps(4)} />
-                    <StyledTab label="Resources" icon={<AttachmentIcon />} iconPosition="start" {...a11yProps(5)} />
-                    <StyledTab label="Content" icon={<SubjectIcon />} iconPosition="start" {...a11yProps(6)} />
-                  </Tabs>
+    // Show error state
+    if (error) {
+        return (
+            <Box sx={{p: 3}}>
+                <Alert severity="error">
+                    <AlertTitle>Error</AlertTitle>
+                    {error}
+                    <Box sx={{mt: 2}}>
+                        <Button variant="contained" onClick={() => navigate('/')}>
+                            Go to Repository Selection
+                        </Button>
+                    </Box>
+                </Alert>
+            </Box>
+        );
+    }
+
+    // Handle markdown content update
+    const handleContentUpdate = (updatedContent: string) => {
+        setMarkdownContent(updatedContent);
+        // Invalidate the lesson plan content query to ensure it's updated when refetched
+        queryClient.setQueryData(['lessonPlanContent', fullLessonPath], (oldData: any) => {
+            if (oldData) {
+                return {
+                    ...oldData,
+                    decoded_content: updatedContent
+                };
+            }
+            return oldData;
+        });
+    };
+
+    const handleExportMarkdown = () => {
+        if (markdownContent) {
+            exportMarkdownFile(markdownContent);
+        }
+    };
+
+    const handleReturnToSelection = () => {
+        // Clear selected repo, branch, and lesson plan in service layer
+        githubRepoService.clearSelectedRepo();
+        githubRepoService.clearSelectedBranch();
+        lessonPlanService.clearSelectedLessonPlan();
+
+        // Reset UI state
+        setMarkdownContent(null);
+        setManualError(null);
+
+        // Invalidate queries to force refetch when returning
+        queryClient.invalidateQueries({queryKey: ['lessonPlanContent']});
+
+        // Navigate to setup page
+        navigate('/');
+    };
+
+    if (loading) {
+        // If we have URL parameters, show a more informative loading message
+        const isDirectNavigation = owner && repo && branch && category && lesson;
+
+        return (
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh'
+            }}>
+                <CircularProgress/>
+                {isDirectNavigation && (
+                    <Typography variant="h6" sx={{mt: 2}}>
+                        Loading editor for {owner}/{repo}/{branch}/{category}/{lesson}...
+                    </Typography>
+                )}
+            </Box>
+        );
+    }
+
+    return (
+        <Box sx={{display: 'flex', flexDirection: 'column', height: '100vh'}}>
+            <StyledAppBar>
+                <Box sx={{display: 'flex', flexDirection: 'column'}}>
+                    <Typography variant="h6" component="div" color="white">
+                        Lesson Plan Editor
+                    </Typography>
+                    {githubRepoService.getSelectedRepo() && lessonPlanService.getSelectedLessonPlan() && (
+                        <Box
+                            component="button"
+                            onClick={handleReturnToSelection}
+                            sx={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                p: 0,
+                                display: 'flex',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <Stack direction="row" spacing={2} sx={{opacity: 0.8, color: 'white'}}>
+                                <Box sx={{display: 'flex', alignItems: 'center'}}>
+                                    <GitHubIcon fontSize="small" sx={{mr: 0.5}}/>
+                                    <Typography variant="caption" color="inherit">
+                                        {`${githubRepoService.getSelectedRepo()?.owner.login}/${githubRepoService.getSelectedRepo()?.name}`}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{display: 'flex', alignItems: 'center'}}>
+                                    <AccountTreeIcon fontSize="small" sx={{mr: 0.5}}/>
+                                    <Typography variant="caption" color="inherit">
+                                        {githubRepoService.getSelectedBranch() || githubRepoService.getSelectedRepo()?.default_branch || ''}
+                                    </Typography>
+                                </Box>
+                                <Divider orientation="vertical" flexItem sx={{bgcolor: 'rgba(255,255,255,0.3)'}}/>
+                                <Box sx={{display: 'flex', alignItems: 'center'}}>
+                                    <DescriptionIcon fontSize="small" sx={{mr: 0.5}}/>
+                                    <Typography variant="caption" color="inherit">
+                                        {lessonPlanService.getSelectedLessonPlan()?.name || ''}
+                                    </Typography>
+                                </Box>
+                            </Stack>
+                        </Box>
+                    )}
                 </Box>
-                
-                <TabPanel value={tabValue} index={0}>
-                  <GeneralInfoEditor 
-                    document={document} 
-                    onChange={handleDocumentChange} 
-                  />
-                </TabPanel>
-                
-                <TabPanel value={tabValue} index={1}>
-                  <AuthorsEditor 
-                    document={document} 
-                    onChange={handleDocumentChange} 
-                  />
-                </TabPanel>
-                
-                <TabPanel value={tabValue} index={2}>
-                  <LearningOutcomesEditor 
-                    document={document} 
-                    onChange={handleDocumentChange} 
-                  />
-                </TabPanel>
-                
-                <TabPanel value={tabValue} index={3}>
-                  <ActivitiesEditor 
-                    document={document} 
-                    onChange={handleDocumentChange} 
-                  />
-                </TabPanel>
-                
-                <TabPanel value={tabValue} index={4}>
-                  <PrerequisitesEditor 
-                    document={document} 
-                    onChange={handleDocumentChange} 
-                  />
-                </TabPanel>
-                
-                <TabPanel value={tabValue} index={5}>
-                  <ResourcesEditor 
-                    document={document} 
-                    onChange={handleDocumentChange} 
-                  />
-                </TabPanel>
-                
-                <TabPanel value={tabValue} index={6}>
-                  <ContentEditor 
-                    document={document} 
-                    onChange={handleDocumentChange} 
-                  />
-                </TabPanel>
-              </Paper>
-            )}
-          </Box>
-        )}
-      </Container>
-    </Box>
-  );
+                <Box sx={{display: 'flex', gap: 1, alignItems: 'center'}}>
+                    {markdownContent && (
+                        <GitHubCommitButton
+                            content={markdownContent}
+                            filePath={getCurrentFilename()}
+                            color="inherit"
+                            onExport={handleExportMarkdown}
+                        />
+                    )}
+                    <UserMenu/>
+                </Box>
+            </StyledAppBar>
+
+            <Container maxWidth="lg" sx={{flexGrow: 1, display: 'flex', flexDirection: 'column', py: 2}}>
+                {loading ? (
+                    <Container maxWidth="lg" sx={{
+                        mt: 4,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '80vh'
+                    }}>
+                        <CircularProgress size={60}/>
+                    </Container>
+                ) : error ? (
+                    <Alert severity="error" sx={{mt: 2}}>
+                        <AlertTitle>Error</AlertTitle>
+                        {error}
+                    </Alert>
+                ) : (
+                    <Box sx={{flexGrow: 1, display: 'flex', flexDirection: 'column'}}>
+                        {markdownContent !== null && document && (
+                            <Paper elevation={3} sx={{mb: 4}}>
+                                <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
+                                    <Tabs
+                                        value={tabValue}
+                                        onChange={handleTabChange}
+                                        aria-label="editor tabs"
+                                        variant="scrollable"
+                                        scrollButtons="auto"
+                                    >
+                                        <StyledTab label="General info" icon={<InfoOutlineIcon/>}
+                                                   iconPosition="start"  {...a11yProps(0)} />
+                                        <StyledTab label="Authors" icon={<AttributionIcon/>}
+                                                   iconPosition="start" {...a11yProps(1)} />
+                                        <StyledTab label="Learning outcomes" icon={<TrackChangesIcon/>}
+                                                   iconPosition="start" {...a11yProps(2)} />
+                                        <StyledTab label="Activities" icon={<EventNoteOutlinedIcon/>}
+                                                   iconPosition="start" {...a11yProps(3)} />
+                                        <StyledTab label="Prerequisites" icon={<ChecklistIcon/>}
+                                                   iconPosition="start" {...a11yProps(4)} />
+                                        <StyledTab label="Resources" icon={<AttachmentIcon/>}
+                                                   iconPosition="start" {...a11yProps(5)} />
+                                        <StyledTab label="Content" icon={<SubjectIcon/>}
+                                                   iconPosition="start" {...a11yProps(6)} />
+                                    </Tabs>
+                                </Box>
+
+                                <TabPanel value={tabValue} index={0}>
+                                    <GeneralInfoEditor
+                                        document={document}
+                                        onChange={handleDocumentChange}
+                                    />
+                                </TabPanel>
+
+                                <TabPanel value={tabValue} index={1}>
+                                    <AuthorsEditor
+                                        document={document}
+                                        onChange={handleDocumentChange}
+                                    />
+                                </TabPanel>
+
+                                <TabPanel value={tabValue} index={2}>
+                                    <LearningOutcomesEditor
+                                        document={document}
+                                        onChange={handleDocumentChange}
+                                    />
+                                </TabPanel>
+
+                                <TabPanel value={tabValue} index={3}>
+                                    <ActivitiesEditor
+                                        document={document}
+                                        onChange={handleDocumentChange}
+                                    />
+                                </TabPanel>
+
+                                <TabPanel value={tabValue} index={4}>
+                                    <PrerequisitesEditor
+                                        document={document}
+                                        onChange={handleDocumentChange}
+                                    />
+                                </TabPanel>
+
+                                <TabPanel value={tabValue} index={5}>
+                                    <ResourcesEditor
+                                        document={document}
+                                        onChange={handleDocumentChange}
+                                    />
+                                </TabPanel>
+
+                                <TabPanel value={tabValue} index={6}>
+                                    <ContentEditor
+                                        document={document}
+                                        onChange={handleDocumentChange}
+                                    />
+                                </TabPanel>
+                            </Paper>
+                        )}
+                    </Box>
+                )}
+            </Container>
+        </Box>
+    );
 };
 
 export default EditorPage;

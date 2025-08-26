@@ -7,12 +7,12 @@ import {FairMarkdownDocument} from '../types';
  * @returns Structured document object
  */
 export const parseMarkdown = (markdown: string): FairMarkdownDocument => {
-  const { data, content } = matter(markdown);
-  
-  return {
-    ...data,
-    content: content.trim(),
-  } as FairMarkdownDocument;
+    const {data, content} = matter(markdown);
+
+    return {
+        ...data,
+        content: content.trim(),
+    } as FairMarkdownDocument;
 };
 
 /**
@@ -21,7 +21,7 @@ export const parseMarkdown = (markdown: string): FairMarkdownDocument => {
  * @returns Raw markdown content with frontmatter
  */
 export const serializeMarkdown = (document: FairMarkdownDocument): string => {
-  const { content, ...frontmatter } = document;
-  
-  return matter.stringify(content, frontmatter);
+    const {content, ...frontmatter} = document;
+
+    return matter.stringify(content, frontmatter);
 };

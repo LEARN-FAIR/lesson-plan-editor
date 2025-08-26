@@ -37,445 +37,447 @@ import {useLessonPlans} from '../services/lessonPlanQueryHooks';
 import BranchSelector from '../components/BranchSelector';
 
 const steps = [
-  {
-    label: 'Select Repository',
-    description: 'Select a GitHub repository to work with.'
-  },
-  {
-    label: 'Select Branch',
-    description: 'Choose a branch from the repository to load lesson plans from.'
-  },
-  {
-    label: 'Select Lesson Plan',
-    description: 'Choose a lesson plan from the repository to edit.'
-  }
+    {
+        label: 'Select Repository',
+        description: 'Select a GitHub repository to work with.'
+    },
+    {
+        label: 'Select Branch',
+        description: 'Choose a branch from the repository to load lesson plans from.'
+    },
+    {
+        label: 'Select Lesson Plan',
+        description: 'Choose a lesson plan from the repository to edit.'
+    }
 ];
 
 interface SetupStepperProps {
-  onComplete: (repo: Repository, lessonPlan: LessonPlan) => void;
+    onComplete: (repo: Repository, lessonPlan: LessonPlan) => void;
 }
 
-const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
-  const queryClient = useQueryClient();
-  const [activeStep, setActiveStep] = useState<number>(0);
-  const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
-  const [selectedLessonPlan, setSelectedLessonPlan] = useState<LessonPlan | null>(null);
+const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
+    const queryClient = useQueryClient();
+    const [activeStep, setActiveStep] = useState<number>(0);
+    const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
+    const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
+    const [selectedLessonPlan, setSelectedLessonPlan] = useState<LessonPlan | null>(null);
 
-  // Use Repository Context to access repositories
-  const { 
-    repositories = [], 
-    isLoading: loadingRepos,
-    error: repoQueryError
-  } = useRepositories();
-  
-  // Custom error state for repositories
-  const [repoError, setRepoError] = useState<string | null>(null);
-  
-  // Use React Query to fetch lesson plans
-  const {
-    data: lessonPlans = [],
-    isLoading: loadingLessonPlans,
-    error: lessonPlanQueryError
-  } = useLessonPlans();
-  
-  // Custom error state for lesson plans
-  const [lessonPlanError, setLessonPlanError] = useState<string | null>(null);
-  
-  // Other state
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+    // Use Repository Context to access repositories
+    const {
+        repositories = [],
+        isLoading: loadingRepos,
+        error: repoQueryError
+    } = useRepositories();
 
-  useEffect(() => {
-    // Check if there's already a selected repository
-    const repo = githubRepoService.getSelectedRepo();
-    if (repo) {
-      setSelectedRepo(repo);
-    }
+    // Custom error state for repositories
+    const [repoError, setRepoError] = useState<string | null>(null);
 
-    // Check if there's already a selected branch
-    const branch = githubRepoService.getSelectedBranch();
-    if (branch) {
-      setSelectedBranch(branch);
-    }
-    
-    // Set error state if React Query had errors
-    if (repoQueryError) {
-      setRepoError((repoQueryError as Error).message);
-    }
-  }, [repoQueryError]);
+    // Use React Query to fetch lesson plans
+    const {
+        data: lessonPlans = [],
+        isLoading: loadingLessonPlans,
+        error: lessonPlanQueryError
+    } = useLessonPlans();
 
-  // Set up lesson plans when data is loaded
-  useEffect(() => {
-    if (lessonPlans.length > 0) {
-      // If there are categories, expand the first one
-      const categories = groupLessonPlansByCategory(lessonPlans);
-      if (categories.length > 0) {
-        setExpandedCategory(categories[0].category);
-      }
-    }
-    
-    // Set error state if React Query had errors
-    if (lessonPlanQueryError) {
-      setLessonPlanError((lessonPlanQueryError as Error).message);
-    }
-  }, [lessonPlans, lessonPlanQueryError]);
+    // Custom error state for lesson plans
+    const [lessonPlanError, setLessonPlanError] = useState<string | null>(null);
 
-  const handleNext = () => {
-    if (activeStep === 0) {
-      // After repository selection, move to branch selection
-      if (selectedRepo) {
-        setActiveStep(1);
-      }
-    } else if (activeStep === 1) {
-      // After branch selection, move to lesson plan selection
-      if (selectedRepo && selectedBranch) {
-        setActiveStep(2);
-      }
-    } else if (activeStep === 2) {
-      // After lesson plan selection, complete the setup
-      if (selectedRepo && selectedBranch && selectedLessonPlan) {
-        setActiveStep(3);
-        onComplete(selectedRepo, selectedLessonPlan);
-      }
-    }
-  };
+    // Other state
+    const [searchQuery, setSearchQuery] = useState<string>('');
+    const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
-
-  const handleReset = () => {
-    setActiveStep(0);
-    setSelectedRepo(null);
-    setSelectedBranch(null);
-    setSelectedLessonPlan(null);
-    githubRepoService.clearSelectedRepo();
-    githubRepoService.setSelectedBranch(null);
-    lessonPlanService.clearSelectedLessonPlan();
-  };
-
-  const handleRepoSelected = (repo: Repository) => {
-    setSelectedRepo(repo);
-    githubRepoService.setSelectedRepo(repo);
-    // Reset branch and lesson plan when repo changes
-    setSelectedBranch(null);
-    setSelectedLessonPlan(null);
-    // Invalidate lesson plans to ensure they're refetched with the new repo
-    queryClient.invalidateQueries({ queryKey: ['lessonPlans'] });
-  };
-  
-  const handleBranchSelected = (branch: string) => {
-    setSelectedBranch(branch);
-    githubRepoService.setSelectedBranch(branch);
-    // Reset lesson plan when branch changes
-    setSelectedLessonPlan(null);
-    // Invalidate lesson plans to ensure they're refetched with the new branch
-    queryClient.invalidateQueries({ queryKey: ['lessonPlans'] });
-  };
-
-  const handleLessonPlanSelected = (lessonPlan: LessonPlan) => {
-    setSelectedLessonPlan(lessonPlan);
-    lessonPlanService.setSelectedLessonPlan(lessonPlan);
-  };
-
-  // Repository step functions
-  const refreshRepositories = () => {
-    // Invalidate and refetch repositories
-    queryClient.invalidateQueries({ queryKey: ['repositories'] });
-  };
-
-  const handleCreateFork = () => {
-    // Open GitHub fork page in a new tab
-    window.open('https://github.com/elixir-europe-training/ELIXIR-TrP-FAIR-Converge/fork', '_blank');
-
-    // Show a message to the user about refreshing after forking
-    setRepoError('After creating your fork on GitHub, please refresh this page to see your new fork.');
-    
-    // Invalidate repositories query to prompt a refetch
-    queryClient.invalidateQueries({ queryKey: ['repositories'] });
-  };
-
-  // Lesson plan step functions
-  const refreshLessonPlans = () => {
-    // Invalidate and refetch lesson plans
-    queryClient.invalidateQueries({ queryKey: ['lessonPlans'] });
-  };
-
-  // Group lesson plans by category
-  const groupLessonPlansByCategory = (plans: LessonPlan[]) => {
-    const categorizedPlans: { category: string; plans: LessonPlan[] }[] = [];
-    const uncategorizedPlans: LessonPlan[] = [];
-
-    // Group plans by category
-    plans.forEach(plan => {
-      if (plan.category && typeof plan.category === 'object' && plan.category.title) {
-        const categoryTitle = plan.category.title;
-        const existingCategory = categorizedPlans.find(c => c.category === categoryTitle);
-        if (existingCategory) {
-          existingCategory.plans.push(plan);
-        } else {
-          categorizedPlans.push({
-            category: plan.category.title,
-            plans: [plan]
-          });
+    useEffect(() => {
+        // Check if there's already a selected repository
+        const repo = githubRepoService.getSelectedRepo();
+        if (repo) {
+            setSelectedRepo(repo);
         }
-      } else {
-        uncategorizedPlans.push(plan);
-      }
-    });
 
-    // Sort categories by number if available
-    categorizedPlans.sort((a, b) => {
-      // Find plans with matching categories and get their category numbers
-      const planA = plans.find(p => p.category && typeof p.category === 'object' && p.category.title === a.category);
-      const planB = plans.find(p => p.category && typeof p.category === 'object' && p.category.title === b.category);
-      const aNumber = planA?.category?.number || 0;
-      const bNumber = planB?.category?.number || 0;
-      return aNumber - bNumber;
-    });
+        // Check if there's already a selected branch
+        const branch = githubRepoService.getSelectedBranch();
+        if (branch) {
+            setSelectedBranch(branch);
+        }
 
-    // Add uncategorized plans at the end if any
-    if (uncategorizedPlans.length > 0) {
-      categorizedPlans.push({
-        category: 'Uncategorized',
-        plans: uncategorizedPlans
-      });
-    }
+        // Set error state if React Query had errors
+        if (repoQueryError) {
+            setRepoError((repoQueryError as Error).message);
+        }
+    }, [repoQueryError]);
 
-    return categorizedPlans;
-  };
+    // Set up lesson plans when data is loaded
+    useEffect(() => {
+        if (lessonPlans.length > 0) {
+            // If there are categories, expand the first one
+            const categories = groupLessonPlansByCategory(lessonPlans);
+            if (categories.length > 0) {
+                setExpandedCategory(categories[0].category);
+            }
+        }
 
-  // Filter lesson plans based on search query
-  const filterLessonPlans = (plans: LessonPlan[]) => {
-    if (!searchQuery) return plans;
+        // Set error state if React Query had errors
+        if (lessonPlanQueryError) {
+            setLessonPlanError((lessonPlanQueryError as Error).message);
+        }
+    }, [lessonPlans, lessonPlanQueryError]);
 
-    const query = searchQuery.toLowerCase();
-    return plans.filter(plan => {
-      const nameMatch = plan.name.toLowerCase().includes(query);
-      const categoryMatch = plan.category && typeof plan.category === 'object' && plan.category.title ? 
-        plan.category.title.toLowerCase().includes(query) : false;
-      return nameMatch || categoryMatch;
-    });
-  };
+    const handleNext = () => {
+        if (activeStep === 0) {
+            // After repository selection, move to branch selection
+            if (selectedRepo) {
+                setActiveStep(1);
+            }
+        } else if (activeStep === 1) {
+            // After branch selection, move to lesson plan selection
+            if (selectedRepo && selectedBranch) {
+                setActiveStep(2);
+            }
+        } else if (activeStep === 2) {
+            // After lesson plan selection, complete the setup
+            if (selectedRepo && selectedBranch && selectedLessonPlan) {
+                setActiveStep(3);
+                onComplete(selectedRepo, selectedLessonPlan);
+            }
+        }
+    };
 
-  const handleToggleCategory = (category: string) => {
-    setExpandedCategory(expandedCategory === category ? null : category);
-  };
+    const handleBack = () => {
+        setActiveStep((prevActiveStep) => prevActiveStep - 1);
+    };
 
-  return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <Stepper activeStep={activeStep} orientation="vertical">
-          {steps.map((step, index) => (
-            <Step key={step.label}>
-              <StepLabel>
-                <Typography variant="subtitle1">{step.label}</Typography>
-              </StepLabel>
-              <StepContent>
-                <Typography>{step.description}</Typography>
+    const handleReset = () => {
+        setActiveStep(0);
+        setSelectedRepo(null);
+        setSelectedBranch(null);
+        setSelectedLessonPlan(null);
+        githubRepoService.clearSelectedRepo();
+        githubRepoService.setSelectedBranch(null);
+        lessonPlanService.clearSelectedLessonPlan();
+    };
 
-                {/* Repository Selection Step */}
-                {index === 0 && (
-                  <Box sx={{ maxWidth: 600, mt: 2 }}>
-                    {loadingRepos ? (
-                      <Box display="flex" justifyContent="center" my={4}>
-                        <CircularProgress />
-                      </Box>
-                    ) : repoError ? (
-                      <Alert severity="error" sx={{ mt: 2 }}>
-                        {repoError}
-                      </Alert>
-                    ) : (
-                      <>
-                        <List>
-                          {repositories.map((repo: Repository) => (
-                            <ListItem key={repo.id} disablePadding>
-                              <ListItemButton
-                                onClick={() => handleRepoSelected(repo)}
-                                selected={selectedRepo?.id === repo.id}
-                              >
-                                <ListItemAvatar>
-                                  <Avatar src={repo.owner.avatar_url} alt={repo.owner.login} />
-                                </ListItemAvatar>
-                                <ListItemText
-                                  primary={repo.full_name}
-                                />
-                              </ListItemButton>
-                            </ListItem>
-                          ))}
-                        </List>
+    const handleRepoSelected = (repo: Repository) => {
+        setSelectedRepo(repo);
+        githubRepoService.setSelectedRepo(repo);
+        // Reset branch and lesson plan when repo changes
+        setSelectedBranch(null);
+        setSelectedLessonPlan(null);
+        // Invalidate lesson plans to ensure they're refetched with the new repo
+        queryClient.invalidateQueries({queryKey: ['lessonPlans']});
+    };
 
-                        <Button
-                          variant="outlined"
-                          color="primary"
-                          onClick={handleCreateFork}
-                          startIcon={<ForkRightIcon />}
-                          sx={{ mb: 2 }}
-                        >
-                          Fork on GitHub
-                        </Button>
-                        <Typography variant="caption" display="block">
-                          After creating your fork, refresh this page to see it in the list.
+    const handleBranchSelected = (branch: string) => {
+        setSelectedBranch(branch);
+        githubRepoService.setSelectedBranch(branch);
+        // Reset lesson plan when branch changes
+        setSelectedLessonPlan(null);
+        // Invalidate lesson plans to ensure they're refetched with the new branch
+        queryClient.invalidateQueries({queryKey: ['lessonPlans']});
+    };
+
+    const handleLessonPlanSelected = (lessonPlan: LessonPlan) => {
+        setSelectedLessonPlan(lessonPlan);
+        lessonPlanService.setSelectedLessonPlan(lessonPlan);
+    };
+
+    // Repository step functions
+    const refreshRepositories = () => {
+        // Invalidate and refetch repositories
+        queryClient.invalidateQueries({queryKey: ['repositories']});
+    };
+
+    const handleCreateFork = () => {
+        // Open GitHub fork page in a new tab
+        window.open('https://github.com/elixir-europe-training/ELIXIR-TrP-FAIR-Converge/fork', '_blank');
+
+        // Show a message to the user about refreshing after forking
+        setRepoError('After creating your fork on GitHub, please refresh this page to see your new fork.');
+
+        // Invalidate repositories query to prompt a refetch
+        queryClient.invalidateQueries({queryKey: ['repositories']});
+    };
+
+    // Lesson plan step functions
+    const refreshLessonPlans = () => {
+        // Invalidate and refetch lesson plans
+        queryClient.invalidateQueries({queryKey: ['lessonPlans']});
+    };
+
+    // Group lesson plans by category
+    const groupLessonPlansByCategory = (plans: LessonPlan[]) => {
+        const categorizedPlans: { category: string; plans: LessonPlan[] }[] = [];
+        const uncategorizedPlans: LessonPlan[] = [];
+
+        // Group plans by category
+        plans.forEach(plan => {
+            if (plan.category && typeof plan.category === 'object' && plan.category.title) {
+                const categoryTitle = plan.category.title;
+                const existingCategory = categorizedPlans.find(c => c.category === categoryTitle);
+                if (existingCategory) {
+                    existingCategory.plans.push(plan);
+                } else {
+                    categorizedPlans.push({
+                        category: plan.category.title,
+                        plans: [plan]
+                    });
+                }
+            } else {
+                uncategorizedPlans.push(plan);
+            }
+        });
+
+        // Sort categories by number if available
+        categorizedPlans.sort((a, b) => {
+            // Find plans with matching categories and get their category numbers
+            const planA = plans.find(p => p.category && typeof p.category === 'object' && p.category.title === a.category);
+            const planB = plans.find(p => p.category && typeof p.category === 'object' && p.category.title === b.category);
+            const aNumber = planA?.category?.number || 0;
+            const bNumber = planB?.category?.number || 0;
+            return aNumber - bNumber;
+        });
+
+        // Add uncategorized plans at the end if any
+        if (uncategorizedPlans.length > 0) {
+            categorizedPlans.push({
+                category: 'Uncategorized',
+                plans: uncategorizedPlans
+            });
+        }
+
+        return categorizedPlans;
+    };
+
+    // Filter lesson plans based on search query
+    const filterLessonPlans = (plans: LessonPlan[]) => {
+        if (!searchQuery) return plans;
+
+        const query = searchQuery.toLowerCase();
+        return plans.filter(plan => {
+            const nameMatch = plan.name.toLowerCase().includes(query);
+            const categoryMatch = plan.category && typeof plan.category === 'object' && plan.category.title ?
+                plan.category.title.toLowerCase().includes(query) : false;
+            return nameMatch || categoryMatch;
+        });
+    };
+
+    const handleToggleCategory = (category: string) => {
+        setExpandedCategory(expandedCategory === category ? null : category);
+    };
+
+    return (
+        <Container maxWidth="md" sx={{mt: 4}}>
+            <Paper elevation={3} sx={{p: 3}}>
+                <Stepper activeStep={activeStep} orientation="vertical">
+                    {steps.map((step, index) => (
+                        <Step key={step.label}>
+                            <StepLabel>
+                                <Typography variant="subtitle1">{step.label}</Typography>
+                            </StepLabel>
+                            <StepContent>
+                                <Typography>{step.description}</Typography>
+
+                                {/* Repository Selection Step */}
+                                {index === 0 && (
+                                    <Box sx={{maxWidth: 600, mt: 2}}>
+                                        {loadingRepos ? (
+                                            <Box display="flex" justifyContent="center" my={4}>
+                                                <CircularProgress/>
+                                            </Box>
+                                        ) : repoError ? (
+                                            <Alert severity="error" sx={{mt: 2}}>
+                                                {repoError}
+                                            </Alert>
+                                        ) : (
+                                            <>
+                                                <List>
+                                                    {repositories.map((repo: Repository) => (
+                                                        <ListItem key={repo.id} disablePadding>
+                                                            <ListItemButton
+                                                                onClick={() => handleRepoSelected(repo)}
+                                                                selected={selectedRepo?.id === repo.id}
+                                                            >
+                                                                <ListItemAvatar>
+                                                                    <Avatar src={repo.owner.avatar_url}
+                                                                            alt={repo.owner.login}/>
+                                                                </ListItemAvatar>
+                                                                <ListItemText
+                                                                    primary={repo.full_name}
+                                                                />
+                                                            </ListItemButton>
+                                                        </ListItem>
+                                                    ))}
+                                                </List>
+
+                                                <Button
+                                                    variant="outlined"
+                                                    color="primary"
+                                                    onClick={handleCreateFork}
+                                                    startIcon={<ForkRightIcon/>}
+                                                    sx={{mb: 2}}
+                                                >
+                                                    Fork on GitHub
+                                                </Button>
+                                                <Typography variant="caption" display="block">
+                                                    After creating your fork, refresh this page to see it in the list.
+                                                </Typography>
+                                            </>
+                                        )}
+                                    </Box>
+                                )}
+
+                                {/* Branch Selection Step */}
+                                {index === 1 && (
+                                    <Box sx={{mt: 2}}>
+                                        <BranchSelector
+                                            onBranchSelected={(branch) => {
+                                                console.log('Branch selected:', branch);
+                                                setSelectedBranch(branch);
+                                            }}
+                                            onBack={() => handleBack()}
+                                            repoId={selectedRepo?.id} // Pass repo ID to trigger refresh when repo changes
+                                        />
+                                    </Box>
+                                )}
+
+                                {/* Lesson Plan Selection Step */}
+                                {index === 2 && (
+                                    <Box sx={{mt: 2}}>
+                                        {lessonPlanError && (
+                                            <Alert severity="error" sx={{mb: 2}}>
+                                                {lessonPlanError}
+                                            </Alert>
+                                        )}
+
+                                        {loadingLessonPlans ? (
+                                            <Box sx={{display: 'flex', justifyContent: 'center', my: 2}}>
+                                                <CircularProgress/>
+                                            </Box>
+                                        ) : (
+                                            <>
+                                                <TextField
+                                                    fullWidth
+                                                    variant="outlined"
+                                                    placeholder="Search lesson plans..."
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    sx={{mb: 2}}
+                                                    InputProps={{
+                                                        startAdornment: (
+                                                            <InputAdornment position="start">
+                                                                <SearchIcon/>
+                                                            </InputAdornment>
+                                                        ),
+                                                        endAdornment: searchQuery ? (
+                                                            <InputAdornment position="end">
+                                                                <IconButton onClick={() => setSearchQuery('')}
+                                                                            size="small">
+                                                                    ×
+                                                                </IconButton>
+                                                            </InputAdornment>
+                                                        ) : null
+                                                    }}
+                                                />
+
+                                                {groupLessonPlansByCategory(filterLessonPlans(lessonPlans)).map((categoryGroup) => (
+                                                    <Accordion
+                                                        key={categoryGroup.category}
+                                                        expanded={expandedCategory === categoryGroup.category}
+                                                        onChange={() => handleToggleCategory(categoryGroup.category)}
+                                                        sx={{mb: 1}}
+                                                    >
+                                                        <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+                                                            <Typography variant="subtitle1">
+                                                                {categoryGroup.category} ({categoryGroup.plans.length})
+                                                            </Typography>
+                                                        </AccordionSummary>
+                                                        <AccordionDetails sx={{p: 0}}>
+                                                            <List dense>
+                                                                {categoryGroup.plans.map((plan) => (
+                                                                    <ListItem key={plan.path} disablePadding>
+                                                                        <ListItemButton
+                                                                            onClick={() => handleLessonPlanSelected(plan)}
+                                                                            selected={selectedLessonPlan?.path === plan.path}
+                                                                            sx={{
+                                                                                border: selectedLessonPlan?.path === plan.path ? '1px solid #1976d2' : 'none',
+                                                                                borderRadius: 1,
+                                                                                mx: 1,
+                                                                                mb: 0.5
+                                                                            }}
+                                                                        >
+                                                                            <ListItemText
+                                                                                primary={plan.name.replace(/\.md$/, '').replace(/-/g, ' ')}
+                                                                                secondary={plan.path.split('/').slice(0, -1).join('/')}
+                                                                            />
+                                                                        </ListItemButton>
+                                                                    </ListItem>
+                                                                ))}
+                                                            </List>
+                                                        </AccordionDetails>
+                                                    </Accordion>
+                                                ))}
+
+                                                {filterLessonPlans(lessonPlans).length === 0 && (
+                                                    <Alert severity="info" sx={{mt: 2}}>
+                                                        No lesson plans found matching your search.
+                                                    </Alert>
+                                                )}
+                                            </>
+                                        )}
+                                    </Box>
+                                )}
+
+                                <Box sx={{mb: 2, mt: 2}}>
+                                    <div>
+                                        <Button
+                                            variant="contained"
+                                            onClick={handleNext}
+                                            sx={{mt: 1, mr: 1}}
+                                            disabled={index === 0 && !selectedRepo || index === 1 && !selectedBranch || index === 2 && !selectedLessonPlan}
+                                        >
+                                            {index === steps.length - 1 ? 'Finish' : 'Continue'}
+                                        </Button>
+                                        <Button
+                                            disabled={index === 0}
+                                            onClick={handleBack}
+                                            sx={{mt: 1, mr: 1}}
+                                        >
+                                            Back
+                                        </Button>
+                                    </div>
+                                </Box>
+                            </StepContent>
+                        </Step>
+                    ))}
+                </Stepper>
+
+                {activeStep === steps.length && (
+                    <Box sx={{mt: 3}}>
+                        <Typography variant="h6" gutterBottom>
+                            Setup Complete
                         </Typography>
-                      </>
-                    )}
-                  </Box>
+                        <Typography variant="body1" paragraph>
+                            You've selected repository <strong>{selectedRepo?.full_name}</strong> and lesson plan{' '}
+                            <strong>{selectedLessonPlan?.name.replace(/\.md$/, '').replace(/-/g, ' ')}</strong>.
+                        </Typography>
+                        <Typography variant="body1" paragraph>
+                            You can now proceed to the editor or change your selections.
+                        </Typography>
+                        <ButtonGroup variant="outlined" sx={{mt: 2}}>
+                            <Button onClick={() => setActiveStep(0)} sx={{mr: 1}}>
+                                Change Repository
+                            </Button>
+                            <Button onClick={() => setActiveStep(1)} sx={{mr: 1}}>
+                                Change Lesson Plan
+                            </Button>
+                            <Button onClick={handleReset} color="secondary">
+                                Reset All
+                            </Button>
+                        </ButtonGroup>
+                    </Box>
                 )}
-
-                {/* Branch Selection Step */}
-                {index === 1 && (
-                  <Box sx={{ mt: 2 }}>
-                    <BranchSelector 
-                      onBranchSelected={(branch) => {
-                        console.log('Branch selected:', branch);
-                        setSelectedBranch(branch);
-                      }}
-                      onBack={() => handleBack()}
-                      repoId={selectedRepo?.id} // Pass repo ID to trigger refresh when repo changes
-                    />
-                  </Box>
-                )}
-
-                {/* Lesson Plan Selection Step */}
-                {index === 2 && (
-                  <Box sx={{ mt: 2 }}>
-                    {lessonPlanError && (
-                      <Alert severity="error" sx={{ mb: 2 }}>
-                        {lessonPlanError}
-                      </Alert>
-                    )}
-
-                    {loadingLessonPlans ? (
-                      <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                        <CircularProgress />
-                      </Box>
-                    ) : (
-                      <>
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          placeholder="Search lesson plans..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          sx={{ mb: 2 }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <SearchIcon />
-                              </InputAdornment>
-                            ),
-                            endAdornment: searchQuery ? (
-                              <InputAdornment position="end">
-                                <IconButton onClick={() => setSearchQuery('')} size="small">
-                                  ×
-                                </IconButton>
-                              </InputAdornment>
-                            ) : null
-                          }}
-                        />
-
-                        {groupLessonPlansByCategory(filterLessonPlans(lessonPlans)).map((categoryGroup) => (
-                          <Accordion
-                            key={categoryGroup.category}
-                            expanded={expandedCategory === categoryGroup.category}
-                            onChange={() => handleToggleCategory(categoryGroup.category)}
-                            sx={{ mb: 1 }}
-                          >
-                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                              <Typography variant="subtitle1">
-                                {categoryGroup.category} ({categoryGroup.plans.length})
-                              </Typography>
-                            </AccordionSummary>
-                            <AccordionDetails sx={{ p: 0 }}>
-                              <List dense>
-                                {categoryGroup.plans.map((plan) => (
-                                  <ListItem key={plan.path} disablePadding>
-                                    <ListItemButton
-                                      onClick={() => handleLessonPlanSelected(plan)}
-                                      selected={selectedLessonPlan?.path === plan.path}
-                                      sx={{
-                                        border: selectedLessonPlan?.path === plan.path ? '1px solid #1976d2' : 'none',
-                                        borderRadius: 1,
-                                        mx: 1,
-                                        mb: 0.5
-                                      }}
-                                    >
-                                      <ListItemText
-                                        primary={plan.name.replace(/\.md$/, '').replace(/-/g, ' ')}
-                                        secondary={plan.path.split('/').slice(0, -1).join('/')}
-                                      />
-                                    </ListItemButton>
-                                  </ListItem>
-                                ))}
-                              </List>
-                            </AccordionDetails>
-                          </Accordion>
-                        ))}
-
-                        {filterLessonPlans(lessonPlans).length === 0 && (
-                          <Alert severity="info" sx={{ mt: 2 }}>
-                            No lesson plans found matching your search.
-                          </Alert>
-                        )}
-                      </>
-                    )}
-                  </Box>
-                )}
-
-                <Box sx={{ mb: 2, mt: 2 }}>
-                  <div>
-                    <Button
-                      variant="contained"
-                      onClick={handleNext}
-                      sx={{ mt: 1, mr: 1 }}
-                      disabled={index === 0 && !selectedRepo || index === 1 && !selectedBranch || index === 2 && !selectedLessonPlan}
-                    >
-                      {index === steps.length - 1 ? 'Finish' : 'Continue'}
-                    </Button>
-                    <Button
-                      disabled={index === 0}
-                      onClick={handleBack}
-                      sx={{ mt: 1, mr: 1 }}
-                    >
-                      Back
-                    </Button>
-                  </div>
-                </Box>
-              </StepContent>
-            </Step>
-          ))}
-        </Stepper>
-
-        {activeStep === steps.length && (
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Setup Complete
-            </Typography>
-            <Typography variant="body1" paragraph>
-              You've selected repository <strong>{selectedRepo?.full_name}</strong> and lesson plan{' '}
-              <strong>{selectedLessonPlan?.name.replace(/\.md$/, '').replace(/-/g, ' ')}</strong>.
-            </Typography>
-            <Typography variant="body1" paragraph>
-              You can now proceed to the editor or change your selections.
-            </Typography>
-            <ButtonGroup variant="outlined" sx={{ mt: 2 }}>
-              <Button onClick={() => setActiveStep(0)} sx={{ mr: 1 }}>
-                Change Repository
-              </Button>
-              <Button onClick={() => setActiveStep(1)} sx={{ mr: 1 }}>
-                Change Lesson Plan
-              </Button>
-              <Button onClick={handleReset} color="secondary">
-                Reset All
-              </Button>
-            </ButtonGroup>
-          </Box>
-        )}
-      </Paper>
-    </Container>
-  );
+            </Paper>
+        </Container>
+    );
 };
 
 export default SetupStepper;

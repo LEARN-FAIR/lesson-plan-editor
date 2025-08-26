@@ -9,99 +9,99 @@ import {Activity} from '../../types';
 import ReactMarkdown from 'react-markdown';
 
 interface SortableActivityRowProps {
-  activity: Activity;
-  id: string;
-  index: number;
-  onEdit: (activity: Activity, index: number) => void;
-  onRemove: (index: number) => void;
-  learningOutcomes?: Record<string, { outcome: string }>;
+    activity: Activity;
+    id: string;
+    index: number;
+    onEdit: (activity: Activity, index: number) => void;
+    onRemove: (index: number) => void;
+    learningOutcomes?: Record<string, { outcome: string }>;
 }
 
-const SortableActivityRow: React.FC<SortableActivityRowProps> = ({ 
-  activity, 
-  id, 
-  index, 
-  onEdit, 
-  onRemove,
-  learningOutcomes = {}
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id });
+const SortableActivityRow: React.FC<SortableActivityRowProps> = ({
+                                                                     activity,
+                                                                     id,
+                                                                     index,
+                                                                     onEdit,
+                                                                     onRemove,
+                                                                     learningOutcomes = {}
+                                                                 }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({id});
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    cursor: isDragging ? 'grabbing' : 'default',
-    backgroundColor: isDragging ? '#f5f5f5' : 'transparent'
-  };
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        cursor: isDragging ? 'grabbing' : 'default',
+        backgroundColor: isDragging ? '#f5f5f5' : 'transparent'
+    };
 
-  return (
-    <TableRow 
-      ref={setNodeRef} 
-      style={style}
-      hover
-    >
-      <TableCell padding="none">
-        <IconButton 
-          size="small" 
-          {...attributes} 
-          {...listeners}
-          sx={{ cursor: 'grab' }}
+    return (
+        <TableRow
+            ref={setNodeRef}
+            style={style}
+            hover
         >
-          <DragIndicatorIcon fontSize="small" />
-        </IconButton>
-      </TableCell>
-      <TableCell>
-        {activity.learning_outcome ? (
-          <Tooltip 
-            title={learningOutcomes?.[String(activity.learning_outcome)]?.outcome || 'No description available'}
-            arrow
-            placement="top"
-          >
-            <Box component="span" sx={{ cursor: 'help' }}>
-              {activity.learning_outcome}
-            </Box>
-          </Tooltip>
-        ) : ('')}
-      </TableCell>
-      <TableCell sx={{ p: 1 }}>
-        <Box sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-          <ReactMarkdown>
-            {typeof activity.activities === 'string' 
-              ? activity.activities 
-              : activity.activities.join("\n")}
-          </ReactMarkdown>
-        </Box>
-      </TableCell>
-      <TableCell>{activity.time}</TableCell>
-      <TableCell>{activity.type}</TableCell>
-      <TableCell>{activity.level}</TableCell>
-      <TableCell align="right">
-        <IconButton 
-          size="small" 
-          color="primary"
-          onClick={() => onEdit(activity, index)}
-          sx={{ mr: 1 }}
-        >
-          <EditIcon fontSize="small" />
-        </IconButton>
-        <IconButton 
-          size="small" 
-          color="error"
-          onClick={() => onRemove(index)}
-        >
-          <DeleteIcon fontSize="small" />
-        </IconButton>
-      </TableCell>
-    </TableRow>
-  );
+            <TableCell padding="none">
+                <IconButton
+                    size="small"
+                    {...attributes}
+                    {...listeners}
+                    sx={{cursor: 'grab'}}
+                >
+                    <DragIndicatorIcon fontSize="small"/>
+                </IconButton>
+            </TableCell>
+            <TableCell>
+                {activity.learning_outcome ? (
+                    <Tooltip
+                        title={learningOutcomes?.[String(activity.learning_outcome)]?.outcome || 'No description available'}
+                        arrow
+                        placement="top"
+                    >
+                        <Box component="span" sx={{cursor: 'help'}}>
+                            {activity.learning_outcome}
+                        </Box>
+                    </Tooltip>
+                ) : ('')}
+            </TableCell>
+            <TableCell sx={{p: 1}}>
+                <Box sx={{whiteSpace: 'normal', wordBreak: 'break-word'}}>
+                    <ReactMarkdown>
+                        {typeof activity.activities === 'string'
+                            ? activity.activities
+                            : activity.activities.join("\n")}
+                    </ReactMarkdown>
+                </Box>
+            </TableCell>
+            <TableCell>{activity.time}</TableCell>
+            <TableCell>{activity.type}</TableCell>
+            <TableCell>{activity.level}</TableCell>
+            <TableCell align="right">
+                <IconButton
+                    size="small"
+                    color="primary"
+                    onClick={() => onEdit(activity, index)}
+                    sx={{mr: 1}}
+                >
+                    <EditIcon fontSize="small"/>
+                </IconButton>
+                <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => onRemove(index)}
+                >
+                    <DeleteIcon fontSize="small"/>
+                </IconButton>
+            </TableCell>
+        </TableRow>
+    );
 };
 
 export default SortableActivityRow;

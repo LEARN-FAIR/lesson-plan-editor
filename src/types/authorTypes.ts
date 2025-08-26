@@ -1,4 +1,4 @@
 export interface AuthorData {
-  name: string;
-  orcid: string;
+    name: string;
+    orcid: string;
 }

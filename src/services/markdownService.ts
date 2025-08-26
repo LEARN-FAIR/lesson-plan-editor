@@ -10,18 +10,18 @@ export const DEFAULT_FILENAME = '1-why-fair.md';
  * @returns Promise with the markdown content
  */
 export const loadMarkdownFile = async (): Promise<string> => {
-  try {
-    const response = await fetch('/1-why-fair.md');
-    
-    if (!response.ok) {
-      throw new Error(`Failed to load markdown: ${response.status} ${response.statusText}`);
+    try {
+        const response = await fetch('/1-why-fair.md');
+
+        if (!response.ok) {
+            throw new Error(`Failed to load markdown: ${response.status} ${response.statusText}`);
+        }
+
+        return response.text();
+    } catch (error) {
+        console.error('Error loading markdown:', error);
+        throw error;
     }
-    
-    return response.text();
-  } catch (error) {
-    console.error('Error loading markdown:', error);
-    throw error;
-  }
 };
 
 /**
@@ -30,36 +30,36 @@ export const loadMarkdownFile = async (): Promise<string> => {
  * @param filename Optional filename override for the download
  */
 export const exportMarkdownFile = (content: string, filename?: string): void => {
-  // Import here to avoid circular dependency
-  const lessonPlanService = require('./lessonPlanService').default;
-  
-  // Get the selected lesson plan and use its path if available
-  const selectedLessonPlan = lessonPlanService.getSelectedLessonPlan();
-  
-  // Extract the actual filename from the path (get the last part after the last slash)
-  let downloadFilename = DEFAULT_FILENAME;
-  
-  if (selectedLessonPlan && selectedLessonPlan.path) {
-    // Extract just the filename from the path
-    const pathParts = selectedLessonPlan.path.split('/');
-    downloadFilename = pathParts[pathParts.length - 1];
-  }
-  
-  // Use provided filename if specified, otherwise use the extracted filename
-  const finalFilename = filename || downloadFilename;
-  
-  const blob = new Blob([content], { type: 'text/markdown' });
-  const url = URL.createObjectURL(blob);
-  
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = finalFilename;
-  document.body.appendChild(a);
-  a.click();
-  
-  // Clean up
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+    // Import here to avoid circular dependency
+    const lessonPlanService = require('./lessonPlanService').default;
+
+    // Get the selected lesson plan and use its path if available
+    const selectedLessonPlan = lessonPlanService.getSelectedLessonPlan();
+
+    // Extract the actual filename from the path (get the last part after the last slash)
+    let downloadFilename = DEFAULT_FILENAME;
+
+    if (selectedLessonPlan && selectedLessonPlan.path) {
+        // Extract just the filename from the path
+        const pathParts = selectedLessonPlan.path.split('/');
+        downloadFilename = pathParts[pathParts.length - 1];
+    }
+
+    // Use provided filename if specified, otherwise use the extracted filename
+    const finalFilename = filename || downloadFilename;
+
+    const blob = new Blob([content], {type: 'text/markdown'});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = finalFilename;
+    document.body.appendChild(a);
+    a.click();
+
+    // Clean up
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 };
 
 /**
@@ -67,15 +67,15 @@ export const exportMarkdownFile = (content: string, filename?: string): void => 
  * @returns The current filename or path from the selected lesson plan
  */
 export const getCurrentFilename = (): string => {
-  // Import here to avoid circular dependency
-  const lessonPlanService = require('./lessonPlanService').default;
-  
-  // Get the selected lesson plan and use its path if available
-  const selectedLessonPlan = lessonPlanService.getSelectedLessonPlan();
-  if (selectedLessonPlan && selectedLessonPlan.path) {
-    return selectedLessonPlan.path;
-  }
-  
-  // Fallback to default filename if no lesson plan is selected
-  return DEFAULT_FILENAME;
+    // Import here to avoid circular dependency
+    const lessonPlanService = require('./lessonPlanService').default;
+
+    // Get the selected lesson plan and use its path if available
+    const selectedLessonPlan = lessonPlanService.getSelectedLessonPlan();
+    if (selectedLessonPlan && selectedLessonPlan.path) {
+        return selectedLessonPlan.path;
+    }
+
+    // Fallback to default filename if no lesson plan is selected
+    return DEFAULT_FILENAME;
 };

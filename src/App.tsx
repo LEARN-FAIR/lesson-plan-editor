@@ -18,43 +18,43 @@ import {AuthProvider} from './contexts/AuthContext';
 import {RepositoryProvider} from './contexts/RepositoryContext';
 
 function App() {
-  return (
-    <ThemeProvider theme={theme}>
-      <AuthProvider>
-        <RepositoryProvider>
-          <Router>
-            <Layout>
-              <CssBaseline />
-              <Routes>
-              {/* Login Page Route */}
-              <Route path="/login" element={<LoginPage />} />
-              
-              {/* Setup Page Route */}
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <SetupPage />
-                </ProtectedRoute>
-              } />
-              
-              {/* Editor Page Route */}
-              <Route path="/editor/:owner/:repo/:branch/:category/:lesson" element={
-                <ProtectedRoute>
-                  <EditorPage />
-                </ProtectedRoute>
-              } />
-              
-              {/* GitHub OAuth Callback */}
-              <Route path="/github-callback" element={<GitHubCallback />} />
-              
-              {/* Catch-all redirect */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Layout>
-        </Router>
-        </RepositoryProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  );
+    return (
+        <ThemeProvider theme={theme}>
+            <AuthProvider>
+                <RepositoryProvider>
+                    <Router>
+                        <Layout>
+                            <CssBaseline/>
+                            <Routes>
+                                {/* Login Page Route */}
+                                <Route path="/login" element={<LoginPage/>}/>
+
+                                {/* Setup Page Route */}
+                                <Route path="/" element={
+                                    <ProtectedRoute>
+                                        <SetupPage/>
+                                    </ProtectedRoute>
+                                }/>
+
+                                {/* Editor Page Route */}
+                                <Route path="/editor/:owner/:repo/:branch/:category/:lesson" element={
+                                    <ProtectedRoute>
+                                        <EditorPage/>
+                                    </ProtectedRoute>
+                                }/>
+
+                                {/* GitHub OAuth Callback */}
+                                <Route path="/github-callback" element={<GitHubCallback/>}/>
+
+                                {/* Catch-all redirect */}
+                                <Route path="*" element={<Navigate to="/" replace/>}/>
+                            </Routes>
+                        </Layout>
+                    </Router>
+                </RepositoryProvider>
+            </AuthProvider>
+        </ThemeProvider>
+    );
 }
 
 export default App;

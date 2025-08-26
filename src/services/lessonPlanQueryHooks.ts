@@ -8,12 +8,12 @@ import githubRepoService from './githubRepoService';
  * @returns Query result with lesson plan content
  */
 export const useLessonPlanContent = (filePath: string) => {
-  return useQuery<LessonPlan, Error>({
-    queryKey: ['lessonPlanContent', filePath],
-    queryFn: () => lessonPlanService.getLessonPlan(filePath),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !!filePath, // Only fetch when filePath is provided
-  });
+    return useQuery<LessonPlan, Error>({
+        queryKey: ['lessonPlanContent', filePath],
+        queryFn: () => lessonPlanService.getLessonPlan(filePath),
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        enabled: !!filePath, // Only fetch when filePath is provided
+    });
 };
 
 /**
@@ -21,21 +21,21 @@ export const useLessonPlanContent = (filePath: string) => {
  * @returns Query result with all lesson plans
  */
 export const useLessonPlans = () => {
-  // Check if a repository is selected
-  const hasRepo = githubRepoService.hasSelectedRepo();
-  const selectedRepo = githubRepoService.getSelectedRepo();
-  const selectedBranch = githubRepoService.getSelectedBranch();
-  
-  return useQuery<LessonPlan[], Error>({
-    queryKey: ['lessonPlans', selectedRepo?.full_name, selectedBranch],
-    queryFn: () => {
-      if (!hasRepo) {
-        // Return empty array instead of throwing an error
-        return Promise.resolve([]);
-      }
-      return lessonPlanService.getLessonPlans();
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !!localStorage.getItem('github_oauth_token'), // Only run if authenticated
-  });
+    // Check if a repository is selected
+    const hasRepo = githubRepoService.hasSelectedRepo();
+    const selectedRepo = githubRepoService.getSelectedRepo();
+    const selectedBranch = githubRepoService.getSelectedBranch();
+
+    return useQuery<LessonPlan[], Error>({
+        queryKey: ['lessonPlans', selectedRepo?.full_name, selectedBranch],
+        queryFn: () => {
+            if (!hasRepo) {
+                // Return empty array instead of throwing an error
+                return Promise.resolve([]);
+            }
+            return lessonPlanService.getLessonPlans();
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        enabled: !!localStorage.getItem('github_oauth_token'), // Only run if authenticated
+    });
 };
