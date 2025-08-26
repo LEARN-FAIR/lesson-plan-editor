@@ -8,7 +8,6 @@ import {
   markdownShortcutPlugin,
   linkPlugin,
   tablePlugin,
-  codeBlockPlugin,
   frontmatterPlugin,
   imagePlugin,
   diffSourcePlugin,
@@ -21,7 +20,6 @@ import {
   CreateLink,
   InsertTable,
   InsertThematicBreak,
-  InsertCodeBlock,
   DiffSourceToggleWrapper
 } from '@mdxeditor/editor';
 import '@mdxeditor/editor/style.css';
@@ -69,7 +67,6 @@ const MdxEditorComponent: React.FC<MdxEditorComponentProps> = ({
           markdownShortcutPlugin(),
           linkPlugin(),
           tablePlugin(),
-          codeBlockPlugin(),
           frontmatterPlugin(),
           imagePlugin(),
           ...(showDiffToggle ? [diffSourcePlugin({ viewMode: 'rich-text' })] : []),
@@ -84,7 +81,6 @@ const MdxEditorComponent: React.FC<MdxEditorComponentProps> = ({
                 <CreateLink />
                 <InsertTable />
                 <InsertThematicBreak />
-                <InsertCodeBlock />
               </>
             )
           })] : [])

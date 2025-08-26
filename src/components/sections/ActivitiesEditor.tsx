@@ -45,6 +45,7 @@ interface ActivitySectionProps {
   icon: React.ReactNode;
   section: 'before' | 'during' | 'after';
   activities: Activity[];
+  learningOutcomes: Record<string, { outcome: string }>;
   onAddActivity: (section: 'before' | 'during' | 'after') => void;
   onEditActivity: (activity: Activity, index: number, section: 'before' | 'during' | 'after') => void;
   onRemoveActivity: (section: 'before' | 'during' | 'after', index: number) => void;
@@ -52,7 +53,7 @@ interface ActivitySectionProps {
 }
 
 function ActivitySection(props: ActivitySectionProps) {
-  const { title, icon, section, activities, onAddActivity, onEditActivity, onRemoveActivity, onReorderActivities } = props;
+  const { title, icon, section, activities, learningOutcomes, onAddActivity, onEditActivity, onRemoveActivity, onReorderActivities } = props;
   
   // Set up sensors for drag and drop
   const sensors = useSensors(
@@ -131,6 +132,7 @@ function ActivitySection(props: ActivitySectionProps) {
                       id={`${section}-${index}`}
                       activity={activity}
                       index={index}
+                      learningOutcomes={learningOutcomes}
                       onEdit={(activity, index) => onEditActivity(activity, index, section)}
                       onRemove={(index) => onRemoveActivity(section, index)}
                     />
@@ -223,6 +225,7 @@ const ActivitiesEditor: React.FC<ActivitiesEditorProps> = ({ document, onChange 
         icon={<RestoreIcon color="primary" />}
         section="before"
         activities={document.activities?.before || []}
+        learningOutcomes={document.learning_outcomes || {}}
         onAddActivity={handleOpenAddModal}
         onEditActivity={handleOpenEditModal}
         onRemoveActivity={handleRemoveActivity}
@@ -234,6 +237,7 @@ const ActivitiesEditor: React.FC<ActivitiesEditorProps> = ({ document, onChange 
         icon={<UpdateIcon  color="primary" />}
         section="during"
         activities={document.activities?.during || []}
+        learningOutcomes={document.learning_outcomes || {}}
         onAddActivity={handleOpenAddModal}
         onEditActivity={handleOpenEditModal}
         onRemoveActivity={handleRemoveActivity}
@@ -245,6 +249,7 @@ const ActivitiesEditor: React.FC<ActivitiesEditorProps> = ({ document, onChange 
         icon={<UpdateIcon color="primary"/>}
         section="after"
         activities={document.activities?.after || []}
+        learningOutcomes={document.learning_outcomes || {}}
         onAddActivity={handleOpenAddModal}
         onEditActivity={handleOpenEditModal}
         onRemoveActivity={handleRemoveActivity}

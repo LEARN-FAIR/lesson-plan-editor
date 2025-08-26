@@ -1,11 +1,11 @@
 import React from 'react';
-import { TableRow, TableCell, IconButton, Box } from '@mui/material';
+import { TableRow, TableCell, IconButton, Box, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Activity } from '../../types';
+import { Activity, FairMarkdownDocument } from '../../types';
 import ReactMarkdown from 'react-markdown';
 
 interface SortableActivityRowProps {
@@ -14,6 +14,7 @@ interface SortableActivityRowProps {
   index: number;
   onEdit: (activity: Activity, index: number) => void;
   onRemove: (index: number) => void;
+  learningOutcomes?: Record<string, { outcome: string }>;
 }
 
 const SortableActivityRow: React.FC<SortableActivityRowProps> = ({ 
@@ -21,7 +22,8 @@ const SortableActivityRow: React.FC<SortableActivityRowProps> = ({
   id, 
   index, 
   onEdit, 
-  onRemove 
+  onRemove,
+  learningOutcomes = {}
 }) => {
   const {
     attributes,
@@ -56,7 +58,19 @@ const SortableActivityRow: React.FC<SortableActivityRowProps> = ({
           <DragIndicatorIcon fontSize="small" />
         </IconButton>
       </TableCell>
-      <TableCell>{activity.learning_outcome || ''}</TableCell>
+      <TableCell>
+        {activity.learning_outcome ? (
+          <Tooltip 
+            title={learningOutcomes?.[String(activity.learning_outcome)]?.outcome || 'No description available'}
+            arrow
+            placement="top"
+          >
+            <Box component="span" sx={{ cursor: 'help' }}>
+              {activity.learning_outcome}
+            </Box>
+          </Tooltip>
+        ) : ('')}
+      </TableCell>
       <TableCell sx={{ p: 1 }}>
         <Box sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
           <ReactMarkdown>

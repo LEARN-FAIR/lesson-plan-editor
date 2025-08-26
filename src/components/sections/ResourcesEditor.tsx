@@ -151,13 +151,13 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
 
   const handleSaveResource = () => {
     // Validate required fields
-    if (!formData.title || !formData.url) {
+    if (!formData.title || (!formData.url && !formData.doi)) {
       return;
     }
 
     const newResource: Resource = {
       title: formData.title,
-      url: formData.url,
+      ...(formData.url && { url: formData.url }),
       ...(formData.author && { author: formData.author }),
       ...(formData.doi && { doi: formData.doi }),
       ...(formData.additionalInformation && { additionalInformation: formData.additionalInformation })
@@ -231,17 +231,22 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
                         <TableCell>{resource.title}</TableCell>
                         <TableCell>{resource.author || '-'}</TableCell>
                         <TableCell sx={{ overflow: 'hidden' }}>
-                          <Tooltip title={resource.url} placement="top">
-                            <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {shortenText(resource.url, 30)}
-                            </Box>
-                          </Tooltip>
+                          {resource.url && (
+                            <Tooltip title={resource.url} placement="top">
+                              <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {shortenText(resource.url, 30)}
+                              </Box>
+                            </Tooltip>
+                          )}
                           {resource.doi && (
                             <Tooltip title={`DOI: ${resource.doi}`} placement="top">
                               <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {shortenText(resource.doi, 30)}
+                                {resource.doi.startsWith('DOI: ') ? shortenText(resource.doi, 30) : shortenText(`DOI: ${resource.doi}`, 30)}
                               </Box>
                             </Tooltip>
+                          )}
+                          {!resource.url && !resource.doi && (
+                            <Box component="span" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>-</Box>
                           )}
                         </TableCell>
                         <TableCell align="right">
@@ -296,16 +301,19 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
             fullWidth
             margin="normal"
             label="URL"
-            required
-            value={formData.url}
+            required={!formData.doi}
+            value={formData.url || ''}
             onChange={handleFormChange('url')}
+            helperText="Either URL or DOI is required"
           />
           <TextField
             fullWidth
             margin="normal"
-            label="DOI (optional)"
+            label="DOI"
+            required={!formData.url}
             value={formData.doi || ''}
             onChange={handleFormChange('doi')}
+            helperText="Either URL or DOI is required"
           />
           <TextField
             fullWidth

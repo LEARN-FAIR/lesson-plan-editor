@@ -26,7 +26,7 @@ export interface Activity {
 export interface Resource {
   title: string;
   author?: string;
-  url: string;
+  url?: string;
   doi?: string;
   additionalInformation?: string;
 }
