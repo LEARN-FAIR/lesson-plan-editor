@@ -91,11 +91,16 @@ const GitHubCallback: React.FC = () => {
           const sessionRedirectUrl = sessionStorage.getItem('redirect_url');
           console.log('Session storage redirect URL at redirect time:', sessionRedirectUrl);
           
-          const finalRedirectUrl = serverRedirectUrl || redirectUrl || sessionRedirectUrl || '/';
+          // If we have a complex editor URL in session storage, prioritize it
+          const isEditorUrl = sessionRedirectUrl && sessionRedirectUrl.startsWith('/edit/');
+          
+          // Always prioritize session storage for authenticated users
+          const finalRedirectUrl = sessionRedirectUrl || serverRedirectUrl || redirectUrl || '/';
           console.log('Final redirect URL decision:', { 
             serverRedirectUrl, 
             redirectUrl,
             sessionRedirectUrl,
+            isEditorUrl,
             finalRedirectUrl 
           });
           

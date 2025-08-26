@@ -81,23 +81,22 @@ const EditorPage: React.FC = () => {
     if (owner && repo && branch && category && lesson) {
       // Check if we're authenticated
       if (!githubService.isAuthenticated()) {
+        console.log('Not authenticated, storing current URL for redirect after login');
+        // Store the current URL for redirect after login
+        const currentUrl = `/edit/${owner}/${repo}/${branch}/${category}/${lesson}`;
+        sessionStorage.setItem('redirect_url', currentUrl);
         setManualError('Not authenticated with GitHub. Please log in.');
         return;
       }
       
-      // Find and set the repository from the React Query data
-      const selectedRepo = repositories.find(r => 
-        r.owner.login.toLowerCase() === owner.toLowerCase() && 
-        r.name.toLowerCase() === repo.toLowerCase()
-      );
-      
+      // Repository is already set by RepositoryLoader
+      // Just verify that we have a selected repository
+      const selectedRepo = githubRepoService.getSelectedRepo();
       if (!selectedRepo) {
-        setManualError(`Repository ${owner}/${repo} not found or you don't have access to it.`);
+        console.log('No repository selected, this should not happen with RepositoryLoader');
+        setManualError('Repository not found or not selected');
         return;
       }
-      
-      // Set the selected repo
-      githubRepoService.setSelectedRepo(selectedRepo);
       
       // Set the selected branch
       if (branch) {
@@ -144,9 +143,35 @@ const EditorPage: React.FC = () => {
 
   // Render setup page if setup is not complete and we're not loading
   if (!setupComplete && !loading) {
-    // Invalidate queries to ensure fresh data when returning to setup
-    queryClient.invalidateQueries({ queryKey: ['repositories'] });
-    return <Navigate to="/" replace />;
+    // Check if we have URL parameters that we can use
+    if (owner && repo && branch && category && lesson) {
+      console.log('URL parameters available, attempting to load content directly');
+      
+      // Check if repositories are loaded but no matching repo was found
+      if (repositories.length > 0 && !repositories.find(r => 
+        r.owner.login.toLowerCase() === owner.toLowerCase() && 
+        r.name.toLowerCase() === repo.toLowerCase()
+      )) {
+        return (
+          <Container maxWidth="lg" sx={{ mt: 4 }}>
+            <Alert severity="error">
+              <AlertTitle>Repository Not Found</AlertTitle>
+              Repository {owner}/{repo} not found or you don't have access to it.
+              <Box sx={{ mt: 2 }}>
+                <Button variant="contained" onClick={() => navigate('/')}>Go to Repository Selection</Button>
+              </Box>
+            </Alert>
+          </Container>
+        );
+      }
+      
+      // We'll continue rendering and let the useEffect handle the loading
+    } else {
+      // No URL parameters, redirect to setup
+      console.log('No URL parameters and setup not complete, redirecting to setup');
+      queryClient.invalidateQueries({ queryKey: ['repositories'] });
+      return <Navigate to="/" replace />;
+    }
   }
 
   // Handle markdown content update
@@ -200,6 +225,22 @@ const EditorPage: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ['hasUncommittedChanges'] });
     queryClient.invalidateQueries({ queryKey: ['hasCommitsOnBranch'] });
   };
+
+  if (loading) {
+    // If we have URL parameters, show a more informative loading message
+    const isDirectNavigation = owner && repo && branch && category && lesson;
+    
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+        {isDirectNavigation && (
+          <Typography variant="h6" sx={{ mt: 2 }}>
+            Loading editor for {owner}/{repo}/{branch}/{category}/{lesson}...
+          </Typography>
+        )}
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
