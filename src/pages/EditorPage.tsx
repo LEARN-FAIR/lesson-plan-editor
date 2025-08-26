@@ -128,7 +128,9 @@ const EditorPage: React.FC = () => {
     (reposError ? (reposError as Error).message : null) || 
     (lessonPlanError ? (lessonPlanError as Error).message : null);
 
-  const [setupComplete, setSetupComplete] = useState(false);
+  // Access stored data for use in component
+  const storedRepo = githubRepoService.getSelectedRepo();
+  const storedLessonPlan = lessonPlanService.getSelectedLessonPlan();
 
   // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -156,6 +158,10 @@ const EditorPage: React.FC = () => {
   // Main effect to handle all loading scenarios
   const loadRepositoryAndLessonPlan = async () => {
       try {
+        // Debug URL parameters
+        console.log('URL parameters:', { owner, repo, branch, category, lesson });
+        console.log('Current path:', window.location.pathname);
+        
         // First check if we have URL parameters
         if (owner && repo && branch && category && lesson) {
           setIsLoadingRepository(true);
@@ -202,7 +208,6 @@ const EditorPage: React.FC = () => {
             if (lessonPlanData.decoded_content) {
               setMarkdownContent(lessonPlanData.decoded_content);
               lessonPlanService.setSelectedLessonPlan(lessonPlanData);
-              setSetupComplete(true);
             } else {
               // If we have lesson plan data but no decoded content, fetch it directly
               try {
@@ -210,7 +215,6 @@ const EditorPage: React.FC = () => {
                 if (fullLessonPlan.decoded_content) {
                   setMarkdownContent(fullLessonPlan.decoded_content);
                   lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
-                  setSetupComplete(true);
                 } else {
                   throw new Error('Could not load lesson plan content');
                 }
@@ -225,7 +229,6 @@ const EditorPage: React.FC = () => {
               if (fullLessonPlan.decoded_content) {
                 setMarkdownContent(fullLessonPlan.decoded_content);
                 lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
-                setSetupComplete(true);
               } else {
                 throw new Error('Could not load lesson plan content');
               }
@@ -236,14 +239,13 @@ const EditorPage: React.FC = () => {
           setIsLoadingLessonPlanContent(false);
         } else {
           // No URL parameters, check if we have selections in session storage
-          const storedRepo = githubRepoService.getSelectedRepo();
-          const storedLessonPlan = lessonPlanService.getSelectedLessonPlan();
+          // Note: We're using the storedRepo and storedLessonPlan variables defined at the component level
+          // to avoid inconsistencies between initial render and effect execution
           
           if (storedRepo && storedLessonPlan) {
             // Check if the stored lesson plan has decoded content
             if (storedLessonPlan.decoded_content) {
               setMarkdownContent(storedLessonPlan.decoded_content);
-              setSetupComplete(true);
             } else {
               // If we have a stored lesson plan but no decoded content, fetch it
               setIsLoadingLessonPlanContent(true);
@@ -252,7 +254,6 @@ const EditorPage: React.FC = () => {
                 if (fullLessonPlan.decoded_content) {
                   setMarkdownContent(fullLessonPlan.decoded_content);
                   lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
-                  setSetupComplete(true);
                 } else {
                   throw new Error('Could not load lesson plan content');
                 }
@@ -291,6 +292,15 @@ const EditorPage: React.FC = () => {
       }
     }
   }, [markdownContent]);
+  
+  // Check for stored data on component mount
+  useEffect(() => {
+    // If we already have stored data with content, set the markdown content
+    if (storedRepo && storedLessonPlan && storedLessonPlan.decoded_content) {
+      console.log('Found stored data with content on mount, setting markdown content');
+      setMarkdownContent(storedLessonPlan.decoded_content);
+    }
+  }, []);
 
   // Show loading state
   if (loading) {
@@ -322,9 +332,9 @@ const EditorPage: React.FC = () => {
     );
   }
   
-  // Redirect to setup if not complete
-  if (!setupComplete) {
-    console.log('Setup not complete, redirecting to setup');
+  // If we don't have any content to display, redirect to setup
+  if (!markdownContent && !loading && !error) {
+    console.log('No content to display, redirecting to setup');
     return <Navigate to="/" replace />;
   }
 
@@ -356,7 +366,6 @@ const EditorPage: React.FC = () => {
     lessonPlanService.clearSelectedLessonPlan();
     
     // Reset UI state
-    setSetupComplete(false);
     setMarkdownContent(null);
     setManualError(null);
     
@@ -390,7 +399,7 @@ const EditorPage: React.FC = () => {
           <Typography variant="h6" component="div" color="white">
             Lesson Plan Editor
           </Typography>
-          {setupComplete && githubRepoService.getSelectedRepo() && lessonPlanService.getSelectedLessonPlan() && (
+          {githubRepoService.getSelectedRepo() && lessonPlanService.getSelectedLessonPlan() && (
             <Box 
               component="button" 
               onClick={handleReturnToSelection}
