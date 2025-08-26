@@ -262,9 +262,6 @@ const EditorPage: React.FC = () => {
         {loading ? (
           <Container maxWidth="lg" sx={{ mt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh' }}>
             <CircularProgress size={60} />
-            <Typography variant="h6" sx={{ mt: 2 }}>
-              {isLoadingRepos ? 'Loading repositories...' : 'Loading lesson plan...'}
-            </Typography>
           </Container>
         ) : error ? (
           <Alert severity="error" sx={{ mt: 2 }}>

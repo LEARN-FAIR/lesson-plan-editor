@@ -57,7 +57,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <Tooltip title="Account settings">
+      <Tooltip title={user.name || user.login}>
         <IconButton
           onClick={handleClick}
           size="small"
@@ -97,10 +97,6 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        <MenuItem disabled>
-          {user.name || user.login}
-        </MenuItem>
-        <Divider />
         <MenuItem onClick={handleLogout}>
           Logout
         </MenuItem>

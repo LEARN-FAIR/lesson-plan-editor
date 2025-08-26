@@ -121,6 +121,7 @@ const LearningOutcomeEditorModal: React.FC<LearningOutcomeEditorModalProps> = ({
             placeholder="Enter learning outcome description"
             multiline
             rows={3}
+            autoFocus
           />
         </Box>
         

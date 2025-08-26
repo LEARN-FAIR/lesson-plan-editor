@@ -99,7 +99,7 @@ const ReviewerEditorModal: React.FC<ReviewerEditorModalProps> = ({
               margin="dense"
               label="Search Contributor"
               variant="outlined"
-              helperText="Search for an existing contributor or enter details manually"
+              autoFocus
             />
           )}
           sx={{ mb: 2 }}

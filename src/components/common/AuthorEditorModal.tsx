@@ -103,6 +103,7 @@ const AuthorEditorModal: React.FC<AuthorEditorModalProps> = ({
                 label="Search for contributor"
                 variant="outlined"
                 fullWidth
+                autoFocus
               />
             )}
           />

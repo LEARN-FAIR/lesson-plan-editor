@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Alert,
+  Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
-  TextField,
-  CircularProgress,
-  Alert,
+  IconButton,
   Menu,
   MenuItem,
-  IconButton,
-  Box,
+  TextField,
   Typography,
   Avatar,
   Divider,
@@ -122,7 +122,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
     setAnchorEl(null);
     
     // Set commit message based on the current file path
-    setCommitMessage(`Update ${filePath}`);
+    setCommitMessage('');
   };
 
   const handleCloseDialog = () => {
@@ -158,6 +158,11 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
   const handleCommit = async () => {
     if (!isAuthenticated) {
       setError('Please authenticate with GitHub first');
+      return;
+    }
+    
+    if (!commitMessage.trim()) {
+      setError('Please enter a commit message');
       return;
     }
 
@@ -278,36 +283,44 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
   // Determine if any loading is happening
   const isAnyLoading = isRefreshing || isLoadingCommits || isLoadingContent || isLoadingChanges;
 
+  // Split button implementation with main action and dropdown
+  const handleMainButtonClick = () => {
+    if (isPrMode) {
+      handleCreatePullRequest();
+    } else {
+      handleOpenDialog();
+    }
+  };
+  
   return (
     <>
-      <Button
-        variant="contained"
-        color={color || 'primary'}
-        onClick={handleMenuOpen}
-        disabled={disabled || isLoading || !isAuthenticated || isAnyLoading}
-        startIcon={isAnyLoading ? <CircularProgress size={20} color="inherit" /> : <GitHubIcon />}
-        sx={{ mr: 1 }}
-      >
-        {isAnyLoading ? 'Loading...' : 'Commit'}
-      </Button>
-      
-      <IconButton 
-        onClick={refreshGitHubInfo} 
-        disabled={isAnyLoading}
-        color="inherit"
-        size="small"
-        sx={{ mr: 1 }}
-      >
-        <RefreshIcon fontSize="small" />
-      </IconButton>
-      
-      <IconButton 
-        onClick={onExport} 
-        color="inherit"
-        size="small"
-      >
-        <FileDownloadIcon fontSize="small" />
-      </IconButton>
+      <Box sx={{ display: 'flex' }}>
+        <Button
+          variant="contained"
+          color={isPrMode ? "success" : (color || 'primary')}
+          onClick={handleMainButtonClick}
+          disabled={disabled || isLoading || !isAuthenticated || isAnyLoading}
+          startIcon={isAnyLoading ? <CircularProgress size={20} color="inherit" /> : <GitHubIcon />}
+          sx={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+        >
+          {isAnyLoading ? 'Loading...' : (isPrMode ? 'Create pull request' : 'Commit changes')}
+        </Button>
+        <Button
+          size="small"
+          variant="contained"
+          color={isPrMode ? "success" : (color || 'primary')}
+          onClick={handleMenuOpen}
+          disabled={disabled || isLoading || !isAuthenticated || isAnyLoading}
+          sx={{ 
+            minWidth: '36px', 
+            borderTopLeftRadius: 0, 
+            borderBottomLeftRadius: 0,
+            borderLeft: '1px solid rgba(255,255,255,0.3)'
+          }}
+        >
+          <ArrowDropDownIcon />
+        </Button>
+      </Box>
       
       <Menu
         anchorEl={anchorEl}
@@ -325,19 +338,6 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
           }}>
             <RefreshIcon fontSize="small" sx={{ mr: 1 }} />
             Refresh GitHub status
-          </MenuItem>
-        )}
-        {isAuthenticated && (
-          <MenuItem onClick={() => {
-            handleMenuClose();
-            if (isPrMode) {
-              handleCreatePullRequest();
-            } else {
-              handleOpenDialog();
-            }
-          }}>
-            <GitHubIcon fontSize="small" sx={{ mr: 1 }} />
-            {isPrMode ? "Create Pull Request" : "Commit to GitHub"}
           </MenuItem>
         )}
       </Menu>
@@ -416,11 +416,15 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
                 </Box>
                 
                 <TextField
+                  margin="normal"
                   label="Commit message"
                   fullWidth
                   variant="outlined"
                   value={commitMessage}
                   onChange={(e) => setCommitMessage(e.target.value)}
+                  required
+                  error={!commitMessage.trim()}
+                  helperText={!commitMessage.trim() ? 'Commit message is required' : ''}
                 />
               </Stack>
             </>
@@ -431,11 +435,12 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({ content, filePa
           {isAuthenticated && (
             <Button 
               onClick={handleCommit} 
-              disabled={isLoading || !selectedRepo || !selectedBranch}
+              disabled={isLoading || !selectedRepo || !selectedBranch || !commitMessage.trim()}
               variant="contained"
               color="primary"
+              startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <GitHubIcon />}
             >
-              {isLoading ? <CircularProgress size={24} /> : 'Commit'}
+              {isLoading ? 'Committing...' : 'Commit'}
             </Button>
           )}
         </DialogActions>

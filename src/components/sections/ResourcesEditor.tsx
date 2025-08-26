@@ -283,6 +283,7 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({ document, onChange })
             required
             value={formData.title}
             onChange={handleFormChange('title')}
+            autoFocus
           />
           <TextField
             fullWidth
