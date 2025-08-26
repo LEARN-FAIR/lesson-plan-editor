@@ -382,8 +382,6 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                                         <Typography variant="body2"
                                                     color="text.secondary">{githubUser.login}</Typography>
                                     </Box>
-                                    <Box sx={{flexGrow: 1}}/>
-                                    <Button onClick={handleSignOut} size="small">Sign Out</Button>
                                 </Box>
                             )}
 

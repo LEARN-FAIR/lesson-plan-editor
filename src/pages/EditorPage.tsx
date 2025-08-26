@@ -449,7 +449,7 @@ const EditorPage: React.FC = () => {
                         <GitHubCommitButton
                             content={markdownContent}
                             filePath={getCurrentFilename()}
-                            color="inherit"
+                            color="secondary"
                             onExport={handleExportMarkdown}
                         />
                     )}
