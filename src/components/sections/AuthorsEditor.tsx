@@ -10,8 +10,8 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import PeopleIcon from '@mui/icons-material/People';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import SectionHeader from '../common/SectionHeader';
-import AuthorEditorModal from '../common/AuthorEditorModal';
-import ReviewerEditorModal from '../common/ReviewerEditorModal';
+import AuthorEditorModal from '../modals/AuthorEditorModal';
+import ReviewerEditorModal from '../modals/ReviewerEditorModal';
 import { 
   FairMarkdownDocument 
 } from '../../types';

@@ -12,8 +12,8 @@ import {
   CircularProgress
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useGitHubUser } from '../services/githubQueryHooks';
+import { useAuth } from '../../contexts/AuthContext';
+import { useGitHubUser } from '../../services/githubQueryHooks';
 
 interface UserMenuProps {
   onLogout?: () => void;

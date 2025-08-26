@@ -20,8 +20,8 @@ import { useRepositoriesAndForks } from '../services/githubRepoQueryHooks';
 import { useLessonPlanContent } from '../services/lessonPlanQueryHooks';
 import { exportMarkdownFile } from '../services/markdownService';
 import Editor from '../components/Editor';
-import UserMenu from '../components/UserMenu';
-import StyledAppBar from '../components/StyledAppBar';
+import UserMenu from '../components/navigation/UserMenu';
+import StyledAppBar from '../components/navigation/StyledAppBar';
 import GitHubCommitButton from '../components/GitHubCommitButton';
 import { getCurrentFilename } from '../services/markdownService';
 
@@ -69,14 +69,10 @@ const EditorPage: React.FC = () => {
 
   // Main effect to handle all loading scenarios
   useEffect(() => {
-    console.log('EditorPage useEffect running');
-    console.log('URL params:', { owner, repo, branch, category, lesson });
-    
     const loadRepositoryAndLessonPlan = async () => {
       try {
         // First check if we have URL parameters
         if (owner && repo && branch && category && lesson) {
-          console.log('URL parameters available, loading repository and lesson plan');
           setIsLoadingRepository(true);
           
           // 1. Load repositories if needed
@@ -89,19 +85,16 @@ const EditorPage: React.FC = () => {
             );
             
             if (!selectedRepo) {
-              console.error(`Repository ${owner}/${repo} not found`);
               setManualError(`Repository ${owner}/${repo} not found or you don't have access to it`);
               setIsLoadingRepository(false);
               return;
             }
           } else {
             // Wait for repositories to load
-            console.log('Waiting for repositories to load');
             return; // Exit and wait for repositories to load
           }
           
           // 2. Set the selected repository and branch
-          console.log('Setting selected repository:', selectedRepo);
           githubRepoService.setSelectedRepo(selectedRepo);
           githubRepoService.setSelectedBranch(branch);
           setIsLoadingRepository(false);
@@ -109,16 +102,12 @@ const EditorPage: React.FC = () => {
           // 3. Load lesson plan content
           setIsLoadingLessonPlanContent(true);
           if (lessonPlanData) {
-            console.log('Lesson plan data available:', lessonPlanData);
-            
             if (lessonPlanData.decoded_content) {
-              console.log('Setting markdown content from lessonPlanData');
               setMarkdownContent(lessonPlanData.decoded_content);
               lessonPlanService.setSelectedLessonPlan(lessonPlanData);
               setSetupComplete(true);
             } else {
               // If we have lesson plan data but no decoded content, fetch it directly
-              console.log('Lesson plan has no decoded content, fetching directly');
               try {
                 const fullLessonPlan = await lessonPlanService.getLessonPlan(fullLessonPath);
                 if (fullLessonPlan.decoded_content) {
@@ -129,13 +118,11 @@ const EditorPage: React.FC = () => {
                   throw new Error('Could not load lesson plan content');
                 }
               } catch (error) {
-                console.error('Error fetching lesson plan content:', error);
                 setManualError('Could not load lesson plan content');
               }
             }
           } else if (!isLoadingLessonPlan) {
             // If lesson plan data isn't loading but we don't have it, fetch it directly
-            console.log('No lesson plan data, fetching directly');
             try {
               const fullLessonPlan = await lessonPlanService.getLessonPlan(fullLessonPath);
               if (fullLessonPlan.decoded_content) {
@@ -146,31 +133,22 @@ const EditorPage: React.FC = () => {
                 throw new Error('Could not load lesson plan content');
               }
             } catch (error) {
-              console.error('Error fetching lesson plan content:', error);
               setManualError('Could not load lesson plan content');
             }
           }
           setIsLoadingLessonPlanContent(false);
         } else {
           // No URL parameters, check if we have selections in session storage
-          console.log('No URL parameters, checking session storage');
           const storedRepo = githubRepoService.getSelectedRepo();
           const storedLessonPlan = lessonPlanService.getSelectedLessonPlan();
           
-          console.log('Stored repo:', storedRepo ? `${storedRepo.owner.login}/${storedRepo.name}` : 'none');
-          console.log('Stored lesson plan:', storedLessonPlan ? storedLessonPlan.path : 'none');
-          
           if (storedRepo && storedLessonPlan) {
-            console.log('Found stored repo and lesson plan');
-            
             // Check if the stored lesson plan has decoded content
             if (storedLessonPlan.decoded_content) {
-              console.log('Setting markdown content from stored lesson plan');
               setMarkdownContent(storedLessonPlan.decoded_content);
               setSetupComplete(true);
             } else {
               // If we have a stored lesson plan but no decoded content, fetch it
-              console.log('Stored lesson plan has no decoded content, fetching');
               setIsLoadingLessonPlanContent(true);
               try {
                 const fullLessonPlan = await lessonPlanService.getLessonPlan(storedLessonPlan.path);
@@ -182,19 +160,16 @@ const EditorPage: React.FC = () => {
                   throw new Error('Could not load lesson plan content');
                 }
               } catch (error) {
-                console.error('Error fetching lesson plan content:', error);
                 setManualError('Could not load lesson plan content');
               }
               setIsLoadingLessonPlanContent(false);
             }
           } else {
             // No stored data, redirect to setup page
-            console.log('No stored data, redirecting to setup page');
             navigate('/');
           }
         }
       } catch (error) {
-        console.error('Error in loadRepositoryAndLessonPlan:', error);
         setManualError(error instanceof Error ? error.message : 'Unknown error occurred');
         setIsLoadingRepository(false);
         setIsLoadingLessonPlanContent(false);
@@ -202,7 +177,7 @@ const EditorPage: React.FC = () => {
     };
     
     loadRepositoryAndLessonPlan();
-  }, [owner, repo, branch, category, lesson, repositories, lessonPlanData, isLoadingLessonPlan, fullLessonPath, navigate, queryClient]);
+  }, [owner, repo, branch, category, lesson, repositories, lessonPlanData, isLoadingLessonPlan, fullLessonPath, navigate]);
 
   // Show loading state
   if (loading) {
@@ -277,19 +252,6 @@ const EditorPage: React.FC = () => {
     
     // Navigate to setup page
     navigate('/');
-  };
-
-  // Handle save dialog open
-  const handleSaveDialogOpen = () => {
-    setSaveDialogOpen(true);
-  };
-
-  // Handle save dialog close
-  const handleSaveDialogClose = () => {
-    setSaveDialogOpen(false);
-    // Invalidate queries to ensure fresh data after saving
-    queryClient.invalidateQueries({ queryKey: ['hasUncommittedChanges'] });
-    queryClient.invalidateQueries({ queryKey: ['hasCommitsOnBranch'] });
   };
 
   if (loading) {
@@ -386,25 +348,6 @@ const EditorPage: React.FC = () => {
           </Box>
         )}
       </Container>
-
-      <Dialog open={saveDialogOpen} onClose={handleSaveDialogClose}>
-        <DialogTitle>Save Markdown</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Do you want to save the changes to the markdown file?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleSaveDialogClose}>Cancel</Button>
-          <Button onClick={() => {
-            handleSaveDialogClose();
-            setSaveDialogOpen(false);
-            // Handle save logic here
-          }} autoFocus>
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

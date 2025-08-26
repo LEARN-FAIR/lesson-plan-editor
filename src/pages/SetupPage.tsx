@@ -10,9 +10,9 @@ import githubRepoService, { Repository } from '../services/githubRepoService';
 import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
 import { useRepositoriesAndForks } from '../services/githubRepoQueryHooks';
 import { useLessonPlans } from '../services/lessonPlanQueryHooks';
-import UserMenu from '../components/UserMenu';
+import UserMenu from '../components/navigation/UserMenu';
 import SetupStepper from '../components/SetupStepper';
-import StyledAppBar from '../components/StyledAppBar';
+import StyledAppBar from '../components/navigation/StyledAppBar';
 
 const SetupPage: React.FC = () => {
   const navigate = useNavigate();

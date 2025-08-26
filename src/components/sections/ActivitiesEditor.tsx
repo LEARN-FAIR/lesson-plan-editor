@@ -11,7 +11,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { FairMarkdownDocument, Activity } from '../../types';
 import MdxEditorComponent from '../common/MdxEditorComponent';
-import ActivityEditorModal from '../common/ActivityEditorModal';
+import ActivityEditorModal from '../modals/ActivityEditorModal';
 import SectionHeader from '../common/SectionHeader';
 import ReactMarkdown from 'react-markdown';
 import RestoreIcon from '@mui/icons-material/Restore';

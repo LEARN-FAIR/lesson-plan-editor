@@ -11,7 +11,7 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import SectionHeader from '../common/SectionHeader';
 import { FairMarkdownDocument, LearningOutcome, LearningVerbLevel } from '../../types';
-import LearningOutcomeEditorModal from '../common/LearningOutcomeEditorModal';
+import LearningOutcomeEditorModal from '../modals/LearningOutcomeEditorModal';
 import { 
   DndContext, 
   closestCenter, 

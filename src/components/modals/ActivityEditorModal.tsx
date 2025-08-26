@@ -5,7 +5,7 @@ import {
   Box, Typography
 } from '@mui/material';
 import { Activity } from '../../types';
-import MdxEditorComponent from './MdxEditorComponent';
+import MdxEditorComponent from '../common/MdxEditorComponent';
 
 interface ActivityEditorModalProps {
   open: boolean;

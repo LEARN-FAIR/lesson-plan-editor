@@ -5,7 +5,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import SectionHeader from '../common/SectionHeader';
-import PrerequisiteEditorModal from '../common/PrerequisiteEditorModal';
+import PrerequisiteEditorModal from '../modals/PrerequisiteEditorModal';
 import { FairMarkdownDocument } from '../../types';
 import { 
   DndContext, 

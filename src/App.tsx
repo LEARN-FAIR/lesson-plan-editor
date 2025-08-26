@@ -10,9 +10,8 @@ import LoginPage from './pages/LoginPage';
 
 // Components
 import GitHubCallback from './components/GitHubCallback';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/navigation/ProtectedRoute';
 import Layout from './components/Layout';
-// RepositoryLoader no longer needed as EditorPage handles loading
 
 // Context
 import { AuthProvider } from './contexts/AuthContext';
