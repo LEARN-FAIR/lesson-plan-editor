@@ -337,7 +337,8 @@ class GitHubRepoService {
 
     const repo = this.getSelectedRepo();
     if (!repo) {
-      throw new Error('No repository selected');
+      console.error('No repository selected in githubRepoService');
+      throw new Error('No repository selected. Please ensure you are logged in and have selected a repository.');
     }
 
     try {

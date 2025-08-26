@@ -34,7 +34,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 // No longer importing modal components
 import githubRepoService, { Repository } from '../services/githubRepoService';
 import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
-import { useRepositoriesAndForks } from '../services/githubRepoQueryHooks';
+import { useRepositories } from '../contexts/RepositoryContext';
 import { useLessonPlans } from '../services/lessonPlanQueryHooks';
 import BranchSelector from '../components/BranchSelector';
 
@@ -64,12 +64,12 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [selectedLessonPlan, setSelectedLessonPlan] = useState<LessonPlan | null>(null);
 
-  // Use React Query to fetch repositories
+  // Use Repository Context to access repositories
   const { 
-    data: repositories = [], 
+    repositories = [], 
     isLoading: loadingRepos,
     error: repoQueryError
-  } = useRepositoriesAndForks();
+  } = useRepositories();
   
   // Custom error state for repositories
   const [repoError, setRepoError] = useState<string | null>(null);
@@ -292,7 +292,7 @@ const SetupStepper: React.FC<SetupStepperProps> = ({ onComplete }) => {
                     ) : (
                       <>
                         <List>
-                          {repositories.map((repo) => (
+                          {repositories.map((repo: Repository) => (
                             <ListItem key={repo.id} disablePadding>
                               <ListItemButton
                                 onClick={() => handleRepoSelected(repo)}

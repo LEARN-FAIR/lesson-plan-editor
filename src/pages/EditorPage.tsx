@@ -23,7 +23,7 @@ import { extractLessonPathParts, generateLessonPlanUrl, constructLessonPath } fr
 import githubRepoService, { Repository } from '../services/githubRepoService';
 import githubService from '../services/githubService';
 import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
-import { useRepositoriesAndForks } from '../services/githubRepoQueryHooks';
+import { useRepositories } from '../contexts/RepositoryContext';
 import { useLessonPlanContent } from '../services/lessonPlanQueryHooks';
 import { exportMarkdownFile } from '../services/markdownService';
 import { parseMarkdown, serializeMarkdown } from '../utils/markdownUtils';
@@ -103,11 +103,12 @@ const EditorPage: React.FC = () => {
   const fullLessonPath = category && lesson ? constructLessonPath(category, lesson) : '';
   
   // Use React Query to fetch repositories
+  // Use Repository Context to access repositories
   const { 
-    data: repositories = [], 
+    repositories = [], 
     isLoading: isLoadingRepos,
     error: reposError
-  } = useRepositoriesAndForks();
+  } = useRepositories();
   
   // Use React Query to fetch lesson plan content
   const {
@@ -164,19 +165,31 @@ const EditorPage: React.FC = () => {
           let selectedRepo;
           if (repositories.length > 0) {
             // Find the repository that matches the URL parameters
-            selectedRepo = repositories.find(r => 
+            selectedRepo = repositories.find((r: Repository) => 
               r.owner.login.toLowerCase() === owner.toLowerCase() && 
               r.name.toLowerCase() === repo.toLowerCase()
             );
             
             if (!selectedRepo) {
-              setManualError(`Repository ${owner}/${repo} not found or you don't have access to it`);
-              setIsLoadingRepository(false);
-              return;
+              // If we can't find the repository in the loaded repositories,
+              // create a temporary repository object to use for API calls
+              selectedRepo = {
+                owner: { login: owner },
+                name: repo,
+                default_branch: branch
+              } as Repository;
+              
+              // Note: We're not setting an error here anymore, as we're creating a temporary repo object
+              console.log(`Creating temporary repository object for ${owner}/${repo}`);
             }
           } else {
-            // Wait for repositories to load
-            return; // Exit and wait for repositories to load
+            // If repositories haven't loaded yet, create a temporary repository object
+            selectedRepo = {
+              owner: { login: owner },
+              name: repo,
+              default_branch: branch
+            } as Repository;
+            console.log(`Creating temporary repository object for ${owner}/${repo} (no repositories loaded yet)`);
           }
           
           // 2. Set the selected repository and branch

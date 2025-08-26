@@ -49,7 +49,8 @@ class LessonPlanService {
 
     const selectedRepo = githubRepoService.getSelectedRepo();
     if (!selectedRepo) {
-      throw new Error('No repository selected');
+      console.error('No repository selected when trying to get lesson plans');
+      throw new Error('No repository selected. Please ensure you are logged in and have selected a repository.');
     }
 
     try {
@@ -95,7 +96,8 @@ class LessonPlanService {
 
     const repo = githubRepoService.getSelectedRepo();
     if (!repo) {
-      throw new Error('No repository selected');
+      console.error('No repository selected when trying to get lesson plan:', path);
+      throw new Error('No repository selected. Please ensure you are logged in and have selected a repository.');
     }
 
     try {

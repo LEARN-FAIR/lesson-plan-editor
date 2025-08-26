@@ -15,15 +15,17 @@ import Layout from './components/Layout';
 
 // Context
 import { AuthProvider } from './contexts/AuthContext';
+import { RepositoryProvider } from './contexts/RepositoryContext';
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <AuthProvider>
-        <Router>
-          <Layout>
-            <CssBaseline />
-            <Routes>
+        <RepositoryProvider>
+          <Router>
+            <Layout>
+              <CssBaseline />
+              <Routes>
               {/* Login Page Route */}
               <Route path="/login" element={<LoginPage />} />
               
@@ -49,6 +51,7 @@ function App() {
             </Routes>
           </Layout>
         </Router>
+        </RepositoryProvider>
       </AuthProvider>
     </ThemeProvider>
   );

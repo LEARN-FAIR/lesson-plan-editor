@@ -8,7 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { generateLessonPlanUrl } from '../utils/urlUtils';
 import githubRepoService, { Repository } from '../services/githubRepoService';
 import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
-import { useRepositoriesAndForks } from '../services/githubRepoQueryHooks';
+import { useRepositories } from '../contexts/RepositoryContext';
 import { useLessonPlans } from '../services/lessonPlanQueryHooks';
 import UserMenu from '../components/navigation/UserMenu';
 import SetupStepper from '../components/SetupStepper';
@@ -18,11 +18,11 @@ const SetupPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  // Use React Query to fetch repositories
+  // Use Repository Context to access repositories
   const { 
     isLoading: isLoadingRepos,
     error: reposError
-  } = useRepositoriesAndForks();
+  } = useRepositories();
   
   // Use React Query to fetch lesson plans
   const {
