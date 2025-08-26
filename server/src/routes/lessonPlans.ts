@@ -1,6 +1,6 @@
 import express from 'express';
-import { Octokit } from '@octokit/rest';
-import { verifyToken } from './github';
+import {Octokit} from '@octokit/rest';
+import {verifyToken} from './github';
 
 export const lessonPlansRouter = express.Router();
 

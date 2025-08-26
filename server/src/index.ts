@@ -1,11 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import {githubRouter} from './routes/github';
+import {lessonPlansRouter} from './routes/lessonPlans';
+import {contributorsRouter} from './routes/contributors';
 // Import from the JavaScript version of the auth router
 const { authRouter } = require('./routes/auth');
-import { githubRouter } from './routes/github';
-import { lessonPlansRouter } from './routes/lessonPlans';
-import { contributorsRouter } from './routes/contributors';
 
 // Load environment variables
 dotenv.config();

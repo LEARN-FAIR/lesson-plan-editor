@@ -1,5 +1,5 @@
 import express from 'express';
-import { fetchContributors } from '../services/contributorService';
+import {fetchContributors} from '../services/contributorService';
 
 export const contributorsRouter = express.Router();
 
