@@ -102,7 +102,6 @@ const EditorPage: React.FC = () => {
   // Construct the lesson path using the category and lesson from URL
   const fullLessonPath = category && lesson ? constructLessonPath(category, lesson) : '';
   
-  // Use React Query to fetch repositories
   // Use Repository Context to access repositories
   const { 
     repositories = [], 
@@ -262,8 +261,10 @@ const EditorPage: React.FC = () => {
               }
               setIsLoadingLessonPlanContent(false);
             }
-          } else {
-            // No stored data, redirect to setup page
+          } else if (!isLoadingRepos) {
+            // Only redirect if repositories have finished loading and we still don't have data
+            // This prevents premature redirects when repositories are still being fetched
+            console.log('No stored data and repositories finished loading, redirecting to setup');
             navigate('/');
           }
         }
