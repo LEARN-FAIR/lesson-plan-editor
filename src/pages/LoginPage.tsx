@@ -1,0 +1,78 @@
+import React, { useEffect } from 'react';
+import { Box, Button, Typography, Paper, Container, CircularProgress } from '@mui/material';
+import { useLocation, Navigate, useNavigate } from 'react-router-dom';
+import githubService from '../services/githubService';
+import { useAuth } from '../contexts/AuthContext';
+import Visual from '../components/images/home-visual.svg';
+
+const LoginPage: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  // Get redirect_url from query parameters
+  const searchParams = new URLSearchParams(location.search);
+  const redirectUrl = searchParams.get('redirect_url') || '/';
+  
+  console.log('LoginPage: redirect_url is', redirectUrl);
+  
+  // If user is already authenticated, redirect to the requested page
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      console.log('User is authenticated, redirecting to:', redirectUrl);
+      navigate(redirectUrl, { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate, redirectUrl]);
+  
+  // Show loading indicator while checking authentication
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+  
+  // If user is already authenticated, don't render the login page
+  if (isAuthenticated) {
+    return null;
+  }
+
+  const handleLogin = () => {
+    // Pass the redirect_url as a state parameter to GitHub OAuth
+    // This will be available in the state when we return from GitHub
+    if (redirectUrl && redirectUrl !== '/login') {
+      console.log('Using redirect URL for GitHub OAuth:', redirectUrl);
+      // Store in session storage as a fallback
+      sessionStorage.setItem('redirect_url', redirectUrl);
+    }
+    
+    // Redirect to GitHub OAuth
+    githubService.redirectToGitHub();
+  };
+
+  return (
+    <Container maxWidth="sm" sx={{ mt: 8 }}>
+      <Paper elevation={3} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <img src={Visual} alt="FAIR Lesson Plan Editor" style={{ maxWidth: '60%', height: 'auto', marginBottom: '20px' }} />
+        <Typography variant="h4" component="h1" color="primary" gutterBottom>
+          FAIR Lesson Plan Editor
+        </Typography>
+        <Typography variant="body1" paragraph>
+          Please sign in with GitHub to use the application.
+        </Typography>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={handleLogin}
+          size="large"
+          sx={{ mt: 2 }}
+        >
+          Sign in with GitHub
+        </Button>
+      </Paper>
+    </Container>
+  );
+};
+
+export default LoginPage;

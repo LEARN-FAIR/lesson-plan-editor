@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Box, Typography, CircularProgress, Paper } from '@mui/material';
+import { Box, Typography, CircularProgress, Paper, Button } from '@mui/material';
 import githubService from '../services/githubService';
+import { useAuth } from '../contexts/AuthContext';
 
 /**
  * Component to handle GitHub OAuth callback.
@@ -10,23 +11,44 @@ import githubService from '../services/githubService';
 const GitHubCallback: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState<boolean>(false);
   const processed = useRef<boolean>(false);
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
 
+  // Get the redirect URL when component mounts
+  useEffect(() => {
+    // First try to get from session storage (set by LoginPage)
+    const storedUrl = sessionStorage.getItem('redirect_url');
+    if (storedUrl) {
+      console.log('Found stored redirect URL:', storedUrl);
+      setRedirectUrl(storedUrl);
+      // Clear it after reading
+      sessionStorage.removeItem('redirect_url');
+    } else {
+      console.log('No stored redirect URL, will use default');
+      setRedirectUrl('/');
+    }
+  }, []);
+
+  // Handle the OAuth callback
   useEffect(() => {
     // Only process once per component mount
     if (processed.current) {
+      console.log('Already processed OAuth callback, skipping');
       return;
     }
 
     const handleCallback = async () => {
       // If already processing, don't try again
       if (processing) {
+        console.log('Already processing OAuth callback, skipping');
         return;
       }
 
       try {
+        console.log('Starting GitHub OAuth callback processing');
         setProcessing(true);
         processed.current = true;
         
@@ -38,23 +60,36 @@ const GitHubCallback: React.FC = () => {
           throw new Error('No authorization code received from GitHub');
         }
         
-        // Check if we already have a token in session storage
-        if (sessionStorage.getItem('github_oauth_token')) {
-          console.log('Already authenticated, redirecting to editor');
-          navigate('/');
-          return;
-        }
-        
+        console.log('Exchanging GitHub code for token');
         // Exchange code for token
         await githubService.handleAuthCallback(code);
+        console.log('Successfully exchanged code for token');
         
         // Clear the code from the URL to prevent reprocessing on refresh
         window.history.replaceState({}, document.title, '/github-callback');
         
-        // Redirect back to editor after successful authentication
+        // Wait a bit to ensure the token is properly stored and auth state is updated
         setTimeout(() => {
-          navigate('/');
-        }, 1500);
+          // Directly check if authenticated using the service
+          const isAuth = githubService.isAuthenticated();
+          console.log('Authentication state after token exchange:', isAuth ? 'authenticated' : 'not authenticated');
+          
+          // If we have a redirect URL, use it, otherwise go to home
+          if (redirectUrl) {
+            try {
+              const decodedUrl = decodeURIComponent(redirectUrl);
+              console.log('Redirecting to:', decodedUrl);
+              window.location.href = decodedUrl; // Use direct location change instead of navigate
+            } catch (error) {
+              console.error('Error decoding redirect URL:', error);
+              window.location.href = redirectUrl; // Use direct location change instead of navigate
+            }
+          } else {
+            console.log('No redirect URL found, going to home page');
+            window.location.href = '/'; // Use direct location change instead of navigate
+          }
+        }, 1500); // Increased timeout to ensure auth state is updated
+        
       } catch (err) {
         console.error('GitHub OAuth callback error:', err);
         setError(`Authentication failed: ${(err as Error).message}`);
@@ -64,7 +99,9 @@ const GitHubCallback: React.FC = () => {
 
     // Execute the callback handler once
     handleCallback();
-  }, []);
+  }, [location, processing, redirectUrl]);
+  
+  // No manual redirect function needed anymore
 
   return (
     <Box

@@ -11,7 +11,8 @@ import {
   Divider,
   CircularProgress
 } from '@mui/material';
-import githubService from '../services/githubService';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { useGitHubUser } from '../services/githubQueryHooks';
 
 interface UserMenuProps {
@@ -21,6 +22,8 @@ interface UserMenuProps {
 const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const navigate = useNavigate();
+  const { logout: authLogout } = useAuth();
   
   // Use React Query hook to fetch GitHub user data
   const { data: user, isLoading, error } = useGitHubUser();
@@ -35,12 +38,13 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
 
   const handleLogout = () => {
     handleClose();
-    githubService.logout();
+    // Use the logout function from AuthContext
+    authLogout();
     if (onLogout) {
       onLogout();
     }
-    // Force a reload to ensure the app resets to the login state
-    window.location.href = '/';
+    // Navigate to login page
+    navigate('/login');
   };
 
   if (isLoading) {

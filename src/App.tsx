@@ -6,41 +6,50 @@ import theme from './theme/theme';
 // Pages
 import EditorPage from './pages/EditorPage';
 import SetupPage from './pages/SetupPage';
+import LoginPage from './pages/LoginPage';
 
 // Components
 import GitHubCallback from './components/GitHubCallback';
-import AuthGuard from './components/AuthGuard';
+import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+
+// Context
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
-      <Router>
-        <Layout>
-          <CssBaseline />
-          <Routes>
-          {/* Setup Page Route */}
-          <Route path="/" element={
-            <AuthGuard>
-              <SetupPage />
-            </AuthGuard>
-          } />
-          
-          {/* Editor Page Route */}
-          <Route path="/edit/:owner/:repo/:branch/:category/:lesson" element={
-            <AuthGuard>
-              <EditorPage />
-            </AuthGuard>
-          } />
-          
-          {/* GitHub OAuth Callback */}
-          <Route path="/github-callback" element={<GitHubCallback />} />
-          
-          {/* Catch-all redirect */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-      </Router>
+      <AuthProvider>
+        <Router>
+          <Layout>
+            <CssBaseline />
+            <Routes>
+              {/* Login Page Route */}
+              <Route path="/login" element={<LoginPage />} />
+              
+              {/* Setup Page Route */}
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <SetupPage />
+                </ProtectedRoute>
+              } />
+              
+              {/* Editor Page Route */}
+              <Route path="/edit/:owner/:repo/:branch/:category/:lesson" element={
+                <ProtectedRoute>
+                  <EditorPage />
+                </ProtectedRoute>
+              } />
+              
+              {/* GitHub OAuth Callback */}
+              <Route path="/github-callback" element={<GitHubCallback />} />
+              
+              {/* Catch-all redirect */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Layout>
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

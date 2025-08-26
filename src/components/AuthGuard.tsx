@@ -1,51 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { Box, Button, Typography, Paper, Container, CircularProgress, Avatar } from '@mui/material';
-import githubService from '../services/githubService';
-import Visual from '../components/images/home-visual.svg';
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { Box, CircularProgress, Typography } from '@mui/material';
+import { useAuth } from '../contexts/AuthContext';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    // Check if the user is already authenticated
-    const checkAuth = async () => {
-      try {
-        const isAuth = githubService.isAuthenticated();
-        console.log(isAuth);
-        setIsAuthenticated(isAuth);
-        
-        if (isAuth) {
-          // Try to get user info if authenticated
-          try {
-            const userInfo = await githubService.getCurrentUser();
-            setUser(userInfo);
-          } catch (userError) {
-            console.error('Error fetching user info:', userError);
-          }
-        }
-      } catch (error) {
-        console.error('Authentication check failed:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    checkAuth();
-  }, []);
-
-  const handleLogin = () => {
-    githubService.redirectToGitHub();
-  };
+  const { isAuthenticated, isLoading, setRedirectPath } = useAuth();
+  const location = useLocation();
 
   // Show loading state while checking authentication
-  if (loading) {
+  if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
         <CircularProgress size={40} sx={{ mb: 2 }} />
@@ -54,34 +21,17 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     );
   }
 
-  // If authenticated, render the children components
-  if (isAuthenticated) {
-    return <>{children}</>;
+  // If not authenticated, redirect to login and save the current path
+  if (!isAuthenticated) {
+    // Store the current path for redirect after login
+    setRedirectPath(location.pathname);
+    
+    // Redirect to login page
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If not authenticated, show login screen
-  return (
-    <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Paper elevation={3} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <img src={Visual} alt="FAIR Lesson Plan Editor" style={{ maxWidth: '60%', height: 'auto', marginBottom: '20px' }} />
-        <Typography variant="h4" component="h1" color="primary" gutterBottom>
-          FAIR Lesson Plan Editor
-        </Typography>
-        <Typography variant="body1" paragraph>
-          Please sign in with GitHub to use the application.
-        </Typography>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          onClick={handleLogin}
-          size="large"
-          sx={{ mt: 2 }}
-        >
-          Sign in with GitHub
-        </Button>
-      </Paper>
-    </Container>
-  );
+  // If authenticated, render the children components
+  return <>{children}</>;
 };
 
 export default AuthGuard;
