@@ -123,10 +123,12 @@ const EditorPage: React.FC = () => {
   // Combine loading states
   const loading = isLoadingRepos || isLoadingLessonPlan || isLoadingRepository || isLoadingLessonPlanContent;
   
-  // Combine error states
-  const error = manualError || 
+  // Combine error states - only show errors if we're not loading
+  const error = !loading ? (
+    manualError || 
     (reposError ? (reposError as Error).message : null) || 
-    (lessonPlanError ? (lessonPlanError as Error).message : null);
+    (lessonPlanError ? (lessonPlanError as Error).message : null)
+  ) : null;
 
   // Access stored data for use in component
   const storedRepo = githubRepoService.getSelectedRepo();
@@ -307,10 +309,6 @@ const EditorPage: React.FC = () => {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <CircularProgress />
-        <Typography variant="h6" sx={{ mt: 2 }}>
-          {isLoadingRepos || isLoadingRepository ? `Loading repository ${owner || ''}/${repo || ''}...` : ''}
-          {(isLoadingLessonPlan || isLoadingLessonPlanContent) && category && lesson ? `Loading lesson plan ${category}/${lesson}...` : ''}
-        </Typography>
       </Box>
     );
   }
@@ -330,12 +328,6 @@ const EditorPage: React.FC = () => {
         </Alert>
       </Box>
     );
-  }
-  
-  // If we don't have any content to display, redirect to setup
-  if (!markdownContent && !loading && !error) {
-    console.log('No content to display, redirecting to setup');
-    return <Navigate to="/" replace />;
   }
 
   // Handle markdown content update
