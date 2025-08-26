@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   Box, Typography, Button, Container, 
   CircularProgress, Alert, AlertTitle, 
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
-  Snackbar,
-  Stack,
-  Divider
+  Snackbar, Stack, Divider, Paper, Tab, Tabs
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import InfoOutlineIcon from '@mui/icons-material/InfoOutline';
+import AttributionIcon from '@mui/icons-material/Attribution';
+import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
+import ChecklistIcon from '@mui/icons-material/Checklist';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import TrackChangesIcon from '@mui/icons-material/TrackChanges';
+import AttachmentIcon from '@mui/icons-material/Attachment';
+import SubjectIcon from '@mui/icons-material/Subject';
 import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import { extractLessonPathParts, generateLessonPlanUrl, constructLessonPath } from '../utils/urlUtils';
 import githubRepoService, { Repository } from '../services/githubRepoService';
@@ -19,16 +26,72 @@ import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
 import { useRepositoriesAndForks } from '../services/githubRepoQueryHooks';
 import { useLessonPlanContent } from '../services/lessonPlanQueryHooks';
 import { exportMarkdownFile } from '../services/markdownService';
-import Editor from '../components/Editor';
+import { parseMarkdown, serializeMarkdown } from '../utils/markdownUtils';
+import { FairMarkdownDocument } from '../types';
 import UserMenu from '../components/navigation/UserMenu';
 import StyledAppBar from '../components/navigation/StyledAppBar';
 import GitHubCommitButton from '../components/GitHubCommitButton';
 import { getCurrentFilename } from '../services/markdownService';
+import GeneralInfoEditor from '../components/sections/GeneralInfoEditor';
+import AuthorsEditor from '../components/sections/AuthorsEditor';
+import LearningOutcomesEditor from '../components/sections/LearningOutcomesEditor';
+import ActivitiesEditor from '../components/sections/ActivitiesEditor';
+import PrerequisitesEditor from '../components/sections/PrerequisitesEditor';
+import TermsEditor from '../components/sections/TermsEditor';
+import ResourcesEditor from '../components/sections/ResourcesEditor';
+import ContentEditor from '../components/sections/ContentEditor';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`editor-tabpanel-${index}`}
+      aria-labelledby={`editor-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
+function a11yProps(index: number) {
+  return {
+    id: `editor-tab-${index}`,
+    'aria-controls': `editor-tabpanel-${index}`,
+  };
+}
+
+interface StyledTabProps {
+  label: string;
+  icon?: React.ReactElement;
+  iconPosition?: 'start' | 'end' | 'top' | 'bottom';
+}
+
+const StyledTab = styled((props: StyledTabProps) => <Tab disableRipple {...props} />)(
+  ({ theme }) => ({
+    minHeight: '48px',
+    textTransform: 'none',
+  }),
+);
 
 const EditorPage: React.FC = () => {
   const [markdownContent, setMarkdownContent] = useState<string | null>(null);
-  const [saveDialogOpen, setSaveDialogOpen] = useState<boolean>(false);
   const [manualError, setManualError] = useState<string | null>(null);
+  const [document, setDocument] = useState<FairMarkdownDocument | null>(null);
+  const [tabValue, setTabValue] = useState(0);
   const navigate = useNavigate();
   const params = useParams();
   const { owner, repo, branch, category, lesson } = params;
@@ -67,9 +130,31 @@ const EditorPage: React.FC = () => {
 
   const [setupComplete, setSetupComplete] = useState(false);
 
+  // Handle tab change
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  // Handle document change
+  const handleDocumentChange = (updatedDocument: Partial<FairMarkdownDocument>) => {
+    if (document) {
+      const newDocument = { ...document, ...updatedDocument };
+      setDocument(newDocument);
+      
+      // Serialize and save
+      try {
+        const markdown = serializeMarkdown(newDocument);
+        setMarkdownContent(markdown);
+        // The content update will be handled by the useEffect that watches markdownContent
+      } catch (error) {
+        console.error('Error serializing markdown:', error);
+        // Handle error state
+      }
+    }
+  };
+
   // Main effect to handle all loading scenarios
-  useEffect(() => {
-    const loadRepositoryAndLessonPlan = async () => {
+  const loadRepositoryAndLessonPlan = async () => {
       try {
         // First check if we have URL parameters
         if (owner && repo && branch && category && lesson) {
@@ -176,8 +261,22 @@ const EditorPage: React.FC = () => {
       }
     };
     
+  useEffect(() => {
     loadRepositoryAndLessonPlan();
   }, [owner, repo, branch, category, lesson, repositories, lessonPlanData, isLoadingLessonPlan, fullLessonPath, navigate]);
+
+  // Parse markdown when content is loaded
+  useEffect(() => {
+    if (markdownContent) {
+      try {
+        const parsedDocument = parseMarkdown(markdownContent);
+        setDocument(parsedDocument);
+      } catch (error) {
+        console.error('Error parsing markdown:', error);
+        // Handle error state
+      }
+    }
+  }, [markdownContent]);
 
   // Show loading state
   if (loading) {
@@ -339,11 +438,75 @@ const EditorPage: React.FC = () => {
           </Alert>
         ) : (
           <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-            {markdownContent !== null && (
-              <Editor
-                initialMarkdown={markdownContent}
-                onSave={handleContentUpdate}
-              />
+            {markdownContent !== null && document && (
+              <Paper elevation={3} sx={{ mb: 4 }}>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                  <Tabs
+                    value={tabValue}
+                    onChange={handleTabChange}
+                    aria-label="editor tabs"
+                    variant="scrollable"
+                    scrollButtons="auto"
+                  >
+                    <StyledTab label="General info" icon={<InfoOutlineIcon />} iconPosition="start"  {...a11yProps(0)} />
+                    <StyledTab label="Authors" icon={<AttributionIcon />} iconPosition="start" {...a11yProps(1)} />
+                    <StyledTab label="Learning outcomes" icon={<TrackChangesIcon />} iconPosition="start" {...a11yProps(2)} />
+                    <StyledTab label="Activities" icon={<EventNoteOutlinedIcon />} iconPosition="start" {...a11yProps(3)} />
+                    <StyledTab label="Prerequisites" icon={<ChecklistIcon />} iconPosition="start" {...a11yProps(4)} />
+                    <StyledTab label="Resources" icon={<AttachmentIcon />} iconPosition="start" {...a11yProps(5)} />
+                    <StyledTab label="Content" icon={<SubjectIcon />} iconPosition="start" {...a11yProps(6)} />
+                  </Tabs>
+                </Box>
+                
+                <TabPanel value={tabValue} index={0}>
+                  <GeneralInfoEditor 
+                    document={document} 
+                    onChange={handleDocumentChange} 
+                  />
+                </TabPanel>
+                
+                <TabPanel value={tabValue} index={1}>
+                  <AuthorsEditor 
+                    document={document} 
+                    onChange={handleDocumentChange} 
+                  />
+                </TabPanel>
+                
+                <TabPanel value={tabValue} index={2}>
+                  <LearningOutcomesEditor 
+                    document={document} 
+                    onChange={handleDocumentChange} 
+                  />
+                </TabPanel>
+                
+                <TabPanel value={tabValue} index={3}>
+                  <ActivitiesEditor 
+                    document={document} 
+                    onChange={handleDocumentChange} 
+                  />
+                </TabPanel>
+                
+                <TabPanel value={tabValue} index={4}>
+                  <PrerequisitesEditor 
+                    document={document} 
+                    onChange={handleDocumentChange} 
+                  />
+                </TabPanel>
+                
+                <TabPanel value={tabValue} index={5}>
+                  <ResourcesEditor 
+                    document={document} 
+                    onChange={handleDocumentChange} 
+                  />
+                </TabPanel>
+                
+                <TabPanel value={tabValue} index={6}>
+                  <ContentEditor 
+                    document={document} 
+                    onChange={handleDocumentChange} 
+                  />
+                </TabPanel>
+              </Paper>
             )}
           </Box>
         )}
