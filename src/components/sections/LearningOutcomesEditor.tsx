@@ -162,19 +162,21 @@ const LearningOutcomesEditor: FC<LearningOutcomesEditorProps> = ({ document, onC
   };
 
   // Format verbs for display in table
-  const formatVerbs = (verbs: LearningVerbLevel[]) => {
-    return verbs.map(v => v.verb ? `${v.verb} (${v.level})` : v.level).join(', ');
+  const formatVerbs = (verbs: LearningVerbLevel[] | undefined) => {
+    return verbs ? verbs.map(v => v.verb ? `${v.verb} (${v.level})` : v.level).join(', ') : '';
   };
   
   // Get color for level display
-  const getLevelColor = (verbs: LearningVerbLevel[]) => {
+  const getLevelColor = (verbs: LearningVerbLevel[] | undefined) => {
+    if (!verbs || verbs.length === 0) return 'primary.main';
     if (verbs.some(v => v.level === 'expert')) return 'error.main';
     if (verbs.some(v => v.level === 'intermediate')) return 'secondary.main';
     return 'primary.main';
   };
   
   // Get highest level from verbs
-  const getHighestLevel = (verbs: LearningVerbLevel[]) => {
+  const getHighestLevel = (verbs: LearningVerbLevel[] | undefined) => {
+    if (!verbs || verbs.length === 0) return '';
     if (verbs.some(v => v.level === 'expert')) return 'Expert';
     if (verbs.some(v => v.level === 'intermediate')) return 'Intermediate';
     if (verbs.some(v => v.level === 'beginner')) return 'Beginner';
@@ -234,9 +236,9 @@ const LearningOutcomesEditor: FC<LearningOutcomesEditorProps> = ({ document, onC
                     <SortableTableRow key={key} id={key}>
                       <DragHandle />
                       <TableCell>{key}</TableCell>
-                      <TableCell>{outcome.outcome}</TableCell>
+                      <TableCell>{outcome?.outcome || ''}</TableCell>
                       <TableCell>
-                        {outcome.verbs.length > 0 ? (
+                        {outcome?.verbs && outcome.verbs.length > 0 ? (
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                             {outcome.verbs.map((verb, index) => (
                               <Chip

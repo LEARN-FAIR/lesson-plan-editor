@@ -49,7 +49,7 @@ const LearningOutcomeEditorModal: React.FC<LearningOutcomeEditorModalProps> = ({
   // Initialize form when outcome changes
   useEffect(() => {
     if (outcome) {
-      setOutcomeText(outcome.outcome || '');
+      setOutcomeText(outcome?.outcome || '');
       
       // Initialize verb inputs based on existing verbs
       const verbInputs: LevelVerbs = {
@@ -58,11 +58,14 @@ const LearningOutcomeEditorModal: React.FC<LearningOutcomeEditorModalProps> = ({
         expert: ''
       };
       
-      outcome.verbs.forEach((verbObj: LearningVerbLevel) => {
-        if (verbObj.level === 'beginner' || verbObj.level === 'intermediate' || verbObj.level === 'expert') {
-          verbInputs[verbObj.level] = verbObj.verb || '';
-        }
-      });
+      // Add null check for verbs array
+      if (outcome.verbs && Array.isArray(outcome.verbs)) {
+        outcome.verbs.forEach((verbObj: LearningVerbLevel) => {
+          if (verbObj.level === 'beginner' || verbObj.level === 'intermediate' || verbObj.level === 'expert') {
+            verbInputs[verbObj.level] = verbObj.verb || '';
+          }
+        });
+      }
       
       setLevelVerbs(verbInputs);
     } else {
