@@ -204,13 +204,18 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
     };
 
     // Group lesson plans by category
-    const groupLessonPlansByCategory = (plans: LessonPlan[]) => {
-        const categorizedPlans: { category: string; plans: LessonPlan[] }[] = [];
+    interface CategoryGroup {
+        category: string;
+        plans: LessonPlan[];
+    }
+    
+    const groupLessonPlansByCategory = (plans: LessonPlan[]): CategoryGroup[] => {
+        const categorizedPlans: CategoryGroup[] = [];
         const uncategorizedPlans: LessonPlan[] = [];
 
         // Group plans by category
         plans.forEach(plan => {
-            if (plan.category && typeof plan.category === 'object' && plan.category.title) {
+            if (plan.category && typeof plan.category === 'object' && 'title' in plan.category && plan.category.title) {
                 const categoryTitle = plan.category.title;
                 const existingCategory = categorizedPlans.find(c => c.category === categoryTitle);
                 if (existingCategory) {
@@ -229,10 +234,10 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
         // Sort categories by number if available
         categorizedPlans.sort((a, b) => {
             // Find plans with matching categories and get their category numbers
-            const planA = plans.find(p => p.category && typeof p.category === 'object' && p.category.title === a.category);
-            const planB = plans.find(p => p.category && typeof p.category === 'object' && p.category.title === b.category);
-            const aNumber = planA?.category?.number || 0;
-            const bNumber = planB?.category?.number || 0;
+            const planA = plans.find(p => p.category && typeof p.category === 'object' && 'title' in p.category && p.category.title === a.category);
+            const planB = plans.find(p => p.category && typeof p.category === 'object' && 'title' in p.category && p.category.title === b.category);
+            const aNumber = planA?.category && 'number' in planA.category ? planA.category.number || 0 : 0;
+            const bNumber = planB?.category && 'number' in planB.category ? planB.category.number || 0 : 0;
             return aNumber - bNumber;
         });
 
@@ -248,13 +253,13 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
     };
 
     // Filter lesson plans based on search query
-    const filterLessonPlans = (plans: LessonPlan[]) => {
+    const filterLessonPlans = (plans: LessonPlan[]): LessonPlan[] => {
         if (!searchQuery) return plans;
 
         const query = searchQuery.toLowerCase();
         return plans.filter(plan => {
             const nameMatch = plan.name.toLowerCase().includes(query);
-            const categoryMatch = plan.category && typeof plan.category === 'object' && plan.category.title ?
+            const categoryMatch = plan.category && typeof plan.category === 'object' && 'title' in plan.category && plan.category.title ?
                 plan.category.title.toLowerCase().includes(query) : false;
             return nameMatch || categoryMatch;
         });
@@ -348,9 +353,33 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
                                             </Alert>
                                         )}
 
-                                        {loadingLessonPlans ? (
+                                        {loadingLessonPlans && (
                                             <Box sx={{display: 'flex', justifyContent: 'center', my: 2}}>
                                                 <CircularProgress/>
+                                            </Box>
+                                        )}
+
+                                        {selectedLessonPlan ? (
+                                            <Box sx={{mt: 2, p: 2, border: '1px solid #1976d2', borderRadius: 1}}>
+                                                <Typography variant="subtitle1" sx={{fontWeight: 'bold'}}>
+                                                    {selectedLessonPlan.name.replace(/\.md$/, '').replace(/-/g, ' ')}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary" sx={{mb: 2}}>
+                                                    {selectedLessonPlan.path}
+                                                </Typography>
+                                                {selectedLessonPlan.category && typeof selectedLessonPlan.category === 'object' && 'title' in selectedLessonPlan.category && (
+                                                    <Typography variant="body2">
+                                                        Category: {selectedLessonPlan.category.title}
+                                                    </Typography>
+                                                )}
+                                                <Button 
+                                                    variant="outlined" 
+                                                    size="small" 
+                                                    sx={{mt: 2}}
+                                                    onClick={() => setSelectedLessonPlan(null)}
+                                                >
+                                                    Change Selection
+                                                </Button>
                                             </Box>
                                         ) : (
                                             <>
@@ -377,13 +406,12 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
                                                         ) : null
                                                     }}
                                                 />
-
+{}
                                                 {groupLessonPlansByCategory(filterLessonPlans(lessonPlans)).map((categoryGroup) => (
                                                     <Accordion
                                                         key={categoryGroup.category}
                                                         expanded={expandedCategory === categoryGroup.category}
                                                         onChange={() => handleToggleCategory(categoryGroup.category)}
-                                                        sx={{mb: 1}}
                                                     >
                                                         <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
                                                             <Typography variant="subtitle1">
@@ -396,9 +424,7 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
                                                                     <ListItem key={plan.path} disablePadding>
                                                                         <ListItemButton
                                                                             onClick={() => handleLessonPlanSelected(plan)}
-                                                                            selected={selectedLessonPlan?.path === plan.path}
                                                                             sx={{
-                                                                                border: selectedLessonPlan?.path === plan.path ? '1px solid #1976d2' : 'none',
                                                                                 borderRadius: 1,
                                                                                 mx: 1,
                                                                                 mb: 0.5
