@@ -5,179 +5,179 @@ export const githubRouter = express.Router();
 
 // Middleware to verify token
 export const verifyToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authorization token is required' });
-  }
-  
-  // Initialize req.body if it doesn't exist (for GET requests)
-  if (!req.body) {
-    req.body = {};
-  }
-  
-  req.body.token = authHeader.split(' ')[1];
-  next();
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({error: 'Authorization token is required'});
+    }
+
+    // Initialize req.body if it doesn't exist (for GET requests)
+    if (!req.body) {
+        req.body = {};
+    }
+
+    req.body.token = authHeader.split(' ')[1];
+    next();
 };
 
 // Get current user
 githubRouter.get('/user', verifyToken, async (req, res) => {
-  try {
-    const user = await githubService.getCurrentUser(req.body.token);
-    return res.json(user);
-  } catch (error) {
-    console.error('Error fetching GitHub user:', error);
-    return res.status(500).json({ error: 'Failed to fetch user information' });
-  }
+    try {
+        const user = await githubService.getCurrentUser(req.body.token);
+        return res.json(user);
+    } catch (error) {
+        console.error('Error fetching GitHub user:', error);
+        return res.status(500).json({error: 'Failed to fetch user information'});
+    }
 });
 
 // Check repository write access
 githubRouter.get('/repo/:owner/:repo/access', verifyToken, async (req, res) => {
-  try {
-    const { owner, repo } = req.params;
-    const hasAccess = await githubService.checkRepositoryWriteAccess(owner, repo, req.body.token);
-    return res.json({ hasAccess });
-  } catch (error) {
-    console.error('Error checking repository access:', error);
-    return res.status(500).json({ error: 'Failed to check repository access' });
-  }
+    try {
+        const {owner, repo} = req.params;
+        const hasAccess = await githubService.checkRepositoryWriteAccess(owner, repo, req.body.token);
+        return res.json({hasAccess});
+    } catch (error) {
+        console.error('Error checking repository access:', error);
+        return res.status(500).json({error: 'Failed to check repository access'});
+    }
 });
 
 // Commit file to repository
 githubRouter.post('/repo/:owner/:repo/commit', verifyToken, async (req, res) => {
-  try {
-    const { owner, repo } = req.params;
-    const { path, message, content, branch, token } = req.body;
-    
-    if (!path || !message || !content) {
-      return res.status(400).json({ error: 'Missing required parameters' });
+    try {
+        const {owner, repo} = req.params;
+        const {path, message, content, branch, token} = req.body;
+
+        if (!path || !message || !content) {
+            return res.status(400).json({error: 'Missing required parameters'});
+        }
+
+        const result = await githubService.commitFile({
+            owner,
+            repo,
+            path,
+            message,
+            content,
+            branch,
+            token
+        });
+
+        return res.json(result);
+    } catch (error) {
+        console.error('Error committing file:', error);
+        return res.status(500).json({error: 'Failed to commit file'});
     }
-    
-    const result = await githubService.commitFile({
-      owner,
-      repo,
-      path,
-      message,
-      content,
-      branch,
-      token
-    });
-    
-    return res.json(result);
-  } catch (error) {
-    console.error('Error committing file:', error);
-    return res.status(500).json({ error: 'Failed to commit file' });
-  }
 });
 
 // Get target repository and its forks
 githubRouter.get('/repos/target-and-forks', verifyToken, async (req, res) => {
-  try {
-    const repos = await githubService.getTargetRepoAndForks(req.body.token);
-    return res.json(repos);
-  } catch (error) {
-    console.error('Error fetching repositories:', error);
-    return res.status(500).json({ error: 'Failed to fetch repositories' });
-  }
+    try {
+        const repos = await githubService.getTargetRepoAndForks(req.body.token);
+        return res.json(repos);
+    } catch (error) {
+        console.error('Error fetching repositories:', error);
+        return res.status(500).json({error: 'Failed to fetch repositories'});
+    }
 });
 
 // Search repositories
 githubRouter.get('/repos/search', verifyToken, async (req, res) => {
-  try {
-    const { q } = req.query;
-    
-    if (!q || typeof q !== 'string') {
-      return res.status(400).json({ error: 'Query parameter is required' });
+    try {
+        const {q} = req.query;
+
+        if (!q || typeof q !== 'string') {
+            return res.status(400).json({error: 'Query parameter is required'});
+        }
+
+        const repos = await githubService.searchRepositories(q, req.body.token);
+        return res.json(repos);
+    } catch (error) {
+        console.error('Error searching repositories:', error);
+        return res.status(500).json({error: 'Failed to search repositories'});
     }
-    
-    const repos = await githubService.searchRepositories(q, req.body.token);
-    return res.json(repos);
-  } catch (error) {
-    console.error('Error searching repositories:', error);
-    return res.status(500).json({ error: 'Failed to search repositories' });
-  }
 });
 
 // Get branches for a repository
 githubRouter.get('/repo/:owner/:repo/branches', verifyToken, async (req, res) => {
-  try {
-    const { owner, repo } = req.params;
-    const branches = await githubService.getBranches(owner, repo, req.body.token);
-    return res.json(branches);
-  } catch (error) {
-    console.error('Error fetching branches:', error);
-    return res.status(500).json({ error: 'Failed to fetch branches' });
-  }
+    try {
+        const {owner, repo} = req.params;
+        const branches = await githubService.getBranches(owner, repo, req.body.token);
+        return res.json(branches);
+    } catch (error) {
+        console.error('Error fetching branches:', error);
+        return res.status(500).json({error: 'Failed to fetch branches'});
+    }
 });
 
 // Create a fork of the target repository
 githubRouter.post('/repos/fork', verifyToken, async (req, res) => {
-  try {
-    const fork = await githubService.createFork(req.body.token);
-    return res.json(fork);
-  } catch (error) {
-    console.error('Error creating fork:', error);
-    return res.status(500).json({ error: 'Failed to create fork' });
-  }
+    try {
+        const fork = await githubService.createFork(req.body.token);
+        return res.json(fork);
+    } catch (error) {
+        console.error('Error creating fork:', error);
+        return res.status(500).json({error: 'Failed to create fork'});
+    }
 });
 
 // Create a new branch in a repository
 githubRouter.post('/repo/:owner/:repo/branches', verifyToken, async (req, res) => {
-  try {
-    const { owner, repo } = req.params;
-    const { branchName, sourceBranch, token } = req.body;
-    
-    if (!branchName || !sourceBranch) {
-      return res.status(400).json({ error: 'Missing required parameters' });
+    try {
+        const {owner, repo} = req.params;
+        const {branchName, sourceBranch, token} = req.body;
+
+        if (!branchName || !sourceBranch) {
+            return res.status(400).json({error: 'Missing required parameters'});
+        }
+
+        const branch = await githubService.createBranch(owner, repo, branchName, sourceBranch, token);
+        return res.json(branch);
+    } catch (error) {
+        console.error('Error creating branch:', error);
+        return res.status(500).json({error: 'Failed to create branch'});
     }
-    
-    const branch = await githubService.createBranch(owner, repo, branchName, sourceBranch, token);
-    return res.json(branch);
-  } catch (error) {
-    console.error('Error creating branch:', error);
-    return res.status(500).json({ error: 'Failed to create branch' });
-  }
 });
 
 // Get commits on a branch
 githubRouter.get('/repo/:owner/:repo/commits', verifyToken, async (req, res) => {
-  try {
-    const { owner, repo } = req.params;
-    const { branch } = req.query;
-    
-    if (!branch || typeof branch !== 'string') {
-      return res.status(400).json({ error: 'Branch parameter is required' });
+    try {
+        const {owner, repo} = req.params;
+        const {branch} = req.query;
+
+        if (!branch || typeof branch !== 'string') {
+            return res.status(400).json({error: 'Branch parameter is required'});
+        }
+
+        const commits = await githubService.getCommitsOnBranch(owner, repo, branch, req.body.token);
+        return res.json(commits);
+    } catch (error) {
+        console.error('Error getting commits:', error);
+        return res.status(500).json({error: 'Failed to get commits'});
     }
-    
-    const commits = await githubService.getCommitsOnBranch(owner, repo, branch, req.body.token);
-    return res.json(commits);
-  } catch (error) {
-    console.error('Error getting commits:', error);
-    return res.status(500).json({ error: 'Failed to get commits' });
-  }
 });
 
 // Get file content from a repository
 githubRouter.get('/repo/:owner/:repo/content', verifyToken, async (req, res) => {
-  try {
-    const { owner, repo } = req.params;
-    const { path, branch } = req.query;
-    
-    if (!path || typeof path !== 'string') {
-      return res.status(400).json({ error: 'Path parameter is required' });
+    try {
+        const {owner, repo} = req.params;
+        const {path, branch} = req.query;
+
+        if (!path || typeof path !== 'string') {
+            return res.status(400).json({error: 'Path parameter is required'});
+        }
+
+        if (!branch || typeof branch !== 'string') {
+            return res.status(400).json({error: 'Branch parameter is required'});
+        }
+
+        const content = await githubService.getFileContent(owner, repo, path, branch, req.body.token);
+        return res.json({content});
+    } catch (error) {
+        console.error('Error getting file content:', error);
+        if ((error as Error).message.includes('Not Found')) {
+            return res.status(404).json({error: 'File not found'});
+        }
+        return res.status(500).json({error: 'Failed to get file content'});
     }
-    
-    if (!branch || typeof branch !== 'string') {
-      return res.status(400).json({ error: 'Branch parameter is required' });
-    }
-    
-    const content = await githubService.getFileContent(owner, repo, path, branch, req.body.token);
-    return res.json({ content });
-  } catch (error) {
-    console.error('Error getting file content:', error);
-    if ((error as Error).message.includes('Not Found')) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-    return res.status(500).json({ error: 'Failed to get file content' });
-  }
 });

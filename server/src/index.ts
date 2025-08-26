@@ -5,7 +5,7 @@ import {githubRouter} from './routes/github';
 import {lessonPlansRouter} from './routes/lessonPlans';
 import {contributorsRouter} from './routes/contributors';
 // Import from the JavaScript version of the auth router
-const { authRouter } = require('./routes/auth');
+const {authRouter} = require('./routes/auth');
 
 // Load environment variables
 dotenv.config();
@@ -15,8 +15,8 @@ const PORT = process.env.PORT || 4000;
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  credentials: true
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true
 }));
 app.use(express.json());
 
@@ -28,10 +28,10 @@ app.use('/api/contributors', contributorsRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Server is running' });
+    res.status(200).json({status: 'ok', message: 'Server is running'});
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
