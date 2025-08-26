@@ -8,7 +8,7 @@ import {
     Avatar,
     Box,
     Button,
-    ButtonGroup,
+    ButtonGroup, Card, Chip,
     CircularProgress,
     Container,
     IconButton,
@@ -26,10 +26,12 @@ import {
     TextField,
     Typography
 } from '@mui/material';
+import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
+import UndoIcon from '@mui/icons-material/Undo';
 import SearchIcon from '@mui/icons-material/Search';
 import ForkRightIcon from '@mui/icons-material/ForkRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-// No longer importing modal components
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import githubRepoService, {Repository} from '../services/githubRepoService';
 import lessonPlanService, {LessonPlan} from '../services/lessonPlanService';
 import {useRepositories} from '../contexts/RepositoryContext';
@@ -38,15 +40,15 @@ import BranchSelector from '../components/BranchSelector';
 
 const steps = [
     {
-        label: 'Select Repository',
+        label: 'Select repository',
         description: 'Select a GitHub repository to work with.'
     },
     {
-        label: 'Select Branch',
+        label: 'Select branch',
         description: 'Choose a branch from the repository to load lesson plans from.'
     },
     {
-        label: 'Select Lesson Plan',
+        label: 'Select lesson plan',
         description: 'Choose a lesson plan from the repository to edit.'
     }
 ];
@@ -360,27 +362,26 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
                                         )}
 
                                         {selectedLessonPlan ? (
-                                            <Box sx={{mt: 2, p: 2, border: '1px solid #1976d2', borderRadius: 1}}>
-                                                <Typography variant="subtitle1" sx={{fontWeight: 'bold'}}>
+                                            <Card variant="outlined" sx={{mt: 2, p: 2, borderRadius: 1}}>
+                                                {selectedLessonPlan.category && typeof selectedLessonPlan.category === 'object' && 'title' in selectedLessonPlan.category && (
+                                                    <Chip size="small" icon={<LocalOfferOutlinedIcon />} label={selectedLessonPlan.category.title} variant="outlined" />
+                                                )}
+                                                <Typography variant="subtitle1" sx={{fontWeight: 'bold', mt: 1}}>
                                                     {selectedLessonPlan.name.replace(/\.md$/, '').replace(/-/g, ' ')}
                                                 </Typography>
                                                 <Typography variant="body2" color="text.secondary" sx={{mb: 2}}>
                                                     {selectedLessonPlan.path}
                                                 </Typography>
-                                                {selectedLessonPlan.category && typeof selectedLessonPlan.category === 'object' && 'title' in selectedLessonPlan.category && (
-                                                    <Typography variant="body2">
-                                                        Category: {selectedLessonPlan.category.title}
-                                                    </Typography>
-                                                )}
                                                 <Button 
                                                     variant="outlined" 
                                                     size="small" 
                                                     sx={{mt: 2}}
                                                     onClick={() => setSelectedLessonPlan(null)}
+                                                    startIcon={<UndoIcon />}
                                                 >
-                                                    Change Selection
+                                                    Change selection
                                                 </Button>
-                                            </Box>
+                                            </Card>
                                         ) : (
                                             <>
                                                 <TextField
@@ -459,16 +460,17 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
                                             onClick={handleNext}
                                             sx={{mt: 1, mr: 1}}
                                             disabled={index === 0 && !selectedRepo || index === 1 && !selectedBranch || index === 2 && !selectedLessonPlan}
+                                            endIcon={<NavigateNextIcon />}
                                         >
                                             {index === steps.length - 1 ? 'Finish' : 'Continue'}
                                         </Button>
-                                        <Button
+                                        {index > 0 && <Button
                                             disabled={index === 0}
                                             onClick={handleBack}
                                             sx={{mt: 1, mr: 1}}
                                         >
                                             Back
-                                        </Button>
+                                        </Button>}
                                     </div>
                                 </Box>
                             </StepContent>

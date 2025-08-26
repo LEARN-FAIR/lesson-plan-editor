@@ -1,8 +1,9 @@
 import React, {useState} from 'react';
-import {Avatar, Box, CircularProgress, IconButton, Menu, MenuItem, Tooltip} from '@mui/material';
+import {Avatar, Box, CircularProgress, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip} from '@mui/material';
 import {useNavigate} from 'react-router-dom';
 import {useAuth} from '../../contexts/AuthContext';
 import {useGitHubUser} from '../../services/githubQueryHooks';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 interface UserMenuProps {
     onLogout?: () => void;
@@ -85,13 +86,19 @@ const UserMenu: React.FC<UserMenuProps> = ({onLogout}) => {
                             ml: -0.5,
                             mr: 1,
                         },
+                        width: 200, maxWidth: '100%'
                     },
                 }}
                 transformOrigin={{horizontal: 'right', vertical: 'top'}}
                 anchorOrigin={{horizontal: 'right', vertical: 'bottom'}}
             >
                 <MenuItem onClick={handleLogout}>
-                    Logout
+                    <ListItemIcon>
+                        <LogoutIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>
+                        Log out
+                    </ListItemText>
                 </MenuItem>
             </Menu>
         </Box>

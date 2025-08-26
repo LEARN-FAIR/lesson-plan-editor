@@ -4,6 +4,8 @@ import {useLocation, useNavigate} from 'react-router-dom';
 import githubService from '../services/githubService';
 import {useAuth} from '../contexts/AuthContext';
 import Visual from '../components/images/home-visual.svg';
+import AddIcon from "@mui/icons-material/Add";
+import GitHubIcon from "@mui/icons-material/GitHub";
 
 const LoginPage: React.FC = () => {
     const location = useLocation();
@@ -71,6 +73,7 @@ const LoginPage: React.FC = () => {
                     onClick={handleLogin}
                     size="large"
                     sx={{mt: 2}}
+                    startIcon={<GitHubIcon/>}
                 >
                     Sign in with GitHub
                 </Button>
