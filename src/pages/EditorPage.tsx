@@ -53,125 +53,191 @@ const EditorPage: React.FC = () => {
     error: lessonPlanError
   } = useLessonPlanContent(fullLessonPath);
   
+  // Track loading states for repositories and lesson plan content
+  const [isLoadingRepository, setIsLoadingRepository] = useState<boolean>(false);
+  const [isLoadingLessonPlanContent, setIsLoadingLessonPlanContent] = useState<boolean>(false);
+  
   // Combine loading states
-  const loading = isLoadingRepos || isLoadingLessonPlan;
+  const loading = isLoadingRepos || isLoadingLessonPlan || isLoadingRepository || isLoadingLessonPlanContent;
   
   // Combine error states
   const error = manualError || 
     (reposError ? (reposError as Error).message : null) || 
     (lessonPlanError ? (lessonPlanError as Error).message : null);
 
-  // Initialize setupComplete based on stored data to prevent flashing
-  const [setupComplete, setSetupComplete] = useState(() => {
-    const storedRepo = githubRepoService.getSelectedRepo();
-    const storedLessonPlan = lessonPlanService.getSelectedLessonPlan();
-    return !!(storedRepo && storedLessonPlan);
-  });
-  
-  // Track if we've already processed the initial setup
-  const initialSetupDoneRef = React.useRef(false);
+  const [setupComplete, setSetupComplete] = useState(false);
 
+  // Main effect to handle all loading scenarios
   useEffect(() => {
-    // Skip if we're still loading data
-    if (loading) {
-      return;
-    }
+    console.log('EditorPage useEffect running');
+    console.log('URL params:', { owner, repo, branch, category, lesson });
     
-    // If we have URL parameters for repo, branch, and lesson, try to load them
-    if (owner && repo && branch && category && lesson) {
-      // Check if we're authenticated
-      if (!githubService.isAuthenticated()) {
-        console.log('Not authenticated, storing current URL for redirect after login');
-        // Store the current URL for redirect after login
-        const currentUrl = `/edit/${owner}/${repo}/${branch}/${category}/${lesson}`;
-        sessionStorage.setItem('redirect_url', currentUrl);
-        setManualError('Not authenticated with GitHub. Please log in.');
-        return;
-      }
-      
-      // Repository is already set by RepositoryLoader
-      // Just verify that we have a selected repository
-      const selectedRepo = githubRepoService.getSelectedRepo();
-      if (!selectedRepo) {
-        console.log('No repository selected, this should not happen with RepositoryLoader');
-        setManualError('Repository not found or not selected');
-        return;
-      }
-      
-      // Set the selected branch
-      if (branch) {
-        githubRepoService.setSelectedBranch(branch);
-      }
-      
-      // Set the lesson plan content from React Query data
-      if (lessonPlanData) {
-        lessonPlanService.setSelectedLessonPlan(lessonPlanData);
-        
-        if (lessonPlanData.decoded_content) {
-          setMarkdownContent(lessonPlanData.decoded_content);
-          setSetupComplete(true);
+    const loadRepositoryAndLessonPlan = async () => {
+      try {
+        // First check if we have URL parameters
+        if (owner && repo && branch && category && lesson) {
+          console.log('URL parameters available, loading repository and lesson plan');
+          setIsLoadingRepository(true);
+          
+          // 1. Load repositories if needed
+          let selectedRepo;
+          if (repositories.length > 0) {
+            // Find the repository that matches the URL parameters
+            selectedRepo = repositories.find(r => 
+              r.owner.login.toLowerCase() === owner.toLowerCase() && 
+              r.name.toLowerCase() === repo.toLowerCase()
+            );
+            
+            if (!selectedRepo) {
+              console.error(`Repository ${owner}/${repo} not found`);
+              setManualError(`Repository ${owner}/${repo} not found or you don't have access to it`);
+              setIsLoadingRepository(false);
+              return;
+            }
+          } else {
+            // Wait for repositories to load
+            console.log('Waiting for repositories to load');
+            return; // Exit and wait for repositories to load
+          }
+          
+          // 2. Set the selected repository and branch
+          console.log('Setting selected repository:', selectedRepo);
+          githubRepoService.setSelectedRepo(selectedRepo);
+          githubRepoService.setSelectedBranch(branch);
+          setIsLoadingRepository(false);
+          
+          // 3. Load lesson plan content
+          setIsLoadingLessonPlanContent(true);
+          if (lessonPlanData) {
+            console.log('Lesson plan data available:', lessonPlanData);
+            
+            if (lessonPlanData.decoded_content) {
+              console.log('Setting markdown content from lessonPlanData');
+              setMarkdownContent(lessonPlanData.decoded_content);
+              lessonPlanService.setSelectedLessonPlan(lessonPlanData);
+              setSetupComplete(true);
+            } else {
+              // If we have lesson plan data but no decoded content, fetch it directly
+              console.log('Lesson plan has no decoded content, fetching directly');
+              try {
+                const fullLessonPlan = await lessonPlanService.getLessonPlan(fullLessonPath);
+                if (fullLessonPlan.decoded_content) {
+                  setMarkdownContent(fullLessonPlan.decoded_content);
+                  lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
+                  setSetupComplete(true);
+                } else {
+                  throw new Error('Could not load lesson plan content');
+                }
+              } catch (error) {
+                console.error('Error fetching lesson plan content:', error);
+                setManualError('Could not load lesson plan content');
+              }
+            }
+          } else if (!isLoadingLessonPlan) {
+            // If lesson plan data isn't loading but we don't have it, fetch it directly
+            console.log('No lesson plan data, fetching directly');
+            try {
+              const fullLessonPlan = await lessonPlanService.getLessonPlan(fullLessonPath);
+              if (fullLessonPlan.decoded_content) {
+                setMarkdownContent(fullLessonPlan.decoded_content);
+                lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
+                setSetupComplete(true);
+              } else {
+                throw new Error('Could not load lesson plan content');
+              }
+            } catch (error) {
+              console.error('Error fetching lesson plan content:', error);
+              setManualError('Could not load lesson plan content');
+            }
+          }
+          setIsLoadingLessonPlanContent(false);
         } else {
-          setManualError('Could not load lesson plan content');
+          // No URL parameters, check if we have selections in session storage
+          console.log('No URL parameters, checking session storage');
+          const storedRepo = githubRepoService.getSelectedRepo();
+          const storedLessonPlan = lessonPlanService.getSelectedLessonPlan();
+          
+          console.log('Stored repo:', storedRepo ? `${storedRepo.owner.login}/${storedRepo.name}` : 'none');
+          console.log('Stored lesson plan:', storedLessonPlan ? storedLessonPlan.path : 'none');
+          
+          if (storedRepo && storedLessonPlan) {
+            console.log('Found stored repo and lesson plan');
+            
+            // Check if the stored lesson plan has decoded content
+            if (storedLessonPlan.decoded_content) {
+              console.log('Setting markdown content from stored lesson plan');
+              setMarkdownContent(storedLessonPlan.decoded_content);
+              setSetupComplete(true);
+            } else {
+              // If we have a stored lesson plan but no decoded content, fetch it
+              console.log('Stored lesson plan has no decoded content, fetching');
+              setIsLoadingLessonPlanContent(true);
+              try {
+                const fullLessonPlan = await lessonPlanService.getLessonPlan(storedLessonPlan.path);
+                if (fullLessonPlan.decoded_content) {
+                  setMarkdownContent(fullLessonPlan.decoded_content);
+                  lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
+                  setSetupComplete(true);
+                } else {
+                  throw new Error('Could not load lesson plan content');
+                }
+              } catch (error) {
+                console.error('Error fetching lesson plan content:', error);
+                setManualError('Could not load lesson plan content');
+              }
+              setIsLoadingLessonPlanContent(false);
+            }
+          } else {
+            // No stored data, redirect to setup page
+            console.log('No stored data, redirecting to setup page');
+            navigate('/');
+          }
         }
+      } catch (error) {
+        console.error('Error in loadRepositoryAndLessonPlan:', error);
+        setManualError(error instanceof Error ? error.message : 'Unknown error occurred');
+        setIsLoadingRepository(false);
+        setIsLoadingLessonPlanContent(false);
       }
-    } else if (!initialSetupDoneRef.current) {
-      // No URL parameters, check if we have selections in session storage
-      // Only do this once to prevent infinite redirects
-      initialSetupDoneRef.current = true;
-      
-      const storedRepo = githubRepoService.getSelectedRepo();
-      const storedLessonPlan = lessonPlanService.getSelectedLessonPlan();
-      
-      if (storedRepo && storedLessonPlan) {
-        setSetupComplete(true);
-        
-        // Get the selected branch
-        const storedBranch = githubRepoService.getSelectedBranch() || undefined;
-        
-        // Generate and navigate to the appropriate URL
-        const url = generateLessonPlanUrl(storedRepo, storedLessonPlan, storedBranch);
-        navigate(url);
-        
-        if (storedLessonPlan.decoded_content) {
-          setMarkdownContent(storedLessonPlan.decoded_content);
-        }
-      } else {
-        setSetupComplete(false);
-      }
-    }
-  }, [owner, repo, branch, category, lesson, navigate, repositories, lessonPlanData, loading]);
+    };
+    
+    loadRepositoryAndLessonPlan();
+  }, [owner, repo, branch, category, lesson, repositories, lessonPlanData, isLoadingLessonPlan, fullLessonPath, navigate, queryClient]);
 
-  // Render setup page if setup is not complete and we're not loading
-  if (!setupComplete && !loading) {
-    // Check if we have URL parameters that we can use
-    if (owner && repo && branch && category && lesson) {
-      console.log('URL parameters available, attempting to load content directly');
-      
-      // Check if repositories are loaded but no matching repo was found
-      if (repositories.length > 0 && !repositories.find(r => 
-        r.owner.login.toLowerCase() === owner.toLowerCase() && 
-        r.name.toLowerCase() === repo.toLowerCase()
-      )) {
-        return (
-          <Container maxWidth="lg" sx={{ mt: 4 }}>
-            <Alert severity="error">
-              <AlertTitle>Repository Not Found</AlertTitle>
-              Repository {owner}/{repo} not found or you don't have access to it.
-              <Box sx={{ mt: 2 }}>
-                <Button variant="contained" onClick={() => navigate('/')}>Go to Repository Selection</Button>
-              </Box>
-            </Alert>
-          </Container>
-        );
-      }
-      
-      // We'll continue rendering and let the useEffect handle the loading
-    } else {
-      // No URL parameters, redirect to setup
-      console.log('No URL parameters and setup not complete, redirecting to setup');
-      queryClient.invalidateQueries({ queryKey: ['repositories'] });
-      return <Navigate to="/" replace />;
-    }
+  // Show loading state
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+        <Typography variant="h6" sx={{ mt: 2 }}>
+          {isLoadingRepos || isLoadingRepository ? `Loading repository ${owner || ''}/${repo || ''}...` : ''}
+          {(isLoadingLessonPlan || isLoadingLessonPlanContent) && category && lesson ? `Loading lesson plan ${category}/${lesson}...` : ''}
+        </Typography>
+      </Box>
+    );
+  }
+  
+  // Show error state
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">
+          <AlertTitle>Error</AlertTitle>
+          {error}
+          <Box sx={{ mt: 2 }}>
+            <Button variant="contained" onClick={() => navigate('/')}>
+              Go to Repository Selection
+            </Button>
+          </Box>
+        </Alert>
+      </Box>
+    );
+  }
+  
+  // Redirect to setup if not complete
+  if (!setupComplete) {
+    console.log('Setup not complete, redirecting to setup');
+    return <Navigate to="/" replace />;
   }
 
   // Handle markdown content update

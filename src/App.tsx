@@ -12,7 +12,7 @@ import LoginPage from './pages/LoginPage';
 import GitHubCallback from './components/GitHubCallback';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
-import RepositoryLoader from './components/RepositoryLoader';
+// RepositoryLoader no longer needed as EditorPage handles loading
 
 // Context
 import { AuthProvider } from './contexts/AuthContext';
@@ -36,11 +36,9 @@ function App() {
               } />
               
               {/* Editor Page Route */}
-              <Route path="/edit/:owner/:repo/:branch/:category/:lesson" element={
+              <Route path="/editor/:owner/:repo/:branch/:category/:lesson" element={
                 <ProtectedRoute>
-                  <RepositoryLoader>
-                    <EditorPage />
-                  </RepositoryLoader>
+                  <EditorPage />
                 </ProtectedRoute>
               } />
               

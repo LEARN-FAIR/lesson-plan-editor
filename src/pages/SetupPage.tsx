@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { generateLessonPlanUrl } from '../utils/urlUtils';
 import githubRepoService, { Repository } from '../services/githubRepoService';
-import { LessonPlan } from '../services/lessonPlanService';
+import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
 import { useRepositoriesAndForks } from '../services/githubRepoQueryHooks';
 import { useLessonPlans } from '../services/lessonPlanQueryHooks';
 import UserMenu from '../components/UserMenu';
@@ -42,14 +42,14 @@ const SetupPage: React.FC = () => {
     // Get the selected branch
     const selectedBranch = githubRepoService.getSelectedBranch() || undefined;
     
-    // Prefetch the lesson plan content to have it ready when navigating
-    queryClient.prefetchQuery({
-      queryKey: ['lessonPlanContent', lessonPlan.path],
-      queryFn: () => Promise.resolve(lessonPlan)
-    });
+    // Store minimal selections in services for EditorPage to use
+    githubRepoService.setSelectedRepo(repo);
+    lessonPlanService.setSelectedLessonPlan(lessonPlan);
     
     // Generate and navigate to the appropriate URL
+    // EditorPage will handle all loading
     const url = generateLessonPlanUrl(repo, lessonPlan, selectedBranch);
+    console.log('Navigating to editor with URL:', url);
     navigate(url);
   };
 
