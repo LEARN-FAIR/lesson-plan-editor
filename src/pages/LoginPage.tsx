@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
-import { Box, Button, Typography, Paper, Container, CircularProgress } from '@mui/material';
-import { useLocation, Navigate, useNavigate } from 'react-router-dom';
+import React, {useEffect} from 'react';
+import {Box, Button, CircularProgress, Container, Paper, Typography} from '@mui/material';
+import {useLocation, useNavigate} from 'react-router-dom';
 import githubService from '../services/githubService';
-import { useAuth } from '../contexts/AuthContext';
+import {useAuth} from '../contexts/AuthContext';
 import Visual from '../components/images/home-visual.svg';
 
 const LoginPage: React.FC = () => {

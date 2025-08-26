@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, TextField, Select, MenuItem, FormControl, InputLabel,
-  Box, Typography
+import React, {useEffect, useState} from 'react';
+import {
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    TextField,
+    Typography
 } from '@mui/material';
-import { Activity } from '../../types';
+import {Activity} from '../../types';
 import MdxEditorComponent from '../common/MdxEditorComponent';
 
 interface ActivityEditorModalProps {

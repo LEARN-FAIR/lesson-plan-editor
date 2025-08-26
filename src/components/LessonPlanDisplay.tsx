@@ -1,15 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Chip,
-  Paper,
-  Tooltip
-} from '@mui/material';
+import React, {useEffect, useState} from 'react';
+import {Box, Button, Paper, Typography} from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
+import lessonPlanService, {LessonPlan} from '../services/lessonPlanService';
 
 interface LessonPlanDisplayProps {
   onSelectLessonPlan: () => void;

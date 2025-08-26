@@ -1,13 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  IconButton
-} from '@mui/material';
+import React, {useEffect, useState} from 'react';
+import {Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
 interface PrerequisiteEditorModalProps {

@@ -1,39 +1,22 @@
-import React, { useState } from 'react';
-import { 
-  Box, Typography, Paper, Button, IconButton, Divider,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  FormControl, InputLabel, Select, MenuItem, TextField
-} from '@mui/material';
-import { Grid } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
+import React, {useState} from 'react';
+import {Box, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import { FairMarkdownDocument, Activity } from '../../types';
-import MdxEditorComponent from '../common/MdxEditorComponent';
+import {Activity, FairMarkdownDocument} from '../../types';
 import ActivityEditorModal from '../modals/ActivityEditorModal';
 import SectionHeader from '../common/SectionHeader';
-import ReactMarkdown from 'react-markdown';
 import RestoreIcon from '@mui/icons-material/Restore';
 import UpdateIcon from '@mui/icons-material/Update';
 import SortableActivityRow from './SortableActivityRow';
-import { 
-  DndContext, 
-  closestCenter, 
-  KeyboardSensor, 
-  PointerSensor, 
-  useSensor, 
-  useSensors,
-  DragEndEvent
-} from '@dnd-kit/core';
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors
+} from '@dnd-kit/core';
+import {arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable';
 
 interface ActivitiesEditorProps {
   document: FairMarkdownDocument;

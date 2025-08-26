@@ -1,30 +1,37 @@
-import React, { useState } from 'react';
-import { 
-  Box, Typography, Paper, TextField, Button, IconButton, 
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Dialog, DialogActions, DialogContent, DialogTitle, Tooltip
+import React, {useState} from 'react';
+import {
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    IconButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TextField,
+    Tooltip,
+    Typography
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import { FairMarkdownDocument, Resource } from '../../types';
+import {FairMarkdownDocument, Resource} from '../../types';
 import AddIcon from '@mui/icons-material/Add';
 import SectionHeader from '../common/SectionHeader';
-import { 
-  DndContext, 
-  closestCenter, 
-  KeyboardSensor, 
-  PointerSensor, 
-  useSensor, 
-  useSensors,
-  DragEndEvent
-} from '@dnd-kit/core';
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable';
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors
+} from '@dnd-kit/core';
+import {arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable';
 import SortableTableRow from '../common/SortableTableRow';
 import DragHandle from '../common/DragHandle';
 import AttachmentIcon from '@mui/icons-material/Attachment';

@@ -1,26 +1,25 @@
 import React from 'react';
-import { 
-  MDXEditor, 
-  headingsPlugin, 
-  listsPlugin, 
-  quotePlugin, 
-  thematicBreakPlugin, 
-  markdownShortcutPlugin,
-  linkPlugin,
-  tablePlugin,
-  frontmatterPlugin,
-  imagePlugin,
-  diffSourcePlugin,
-  toolbarPlugin,
-  UndoRedo,
-  BoldItalicUnderlineToggles,
-  CodeToggle,
-  ListsToggle,
-  BlockTypeSelect,
-  CreateLink,
-  InsertTable,
-  InsertThematicBreak,
-  DiffSourceToggleWrapper
+import {
+    BlockTypeSelect,
+    BoldItalicUnderlineToggles,
+    CodeToggle,
+    CreateLink,
+    diffSourcePlugin,
+    frontmatterPlugin,
+    headingsPlugin,
+    imagePlugin,
+    InsertTable,
+    InsertThematicBreak,
+    linkPlugin,
+    listsPlugin,
+    ListsToggle,
+    markdownShortcutPlugin,
+    MDXEditor,
+    quotePlugin,
+    tablePlugin,
+    thematicBreakPlugin,
+    toolbarPlugin,
+    UndoRedo
 } from '@mdxeditor/editor';
 import '@mdxeditor/editor/style.css';
 

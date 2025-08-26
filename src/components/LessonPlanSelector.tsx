@@ -1,34 +1,34 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Typography,
-  CircularProgress,
-  Alert,
-  Divider,
-  TextField,
-  InputAdornment,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Chip
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Alert,
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Divider,
+    InputAdornment,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemText,
+    TextField,
+    Typography
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
+import lessonPlanService, {LessonPlan} from '../services/lessonPlanService';
 import githubRepoService from '../services/githubRepoService';
-import { useLessonPlans } from '../services/lessonPlanQueryHooks';
+import {useLessonPlans} from '../services/lessonPlanQueryHooks';
 
 interface LessonPlanSelectorProps {
   open: boolean;

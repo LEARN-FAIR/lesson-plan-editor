@@ -1,6 +1,16 @@
 import React from 'react';
-import { Box, TextField, MenuItem, FormControl, FormLabel, FormGroup, Checkbox, FormControlLabel, Typography } from '@mui/material';
-import { FairMarkdownDocument } from '../../types';
+import {
+    Box,
+    Checkbox,
+    FormControl,
+    FormControlLabel,
+    FormGroup,
+    FormLabel,
+    MenuItem,
+    TextField,
+    Typography
+} from '@mui/material';
+import {FairMarkdownDocument} from '../../types';
 import MdxEditorComponent from '../common/MdxEditorComponent';
 import SectionHeader from '../common/SectionHeader';
 import InfoOutlineIcon from '@mui/icons-material/InfoOutline';

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Box, CssBaseline } from '@mui/material';
-import { useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import {Box, CssBaseline} from '@mui/material';
+import {useLocation} from 'react-router-dom';
+import {useAuth} from '../contexts/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;

@@ -1,4 +1,4 @@
-import { createTheme } from '@mui/material/styles';
+import {createTheme} from '@mui/material/styles';
 
 // Define the main color as requested by the user
 const mainColor = 'rgb(12, 52, 80)';

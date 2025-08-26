@@ -1,32 +1,34 @@
-import React, { FC, useState, useEffect } from 'react';
-import { 
-  Box, TextField, Button, Typography, Paper, IconButton, Chip,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  FormControl, InputLabel, Checkbox, FormControlLabel, Grid, Divider
+import React, {FC, useState} from 'react';
+import {
+    Box,
+    Button,
+    Chip,
+    IconButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import SectionHeader from '../common/SectionHeader';
-import { FairMarkdownDocument, LearningOutcome, LearningVerbLevel } from '../../types';
+import {FairMarkdownDocument, LearningOutcome, LearningVerbLevel} from '../../types';
 import LearningOutcomeEditorModal from '../modals/LearningOutcomeEditorModal';
-import { 
-  DndContext, 
-  closestCenter, 
-  KeyboardSensor, 
-  PointerSensor, 
-  useSensor, 
-  useSensors,
-  DragEndEvent
-} from '@dnd-kit/core';
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable';
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors
+} from '@dnd-kit/core';
+import {arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable';
 import SortableTableRow from '../common/SortableTableRow';
 import DragHandle from '../common/DragHandle';
 

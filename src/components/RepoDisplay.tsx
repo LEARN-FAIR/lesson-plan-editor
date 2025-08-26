@@ -1,16 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Chip,
-  Avatar,
-  Paper,
-  Tooltip
-} from '@mui/material';
+import React, {useEffect, useState} from 'react';
+import {Avatar, Box, Button, Chip, Paper, Tooltip, Typography} from '@mui/material';
 import ForkRightIcon from '@mui/icons-material/ForkRight';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import githubRepoService, { Repository } from '../services/githubRepoService';
+import githubRepoService, {Repository} from '../services/githubRepoService';
 
 interface RepoDisplayProps {
   onSelectRepo: () => void;

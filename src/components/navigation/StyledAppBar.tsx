@@ -1,5 +1,5 @@
-import React, { ReactNode } from 'react';
-import { AppBar, Toolbar, styled, alpha, Container, Box } from '@mui/material';
+import React, {ReactNode} from 'react';
+import {AppBar, Container, styled, Toolbar} from '@mui/material';
 
 interface StyledAppBarProps {
   children: ReactNode;

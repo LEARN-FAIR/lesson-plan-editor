@@ -1,43 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { 
-  Box, Typography, Button, Container, 
-  CircularProgress, Alert, AlertTitle, 
-  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
-  Snackbar, Stack, Divider, Paper, Tab, Tabs
+import React, {useEffect, useState} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
+import {
+    Alert,
+    AlertTitle,
+    Box,
+    Button,
+    CircularProgress,
+    Container,
+    Divider,
+    Paper,
+    Stack,
+    Tab,
+    Tabs,
+    Typography
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import {styled} from '@mui/material/styles';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import InfoOutlineIcon from '@mui/icons-material/InfoOutline';
 import AttributionIcon from '@mui/icons-material/Attribution';
-import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 import SubjectIcon from '@mui/icons-material/Subject';
-import { useNavigate, useParams, Navigate } from 'react-router-dom';
-import { extractLessonPathParts, generateLessonPlanUrl, constructLessonPath } from '../utils/urlUtils';
-import githubRepoService, { Repository } from '../services/githubRepoService';
-import githubService from '../services/githubService';
-import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
-import { useRepositories } from '../contexts/RepositoryContext';
-import { useLessonPlanContent } from '../services/lessonPlanQueryHooks';
-import { exportMarkdownFile } from '../services/markdownService';
-import { parseMarkdown, serializeMarkdown } from '../utils/markdownUtils';
-import { FairMarkdownDocument } from '../types';
+import {useNavigate, useParams} from 'react-router-dom';
+import {constructLessonPath} from '../utils/urlUtils';
+import githubRepoService, {Repository} from '../services/githubRepoService';
+import lessonPlanService from '../services/lessonPlanService';
+import {useRepositories} from '../contexts/RepositoryContext';
+import {useLessonPlanContent} from '../services/lessonPlanQueryHooks';
+import {exportMarkdownFile, getCurrentFilename} from '../services/markdownService';
+import {parseMarkdown, serializeMarkdown} from '../utils/markdownUtils';
+import {FairMarkdownDocument} from '../types';
 import UserMenu from '../components/navigation/UserMenu';
 import StyledAppBar from '../components/navigation/StyledAppBar';
 import GitHubCommitButton from '../components/GitHubCommitButton';
-import { getCurrentFilename } from '../services/markdownService';
 import GeneralInfoEditor from '../components/sections/GeneralInfoEditor';
 import AuthorsEditor from '../components/sections/AuthorsEditor';
 import LearningOutcomesEditor from '../components/sections/LearningOutcomesEditor';
 import ActivitiesEditor from '../components/sections/ActivitiesEditor';
 import PrerequisitesEditor from '../components/sections/PrerequisitesEditor';
-import TermsEditor from '../components/sections/TermsEditor';
 import ResourcesEditor from '../components/sections/ResourcesEditor';
 import ContentEditor from '../components/sections/ContentEditor';
 

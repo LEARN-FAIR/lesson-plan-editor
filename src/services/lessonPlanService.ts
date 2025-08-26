@@ -2,7 +2,7 @@
  * Lesson Plan service for handling lesson plan operations
  */
 
-import githubRepoService, { Repository } from './githubRepoService';
+import githubRepoService from './githubRepoService';
 
 // Local storage keys
 const SELECTED_LESSON_PLAN_KEY = 'selected_lesson_plan';

@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import lessonPlanService, { LessonPlan } from './lessonPlanService';
+import {useQuery} from '@tanstack/react-query';
+import lessonPlanService, {LessonPlan} from './lessonPlanService';
 import githubRepoService from './githubRepoService';
 
 /**

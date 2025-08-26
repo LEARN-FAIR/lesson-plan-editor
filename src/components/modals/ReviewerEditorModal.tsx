@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  IconButton,
-  Autocomplete,
-  Box
+    Autocomplete,
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    IconButton,
+    TextField
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { Contributor } from '../../services/contributorService';
-import { AuthorData } from '../../types/authorTypes';
+import {Contributor} from '../../services/contributorService';
+import {AuthorData} from '../../types/authorTypes';
 
 interface ReviewerEditorModalProps {
   open: boolean;

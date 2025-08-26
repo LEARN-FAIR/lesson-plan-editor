@@ -1,27 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemButton,
-  ListItemText,
-  Avatar,
-  Typography,
-  CircularProgress,
-  Alert,
-  Tooltip,
-  Chip,
-  Link
+    Alert,
+    Avatar,
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    List,
+    ListItem,
+    ListItemAvatar,
+    ListItemButton,
+    ListItemText,
+    Tooltip,
+    Typography
 } from '@mui/material';
 import ForkRightIcon from '@mui/icons-material/ForkRight';
-import githubRepoService, { Repository } from '../services/githubRepoService';
+import githubRepoService, {Repository} from '../services/githubRepoService';
 
 interface RepoSelectorProps {
   open: boolean;

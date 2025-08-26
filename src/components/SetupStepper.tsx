@@ -1,41 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import React, {useEffect, useState} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
 import {
-  Box,
-  Stepper,
-  Step,
-  StepLabel,
-  Button,
-  Typography,
-  Paper,
-  Container,
-  StepContent,
-  Alert,
-  ButtonGroup,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemButton,
-  ListItemText,
-  Avatar,
-  Chip,
-  Tooltip,
-  CircularProgress,
-  TextField,
-  InputAdornment,
-  IconButton,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Alert,
+    Avatar,
+    Box,
+    Button,
+    ButtonGroup,
+    CircularProgress,
+    Container,
+    IconButton,
+    InputAdornment,
+    List,
+    ListItem,
+    ListItemAvatar,
+    ListItemButton,
+    ListItemText,
+    Paper,
+    Step,
+    StepContent,
+    StepLabel,
+    Stepper,
+    TextField,
+    Typography
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ForkRightIcon from '@mui/icons-material/ForkRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 // No longer importing modal components
-import githubRepoService, { Repository } from '../services/githubRepoService';
-import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
-import { useRepositories } from '../contexts/RepositoryContext';
-import { useLessonPlans } from '../services/lessonPlanQueryHooks';
+import githubRepoService, {Repository} from '../services/githubRepoService';
+import lessonPlanService, {LessonPlan} from '../services/lessonPlanService';
+import {useRepositories} from '../contexts/RepositoryContext';
+import {useLessonPlans} from '../services/lessonPlanQueryHooks';
 import BranchSelector from '../components/BranchSelector';
 
 const steps = [

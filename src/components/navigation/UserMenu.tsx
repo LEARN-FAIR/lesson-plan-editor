@@ -1,19 +1,8 @@
-import React, { useState } from 'react';
-import { 
-  Box, 
-  Avatar, 
-  Typography, 
-  Button, 
-  Menu, 
-  MenuItem, 
-  IconButton,
-  Tooltip,
-  Divider,
-  CircularProgress
-} from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { useGitHubUser } from '../../services/githubQueryHooks';
+import React, {useState} from 'react';
+import {Avatar, Box, CircularProgress, IconButton, Menu, MenuItem, Tooltip} from '@mui/material';
+import {useNavigate} from 'react-router-dom';
+import {useAuth} from '../../contexts/AuthContext';
+import {useGitHubUser} from '../../services/githubQueryHooks';
 
 interface UserMenuProps {
   onLogout?: () => void;

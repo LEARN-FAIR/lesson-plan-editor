@@ -1,6 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { CssBaseline, ThemeProvider } from '@mui/material';
+import {BrowserRouter as Router, Navigate, Route, Routes} from 'react-router-dom';
+import {CssBaseline, ThemeProvider} from '@mui/material';
 import theme from './theme/theme';
 
 // Pages
@@ -14,8 +14,8 @@ import ProtectedRoute from './components/navigation/ProtectedRoute';
 import Layout from './components/Layout';
 
 // Context
-import { AuthProvider } from './contexts/AuthContext';
-import { RepositoryProvider } from './contexts/RepositoryContext';
+import {AuthProvider} from './contexts/AuthContext';
+import {RepositoryProvider} from './contexts/RepositoryContext';
 
 function App() {
   return (

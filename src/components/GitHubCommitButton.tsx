@@ -1,33 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  IconButton,
-  Menu,
-  MenuItem,
-  TextField,
-  Typography,
-  Avatar,
-  Divider,
-  Stack,
-  Snackbar
+    Alert,
+    Avatar,
+    Box,
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Divider,
+    Menu,
+    MenuItem,
+    Snackbar,
+    Stack,
+    TextField,
+    Typography
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import githubService, { CommitFileParams } from '../services/githubService';
+import githubService, {CommitFileParams} from '../services/githubService';
 import githubRepoService from '../services/githubRepoService';
 import lessonPlanService from '../services/lessonPlanService';
-import { useHasCommitsOnBranch, useFileContent, useHasUncommittedChanges } from '../services/githubQueryHooks';
-import { useQueryClient } from '@tanstack/react-query';
+import {useFileContent, useHasCommitsOnBranch, useHasUncommittedChanges} from '../services/githubQueryHooks';
+import {useQueryClient} from '@tanstack/react-query';
 
 interface GitHubCommitButtonProps {
   content: string;

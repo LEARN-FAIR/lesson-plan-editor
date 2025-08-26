@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Box, Typography, CircularProgress, Paper, Button } from '@mui/material';
+import React, {useEffect, useRef, useState} from 'react';
+import {useLocation, useNavigate} from 'react-router-dom';
+import {Box, CircularProgress, Paper, Typography} from '@mui/material';
 import githubService from '../services/githubService';
-import { useAuth } from '../contexts/AuthContext';
+import {useAuth} from '../contexts/AuthContext';
 
 /**
  * Component to handle GitHub OAuth callback.

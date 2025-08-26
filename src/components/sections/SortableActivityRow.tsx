@@ -1,11 +1,11 @@
 import React from 'react';
-import { TableRow, TableCell, IconButton, Box, Tooltip } from '@mui/material';
+import {Box, IconButton, TableCell, TableRow, Tooltip} from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Activity, FairMarkdownDocument } from '../../types';
+import {useSortable} from '@dnd-kit/sortable';
+import {CSS} from '@dnd-kit/utilities';
+import {Activity} from '../../types';
 import ReactMarkdown from 'react-markdown';
 
 interface SortableActivityRowProps {

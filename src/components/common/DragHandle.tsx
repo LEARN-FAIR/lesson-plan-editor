@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconButton, TableCell } from '@mui/material';
+import {IconButton, TableCell} from '@mui/material';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 
 interface DragHandleProps {

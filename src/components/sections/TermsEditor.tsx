@@ -1,6 +1,6 @@
 import React from 'react';
-import { Box, Typography, Paper, Alert, AlertTitle } from '@mui/material';
-import { FairMarkdownDocument } from '../../types';
+import {Alert, AlertTitle, Box, Paper, Typography} from '@mui/material';
+import {FairMarkdownDocument} from '../../types';
 import SectionHeader from '../common/SectionHeader';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 

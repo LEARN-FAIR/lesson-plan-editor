@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import githubRepoService, { Repository } from '../services/githubRepoService';
+import React, {createContext, useContext, useEffect} from 'react';
+import {useQuery} from '@tanstack/react-query';
+import githubRepoService, {Repository} from '../services/githubRepoService';
 
 interface RepositoryContextType {
   repositories: Repository[];

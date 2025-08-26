@@ -1,7 +1,7 @@
 import React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { ListItem, ListItemIcon } from '@mui/material';
+import {useSortable} from '@dnd-kit/sortable';
+import {CSS} from '@dnd-kit/utilities';
+import {ListItem, ListItemIcon} from '@mui/material';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 
 interface SortableListItemProps {

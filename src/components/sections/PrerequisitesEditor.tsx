@@ -1,29 +1,22 @@
-import React, { useState } from 'react';
-import { Box, Button, List, ListItemText, ListItemSecondaryAction, IconButton, Typography } from '@mui/material';
+import React, {useState} from 'react';
+import {Box, Button, IconButton, List, ListItemSecondaryAction, ListItemText, Typography} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import SectionHeader from '../common/SectionHeader';
 import PrerequisiteEditorModal from '../modals/PrerequisiteEditorModal';
-import { FairMarkdownDocument } from '../../types';
-import { 
-  DndContext, 
-  closestCenter, 
-  KeyboardSensor, 
-  PointerSensor, 
-  useSensor, 
-  useSensors,
-  DragEndEvent
-} from '@dnd-kit/core';
+import {FairMarkdownDocument} from '../../types';
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors
+} from '@dnd-kit/core';
+import {arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable';
 import SortableListItem from '../common/SortableListItem';
 
 interface PrerequisitesEditorProps {

@@ -1,5 +1,5 @@
-import { Repository } from '../services/githubRepoService';
-import { LessonPlan } from '../services/lessonPlanService';
+import {Repository} from '../services/githubRepoService';
+import {LessonPlan} from '../services/lessonPlanService';
 
 /**
  * Extracts category and lesson filename from a lesson plan path

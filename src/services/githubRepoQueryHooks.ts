@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import githubRepoService, { Repository, Branch } from './githubRepoService';
+import {useQuery} from '@tanstack/react-query';
+import githubRepoService, {Branch, Repository} from './githubRepoService';
 
 /**
  * React Query hook to fetch repositories and forks

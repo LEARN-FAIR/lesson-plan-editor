@@ -1,15 +1,12 @@
 import React from 'react';
-import { 
-  Box, Typography, Container, 
-  CircularProgress, Alert, AlertTitle
-} from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { generateLessonPlanUrl } from '../utils/urlUtils';
-import githubRepoService, { Repository } from '../services/githubRepoService';
-import lessonPlanService, { LessonPlan } from '../services/lessonPlanService';
-import { useRepositories } from '../contexts/RepositoryContext';
-import { useLessonPlans } from '../services/lessonPlanQueryHooks';
+import {Alert, AlertTitle, Box, CircularProgress, Container, Typography} from '@mui/material';
+import {useNavigate} from 'react-router-dom';
+import {useQueryClient} from '@tanstack/react-query';
+import {generateLessonPlanUrl} from '../utils/urlUtils';
+import githubRepoService, {Repository} from '../services/githubRepoService';
+import lessonPlanService, {LessonPlan} from '../services/lessonPlanService';
+import {useRepositories} from '../contexts/RepositoryContext';
+import {useLessonPlans} from '../services/lessonPlanQueryHooks';
 import UserMenu from '../components/navigation/UserMenu';
 import SetupStepper from '../components/SetupStepper';
 import StyledAppBar from '../components/navigation/StyledAppBar';

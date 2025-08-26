@@ -1,43 +1,39 @@
-import React, { useState } from 'react';
-import { 
-  Box, Button, Typography, IconButton, Chip, Autocomplete,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  TextField, Grid, Tooltip
+import React, {useState} from 'react';
+import {
+    Box,
+    Button,
+    IconButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import PeopleIcon from '@mui/icons-material/People';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import SectionHeader from '../common/SectionHeader';
 import AuthorEditorModal from '../modals/AuthorEditorModal';
 import ReviewerEditorModal from '../modals/ReviewerEditorModal';
-import { 
-  FairMarkdownDocument 
-} from '../../types';
-import { 
-  Contributor, 
-  getContributorDisplayName 
-} from '../../services/contributorService';
-import { useContributors } from '../../services/contributorQueryHooks';
-import { 
-  DndContext, 
-  closestCenter, 
-  KeyboardSensor, 
-  PointerSensor, 
-  useSensor, 
-  useSensors,
-  DragEndEvent
-} from '@dnd-kit/core';
+import {FairMarkdownDocument} from '../../types';
+import {Contributor} from '../../services/contributorService';
+import {useContributors} from '../../services/contributorQueryHooks';
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable';
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors
+} from '@dnd-kit/core';
+import {arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable';
 import SortableTableRow from '../common/SortableTableRow';
 import DragHandle from '../common/DragHandle';
-import { AuthorData } from '../../types/authorTypes';
+import {AuthorData} from '../../types/authorTypes';
 
 interface AuthorsEditorProps {
   document: FairMarkdownDocument;

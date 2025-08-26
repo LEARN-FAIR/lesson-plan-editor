@@ -1,33 +1,29 @@
-import React, { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import React, {useEffect, useState} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
 import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Divider,
-  FormControl,
-  FormHelperText,
-  InputLabel,
-  Link,
-  MenuItem,
-  Paper,
-  Select,
-  SelectChangeEvent,
-  TextField,
-  Typography
+    Alert,
+    Box,
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    SelectChangeEvent,
+    TextField,
+    Typography
 } from '@mui/material';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import AddIcon from '@mui/icons-material/Add';
 import WarningIcon from '@mui/icons-material/Warning';
-import githubRepoService, { Branch } from '../services/githubRepoService';
+import githubRepoService, {Branch} from '../services/githubRepoService';
 import githubService from '../services/githubService';
-import { useBranches } from '../services/githubRepoQueryHooks';
+import {useBranches} from '../services/githubRepoQueryHooks';
 
 interface BranchSelectorProps {
   onBranchSelected: (branch: string) => void;

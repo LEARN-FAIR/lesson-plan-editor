@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Box,
-  Divider,
-  Typography,
-  Grid
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    TextField,
+    Typography
 } from '@mui/material';
-import { LearningOutcome, LearningVerbLevel } from '../../types';
+import {LearningOutcome, LearningVerbLevel} from '../../types';
 
 // Define a type for the level strings
 type LevelString = 'beginner' | 'intermediate' | 'expert';
