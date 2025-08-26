@@ -19,8 +19,8 @@ const GitHubCallback: React.FC = () => {
 
   // Get the redirect URL when component mounts
   useEffect(() => {
-    // First try to get from session storage (set by LoginPage)
-    const storedUrl = sessionStorage.getItem('redirect_url');
+    // First try to get from local storage (set by LoginPage)
+    const storedUrl = localStorage.getItem('redirect_url');
     if (storedUrl) {
       console.log('Found stored redirect URL:', storedUrl);
       setRedirectUrl(storedUrl);
@@ -87,14 +87,14 @@ const GitHubCallback: React.FC = () => {
           console.log('Authentication state after token exchange:', isAuth ? 'authenticated' : 'not authenticated');
           
           // Get the final redirect URL to use
-          // Check session storage again in case it was updated
-          const sessionRedirectUrl = sessionStorage.getItem('redirect_url');
+          // Check local storage again in case it was updated
+          const sessionRedirectUrl = localStorage.getItem('redirect_url');
           console.log('Session storage redirect URL at redirect time:', sessionRedirectUrl);
           
           // If we have a complex editor URL in session storage, prioritize it
           const isEditorUrl = sessionRedirectUrl && sessionRedirectUrl.startsWith('/editor/');
           
-          // Always prioritize session storage for authenticated users
+          // Always prioritize local storage for authenticated users
           const finalRedirectUrl = sessionRedirectUrl || serverRedirectUrl || redirectUrl || '/';
           console.log('Final redirect URL decision:', { 
             serverRedirectUrl, 
@@ -104,8 +104,8 @@ const GitHubCallback: React.FC = () => {
             finalRedirectUrl 
           });
           
-          // Now clear the session storage
-          sessionStorage.removeItem('redirect_url');
+          // Now clear the local storage
+          localStorage.removeItem('redirect_url');
           
           try {
             const decodedUrl = decodeURIComponent(finalRedirectUrl);

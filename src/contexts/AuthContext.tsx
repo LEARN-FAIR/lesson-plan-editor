@@ -57,11 +57,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const setRedirectPath = (path: string) => {
-    sessionStorage.setItem('redirect_after_login', path);
+    localStorage.setItem('redirect_after_login', path);
   };
 
   const getRedirectPath = (): string => {
-    return sessionStorage.getItem('redirect_after_login') || '/';
+    return localStorage.getItem('redirect_after_login') || '/';
   };
 
   const value = {

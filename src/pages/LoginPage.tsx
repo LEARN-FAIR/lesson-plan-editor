@@ -43,8 +43,8 @@ const LoginPage: React.FC = () => {
     // This will be available in the state when we return from GitHub
     if (redirectUrl && redirectUrl !== '/login') {
       console.log('Using redirect URL for GitHub OAuth:', redirectUrl);
-      // Store in session storage as a fallback
-      sessionStorage.setItem('redirect_url', redirectUrl);
+      // Store in local storage as a fallback
+      localStorage.setItem('redirect_url', redirectUrl);
       
       // Pass the redirect_url to the GitHub service
       githubService.redirectToGitHub(redirectUrl);

@@ -29,7 +29,7 @@ export const RepositoryProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     queryKey: ['repositories'],
     queryFn: () => githubRepoService.getTargetRepoAndForks(),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !!sessionStorage.getItem('github_oauth_token'), // Only fetch if authenticated
+    enabled: !!localStorage.getItem('github_oauth_token'), // Only fetch if authenticated
   });
 
   // When repositories load, log them for debugging

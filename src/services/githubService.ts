@@ -4,7 +4,7 @@
  * All GitHub API calls are now routed through the backend
  */
 
-// Session storage keys
+// Local storage keys
 const TOKEN_STORAGE_KEY = 'github_oauth_token';
 const USER_STORAGE_KEY = 'github_user';
 
@@ -38,9 +38,9 @@ class GitHubService {
   private user: GitHubUser | null = null;
 
   constructor() {
-    // Try to load token and user from session storage on initialization
-    this.token = sessionStorage.getItem(TOKEN_STORAGE_KEY);
-    const userJson = sessionStorage.getItem(USER_STORAGE_KEY);
+    // Try to load token and user from local storage on initialization
+    this.token = localStorage.getItem(TOKEN_STORAGE_KEY);
+    const userJson = localStorage.getItem(USER_STORAGE_KEY);
     if (userJson) {
       try {
         this.user = JSON.parse(userJson);
@@ -56,7 +56,7 @@ class GitHubService {
    */
   initialize(params: { token: string }) {
     this.token = params.token;
-    sessionStorage.setItem(TOKEN_STORAGE_KEY, params.token);
+    localStorage.setItem(TOKEN_STORAGE_KEY, params.token);
   }
 
   /**
@@ -113,10 +113,10 @@ class GitHubService {
       const tokenData = await tokenResponse.json();
       this.token = tokenData.access_token;
       
-      // Save token to session storage
+      // Save token to local storage
       if (this.token) {
-        sessionStorage.setItem(TOKEN_STORAGE_KEY, this.token);
-        console.log('Token saved to session storage');
+        localStorage.setItem(TOKEN_STORAGE_KEY, this.token);
+        console.log('Token saved to local storage');
       }
       
       // Get user data from GitHub API
@@ -155,8 +155,8 @@ class GitHubService {
   logout() {
     this.token = null;
     this.user = null;
-    sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-    sessionStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
   }
 
   /**
@@ -192,8 +192,8 @@ class GitHubService {
         email: userData.email || undefined
       };
       
-      // Save to session storage
-      sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user));
+      // Save to local storage
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user));
       return this.user;
     } catch (error) {
       console.error('Failed to get user information:', error);

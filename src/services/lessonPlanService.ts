@@ -4,7 +4,7 @@
 
 import githubRepoService, { Repository } from './githubRepoService';
 
-// Session storage keys
+// Local storage keys
 const SELECTED_LESSON_PLAN_KEY = 'selected_lesson_plan';
 
 // Lesson plan folder path
@@ -27,8 +27,8 @@ class LessonPlanService {
   private selectedLessonPlan: LessonPlan | null = null;
 
   constructor() {
-    // Try to load selected lesson plan from session storage
-    const lessonPlanJson = sessionStorage.getItem(SELECTED_LESSON_PLAN_KEY);
+    // Try to load selected lesson plan from local storage
+    const lessonPlanJson = localStorage.getItem(SELECTED_LESSON_PLAN_KEY);
     if (lessonPlanJson) {
       try {
         this.selectedLessonPlan = JSON.parse(lessonPlanJson);
@@ -43,7 +43,7 @@ class LessonPlanService {
    */
   async getLessonPlans(): Promise<LessonPlan[]> {
     // Check if we have a GitHub token
-    if (!sessionStorage.getItem('github_oauth_token')) {
+    if (!localStorage.getItem('github_oauth_token')) {
       throw new Error('Not authenticated with GitHub');
     }
 
@@ -60,7 +60,7 @@ class LessonPlanService {
       // Get lesson plans from the backend API
       const response = await fetch(`http://localhost:4000/api/lesson-plans?owner=${encodeURIComponent(selectedRepo.owner.login)}&repo=${encodeURIComponent(selectedRepo.name)}&branch=${encodeURIComponent(selectedBranch)}`, {
         headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('github_oauth_token')}`
+          'Authorization': `Bearer ${localStorage.getItem('github_oauth_token')}`
         }
       });
       
@@ -90,7 +90,7 @@ class LessonPlanService {
    */
   async getLessonPlan(path: string): Promise<LessonPlan> {
     // Check if we have a GitHub token
-    if (!sessionStorage.getItem('github_oauth_token')) {
+    if (!localStorage.getItem('github_oauth_token')) {
       throw new Error('Not authenticated with GitHub');
     }
 
@@ -107,7 +107,7 @@ class LessonPlanService {
       // We're using a query parameter approach to avoid path encoding issues
       const response = await fetch(`http://localhost:4000/api/lesson-plans/file?path=${encodeURIComponent(path)}&owner=${encodeURIComponent(repo.owner.login)}&repo=${encodeURIComponent(repo.name)}&branch=${encodeURIComponent(branch)}`, {
         headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('github_oauth_token')}`
+          'Authorization': `Bearer ${localStorage.getItem('github_oauth_token')}`
         }
       });
       
@@ -129,7 +129,7 @@ class LessonPlanService {
    */
   setSelectedLessonPlan(lessonPlan: LessonPlan): void {
     this.selectedLessonPlan = lessonPlan;
-    sessionStorage.setItem(SELECTED_LESSON_PLAN_KEY, JSON.stringify(lessonPlan));
+    localStorage.setItem(SELECTED_LESSON_PLAN_KEY, JSON.stringify(lessonPlan));
   }
 
   /**
@@ -144,7 +144,7 @@ class LessonPlanService {
    */
   clearSelectedLessonPlan(): void {
     this.selectedLessonPlan = null;
-    sessionStorage.removeItem(SELECTED_LESSON_PLAN_KEY);
+    localStorage.removeItem(SELECTED_LESSON_PLAN_KEY);
   }
 
   /**

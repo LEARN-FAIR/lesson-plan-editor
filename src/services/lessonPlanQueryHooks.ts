@@ -36,6 +36,6 @@ export const useLessonPlans = () => {
       return lessonPlanService.getLessonPlans();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !!sessionStorage.getItem('github_oauth_token'), // Only run if authenticated
+    enabled: !!localStorage.getItem('github_oauth_token'), // Only run if authenticated
   });
 };

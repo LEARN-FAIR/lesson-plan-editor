@@ -9,7 +9,7 @@ import githubService from './githubService';
 const TARGET_REPO = 'ELIXIR-TrP-FAIR-Converge';
 const TARGET_OWNER = 'elixir-europe-training';
 
-// Session storage keys
+// Local storage keys
 const SELECTED_REPO_KEY = 'selected_github_repo';
 const SELECTED_BRANCH_KEY = 'selected_github_branch';
 
@@ -80,8 +80,8 @@ class GitHubRepoService {
   private selectedBranch: string | null = null;
 
   constructor() {
-    // Try to load selected repo from session storage
-    const repoJson = sessionStorage.getItem(SELECTED_REPO_KEY);
+    // Try to load selected repo from local storage
+    const repoJson = localStorage.getItem(SELECTED_REPO_KEY);
     if (repoJson) {
       try {
         this.selectedRepo = JSON.parse(repoJson);
@@ -90,8 +90,8 @@ class GitHubRepoService {
       }
     }
 
-    // Try to load selected branch from session storage
-    const branch = sessionStorage.getItem(SELECTED_BRANCH_KEY);
+    // Try to load selected branch from local storage
+    const branch = localStorage.getItem(SELECTED_BRANCH_KEY);
     if (branch) {
       this.selectedBranch = branch;
     }
@@ -107,7 +107,7 @@ class GitHubRepoService {
     }
 
     try {
-      const token = sessionStorage.getItem('github_oauth_token');
+      const token = localStorage.getItem('github_oauth_token');
       if (!token) {
         throw new Error('GitHub token not found');
       }
@@ -139,7 +139,7 @@ class GitHubRepoService {
         throw new Error('Not authenticated with GitHub');
       }
       
-      const token = sessionStorage.getItem('github_oauth_token');
+      const token = localStorage.getItem('github_oauth_token');
       if (!token) {
         throw new Error('GitHub token not found');
       }
@@ -171,7 +171,7 @@ class GitHubRepoService {
         throw new Error('Not authenticated with GitHub');
       }
       
-      const token = sessionStorage.getItem('github_oauth_token');
+      const token = localStorage.getItem('github_oauth_token');
       if (!token) {
         throw new Error('GitHub token not found');
       }
@@ -202,11 +202,11 @@ class GitHubRepoService {
   setSelectedRepo(repo: Repository | null): void {
     this.selectedRepo = repo;
     if (repo) {
-      sessionStorage.setItem(SELECTED_REPO_KEY, JSON.stringify(repo));
+      localStorage.setItem(SELECTED_REPO_KEY, JSON.stringify(repo));
       // Reset selected branch when changing repo
       this.setSelectedBranch(null);
     } else {
-      sessionStorage.removeItem(SELECTED_REPO_KEY);
+      localStorage.removeItem(SELECTED_REPO_KEY);
       this.setSelectedBranch(null);
     }
   }
@@ -224,9 +224,9 @@ class GitHubRepoService {
   setSelectedBranch(branch: string | null): void {
     this.selectedBranch = branch;
     if (branch) {
-      sessionStorage.setItem(SELECTED_BRANCH_KEY, branch);
+      localStorage.setItem(SELECTED_BRANCH_KEY, branch);
     } else {
-      sessionStorage.removeItem(SELECTED_BRANCH_KEY);
+      localStorage.removeItem(SELECTED_BRANCH_KEY);
     }
   }
   
@@ -270,7 +270,7 @@ class GitHubRepoService {
    */
   clearSelectedRepo(): void {
     this.selectedRepo = null;
-    sessionStorage.removeItem(SELECTED_REPO_KEY);
+    localStorage.removeItem(SELECTED_REPO_KEY);
   }
   
   /**
@@ -278,7 +278,7 @@ class GitHubRepoService {
    */
   clearSelectedBranch(): void {
     this.selectedBranch = null;
-    sessionStorage.removeItem(SELECTED_BRANCH_KEY);
+    localStorage.removeItem(SELECTED_BRANCH_KEY);
   }
 
   /**
@@ -297,7 +297,7 @@ class GitHubRepoService {
     }
 
     try {
-      const token = sessionStorage.getItem('github_oauth_token');
+      const token = localStorage.getItem('github_oauth_token');
       if (!token) {
         throw new Error('GitHub token not found');
       }
@@ -342,7 +342,7 @@ class GitHubRepoService {
     }
 
     try {
-      const token = sessionStorage.getItem('github_oauth_token');
+      const token = localStorage.getItem('github_oauth_token');
       if (!token) {
         throw new Error('GitHub token not found');
       }
