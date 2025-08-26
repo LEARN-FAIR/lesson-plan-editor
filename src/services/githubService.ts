@@ -61,25 +61,40 @@ class GitHubService {
 
   /**
    * Redirect to GitHub for OAuth authentication via backend
+   * @param redirectUrl Optional URL to redirect to after successful authentication
    */
-  redirectToGitHub() {
+  redirectToGitHub(redirectUrl?: string) {
     // Use the backend endpoint to handle GitHub OAuth redirection
-    window.location.href = `${API_URL}/auth/github/login`;
+    let loginUrl = `${API_URL}/auth/github/login`;
+    
+    // Add redirect_url as a query parameter if provided
+    if (redirectUrl) {
+      // Encode the redirect URL to ensure it's properly passed
+      const encodedRedirectUrl = encodeURIComponent(redirectUrl);
+      loginUrl += `?redirect_url=${encodedRedirectUrl}`;
+    }
+    
+    window.location.href = loginUrl;
   }
 
   /**
    * Handle the OAuth callback from GitHub
    * Uses our backend to securely exchange the code for an access token
+   * @returns The redirect URL from the server response, if any
    */
-  async handleAuthCallback(code: string): Promise<void> {
+  async handleAuthCallback(code: string, state?: string): Promise<string | null> {
     // If we already have a token, don't try to exchange the code again
     if (this.token && this.isAuthenticated()) {
       console.log('Already authenticated, skipping code exchange');
-      return Promise.resolve();
+      return null;
     }
     
     try {
       console.log('Exchanging code for token...');
+      console.log('State parameter received:', state);
+      
+      // The state parameter is just a random string for security, not JSON
+      // We don't need to try to extract anything from it
       
       // Exchange the code for an access token via our backend
       const tokenResponse = await fetch(`${API_URL}/auth/github/callback`, {
@@ -87,7 +102,7 @@ class GitHubService {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ code })
+        body: JSON.stringify({ code, state })
       });
       
       if (!tokenResponse.ok) {
@@ -107,7 +122,13 @@ class GitHubService {
       // Get user data from GitHub API
       await this.getCurrentUser();
       
-      return Promise.resolve();
+      // Use the redirect URL from the server response if available
+      if (tokenData.redirect_url) {
+        console.log('Using redirect_url from server response:', tokenData.redirect_url);
+        return tokenData.redirect_url;
+      }
+      
+      return null;
     } catch (error) {
       console.error('Error handling GitHub callback:', error);
       throw error;

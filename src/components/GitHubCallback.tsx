@@ -24,8 +24,7 @@ const GitHubCallback: React.FC = () => {
     if (storedUrl) {
       console.log('Found stored redirect URL:', storedUrl);
       setRedirectUrl(storedUrl);
-      // Clear it after reading
-      sessionStorage.removeItem('redirect_url');
+      // Don't clear it yet, we'll need it in the callback handler
     } else {
       console.log('No stored redirect URL, will use default');
       setRedirectUrl('/');
@@ -52,18 +51,31 @@ const GitHubCallback: React.FC = () => {
         setProcessing(true);
         processed.current = true;
         
-        // Get the code from URL query params
+        // Get the code and state from URL query params
         const searchParams = new URLSearchParams(location.search);
         const code = searchParams.get('code');
+        const state = searchParams.get('state');
         
         if (!code) {
           throw new Error('No authorization code received from GitHub');
         }
         
+        console.log('Received state parameter:', state);
+        
+        // The state parameter contains our redirect URL
+        // But we'll let the server decode it for us
+        console.log('Using session storage redirect URL as fallback:', redirectUrl);
+        
         console.log('Exchanging GitHub code for token');
-        // Exchange code for token
-        await githubService.handleAuthCallback(code);
+        // Exchange code for token and get redirect URL from server response
+        const serverRedirectUrl = await githubService.handleAuthCallback(code, state || undefined);
         console.log('Successfully exchanged code for token');
+        
+        // If we got a redirect URL from the server, use it instead of the stored one
+        if (serverRedirectUrl) {
+          console.log('Using redirect URL from server response:', serverRedirectUrl);
+          setRedirectUrl(serverRedirectUrl);
+        }
         
         // Clear the code from the URL to prevent reprocessing on refresh
         window.history.replaceState({}, document.title, '/github-callback');
@@ -74,19 +86,29 @@ const GitHubCallback: React.FC = () => {
           const isAuth = githubService.isAuthenticated();
           console.log('Authentication state after token exchange:', isAuth ? 'authenticated' : 'not authenticated');
           
-          // If we have a redirect URL, use it, otherwise go to home
-          if (redirectUrl) {
-            try {
-              const decodedUrl = decodeURIComponent(redirectUrl);
-              console.log('Redirecting to:', decodedUrl);
-              window.location.href = decodedUrl; // Use direct location change instead of navigate
-            } catch (error) {
-              console.error('Error decoding redirect URL:', error);
-              window.location.href = redirectUrl; // Use direct location change instead of navigate
-            }
-          } else {
-            console.log('No redirect URL found, going to home page');
-            window.location.href = '/'; // Use direct location change instead of navigate
+          // Get the final redirect URL to use
+          // Check session storage again in case it was updated
+          const sessionRedirectUrl = sessionStorage.getItem('redirect_url');
+          console.log('Session storage redirect URL at redirect time:', sessionRedirectUrl);
+          
+          const finalRedirectUrl = serverRedirectUrl || redirectUrl || sessionRedirectUrl || '/';
+          console.log('Final redirect URL decision:', { 
+            serverRedirectUrl, 
+            redirectUrl,
+            sessionRedirectUrl,
+            finalRedirectUrl 
+          });
+          
+          // Now clear the session storage
+          sessionStorage.removeItem('redirect_url');
+          
+          try {
+            const decodedUrl = decodeURIComponent(finalRedirectUrl);
+            console.log('Redirecting to:', decodedUrl);
+            window.location.href = decodedUrl; // Use direct location change instead of navigate
+          } catch (error) {
+            console.error('Error decoding redirect URL:', error);
+            window.location.href = finalRedirectUrl; // Use direct location change instead of navigate
           }
         }, 1500); // Increased timeout to ensure auth state is updated
         
