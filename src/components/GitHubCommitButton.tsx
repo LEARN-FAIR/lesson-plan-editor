@@ -22,11 +22,18 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import FolderIcon from '@mui/icons-material/Folder';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import githubService, {CommitFileParams} from '../services/githubService';
 import githubRepoService from '../services/githubRepoService';
 import lessonPlanService from '../services/lessonPlanService';
 import {useFileContent, useHasCommitsOnBranch, useHasUncommittedChanges} from '../services/githubQueryHooks';
 import {useQueryClient} from '@tanstack/react-query';
+import ReactDiffViewer from 'react-diff-viewer-continued';
 
 interface GitHubCommitButtonProps {
     content: string;
@@ -347,8 +354,8 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                 )}
             </Menu>
 
-            <Dialog open={isDialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-                <DialogTitle>Commit to GitHub</DialogTitle>
+            <Dialog open={isDialogOpen} onClose={handleCloseDialog} maxWidth="lg" fullWidth>
+                <DialogTitle sx={{ pb: 1 }}>Commit to GitHub</DialogTitle>
                 <DialogContent>
                     {error && <Alert severity="error" sx={{mb: 2}}>{error}</Alert>}
 
@@ -373,89 +380,128 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                         </>
                     ) : (
                         <>
-                            {githubUser && (
-                                <Box sx={{display: 'flex', alignItems: 'center', mb: 3}}>
-                                    <Avatar src={githubUser.avatar_url} alt={githubUser.login} sx={{mr: 2}}/>
-                                    <Box>
-                                        <Typography
-                                            variant="subtitle1">{githubUser.name || githubUser.login}</Typography>
-                                        <Typography variant="body2"
-                                                    color="text.secondary">{githubUser.login}</Typography>
+                            {isAuthenticated && selectedRepo && (
+                                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+                                    {/* Left column: Repository, branch, file info */}
+                                    <Box sx={{ flex: 1, width: '400px' }}>
+                                        {/* Display repository info */}
+                                        <Box sx={{
+                                            mb: 1,
+                                            mt: '28px',
+                                            p: 0.75,
+                                            bgcolor: 'background.paper',
+                                            borderRadius: 1,
+                                            border: '1px solid',
+                                            borderColor: 'divider'
+                                        }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <FolderIcon color="primary" fontSize="small" sx={{ mr: 0.5 }} />
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Repository
+                                                </Typography>
+                                            </Box>
+                                            <Typography variant="body2">
+                                                {selectedRepo.full_name}
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Display branch info */}
+                                        <Box sx={{
+                                            mb: 1,
+                                            p: 0.75,
+                                            bgcolor: 'background.paper',
+                                            borderRadius: 1,
+                                            border: '1px solid',
+                                            borderColor: 'divider'
+                                        }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <AccountTreeIcon color="primary" fontSize="small" sx={{ mr: 0.5 }} />
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Branch
+                                                </Typography>
+                                            </Box>
+                                            <Typography variant="body2">
+                                                {selectedBranch}
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Display file path info */}
+                                        <Box sx={{
+                                            mb: 1,
+                                            p: 0.75,
+                                            bgcolor: 'background.paper',
+                                            borderRadius: 1,
+                                            border: '1px solid',
+                                            borderColor: 'divider'
+                                        }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <InsertDriveFileIcon color="primary" fontSize="small" sx={{ mr: 0.5 }} />
+                                                <Typography variant="caption" color="text.secondary">
+                                                    File
+                                                </Typography>
+                                            </Box>
+                                            <Typography variant="body2" sx={{wordBreak: 'break-all'}}>
+                                                {filePath}
+                                            </Typography>
+                                        </Box>
+
+                                        <TextField
+                                            margin="dense"
+                                            label="Commit message"
+                                            fullWidth
+                                            variant="outlined"
+                                            value={commitMessage}
+                                            onChange={(e) => setCommitMessage(e.target.value)}
+                                            required
+                                            size="small"
+                                            error={!commitMessage.trim()}
+                                            helperText={!commitMessage.trim() ? 'Commit message is required' : ''}
+                                        />
+                                    </Box>
+                                    
+                                    {/* Right column: Diff viewer */}
+                                    <Box sx={{ flex: 2, overflow: 'hidden' }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <CompareArrowsIcon color="primary" fontSize="small" sx={{ mr: 0.5 }} />
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Changes to be committed
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                        <Box sx={{ 
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            borderRadius: 1,
+                                            overflow: 'auto',
+                                            maxHeight: '400px'
+                                        }}>
+                                            <ReactDiffViewer
+                                                oldValue={githubContent || ''}
+                                                newValue={content}
+                                                splitView={false}
+                                                showDiffOnly={false}
+                                                useDarkTheme={false}
+                                                styles={{
+                                                    contentText: {
+                                                        fontSize: '0.7rem',
+                                                        lineHeight: '1.2',
+                                                        fontFamily: 'monospace'
+                                                    },
+                                                    gutter: {
+                                                        fontSize: '0.65rem',
+                                                        padding: '0 0.3rem',
+                                                        lineHeight: '1.2'
+                                                    },
+                                                    line: {
+                                                        padding: '0'
+                                                    }
+                                                }}
+                                            />
+                                        </Box>
                                     </Box>
                                 </Box>
                             )}
-
-                            <Divider sx={{mb: 3}}/>
-
-                            <Stack spacing={2}>
-                                <DialogContentText>
-                                    You are about to commit changes to the selected repository and branch.
-                                </DialogContentText>
-
-                                {/* Display repository info */}
-                                {selectedRepo && (
-                                    <Box sx={{
-                                        mb: 2,
-                                        p: 2,
-                                        bgcolor: 'background.paper',
-                                        borderRadius: 1,
-                                        border: '1px solid',
-                                        borderColor: 'divider'
-                                    }}>
-                                        <Typography variant="subtitle2" color="text.secondary"
-                                                    gutterBottom>Repository</Typography>
-                                        <Typography variant="body1">
-                                            {selectedRepo.full_name}
-                                        </Typography>
-                                    </Box>
-                                )}
-
-                                {/* Display branch info */}
-                                {selectedBranch && (
-                                    <Box sx={{
-                                        mb: 2,
-                                        p: 2,
-                                        bgcolor: 'background.paper',
-                                        borderRadius: 1,
-                                        border: '1px solid',
-                                        borderColor: 'divider'
-                                    }}>
-                                        <Typography variant="subtitle2" color="text.secondary"
-                                                    gutterBottom>Branch</Typography>
-                                        <Typography variant="body1">
-                                            {selectedBranch}
-                                        </Typography>
-                                    </Box>
-                                )}
-
-                                {/* Display file path info */}
-                                <Box sx={{
-                                    mb: 2,
-                                    p: 2,
-                                    bgcolor: 'background.paper',
-                                    borderRadius: 1,
-                                    border: '1px solid',
-                                    borderColor: 'divider'
-                                }}>
-                                    <Typography variant="subtitle2" color="text.secondary"
-                                                gutterBottom>File</Typography>
-                                    <Typography variant="body1" sx={{wordBreak: 'break-all'}}>
-                                        {filePath}
-                                    </Typography>
-                                </Box>
-
-                                <TextField
-                                    margin="normal"
-                                    label="Commit message"
-                                    fullWidth
-                                    variant="outlined"
-                                    value={commitMessage}
-                                    onChange={(e) => setCommitMessage(e.target.value)}
-                                    required
-                                    error={!commitMessage.trim()}
-                                    helperText={!commitMessage.trim() ? 'Commit message is required' : ''}
-                                />
-                            </Stack>
                         </>
                     )}
                 </DialogContent>
@@ -471,20 +517,9 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                         >
                             {isLoading ? 'Committing...' : 'Commit'}
                         </Button>
-                    )}
+                        )}
                 </DialogActions>
             </Dialog>
-
-            {/* Success notification */}
-            <Snackbar
-                open={success}
-                autoHideDuration={6000}
-                onClose={handleCloseSnackbar}
-            >
-                <Alert onClose={handleCloseSnackbar} severity="success" sx={{width: '100%'}}>
-                    File successfully committed to GitHub!
-                </Alert>
-            </Snackbar>
 
             {/* GitHub App Installation Dialog */}
             <Dialog open={isAppInstallDialogOpen} onClose={handleCloseAppInstallDialog}>
@@ -516,15 +551,19 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                     {selectedRepo && (
                         <Box sx={{
                             mt: 2,
-                            p: 2,
+                            p: 0.75,
                             bgcolor: 'background.paper',
                             borderRadius: 1,
                             border: '1px solid',
                             borderColor: 'divider'
                         }}>
-                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Selected
-                                Repository</Typography>
-                            <Typography variant="body1">
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <FolderIcon color="primary" fontSize="small" sx={{ mr: 0.5 }} />
+                                <Typography variant="caption" color="text.secondary">
+                                    Selected Repository
+                                </Typography>
+                            </Box>
+                            <Typography variant="body2">
                                 {selectedRepo.full_name}
                             </Typography>
                         </Box>
@@ -541,6 +580,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                     </Button>
                 </DialogActions>
             </Dialog>
+
         </>
     );
 };
