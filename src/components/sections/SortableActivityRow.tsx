@@ -1,12 +1,10 @@
 import React from 'react';
-import {Box, IconButton, TableCell, TableRow, Tooltip} from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
+import {Box, IconButton, TableCell, Tooltip} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import {useSortable} from '@dnd-kit/sortable';
-import {CSS} from '@dnd-kit/utilities';
-import {Activity} from '../../types';
+import EditIcon from '@mui/icons-material/Edit';
 import ReactMarkdown from 'react-markdown';
+import SortableRowWithActions from '../common/SortableRowWithActions';
+import {Activity} from '../../types';
 
 interface SortableActivityRowProps {
     activity: Activity;
@@ -18,46 +16,38 @@ interface SortableActivityRowProps {
 }
 
 const SortableActivityRow: React.FC<SortableActivityRowProps> = ({
-                                                                     activity,
-                                                                     id,
-                                                                     index,
-                                                                     onEdit,
-                                                                     onRemove,
-                                                                     learningOutcomes = {}
-                                                                 }) => {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging
-    } = useSortable({id});
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-        cursor: isDragging ? 'grabbing' : 'default',
-        backgroundColor: isDragging ? '#f5f5f5' : 'transparent'
-    };
-
+                                                                      activity,
+                                                                      id,
+                                                                      index,
+                                                                      onEdit,
+                                                                      onRemove,
+                                                                      learningOutcomes
+                                                                  }) => {
+    const actions = (
+        <>
+            <IconButton
+                size="small"
+                color="primary"
+                onClick={() => onEdit(activity, index)}
+                className="action-item"
+                sx={{ visibility: 'hidden', mr: 1 }}
+            >
+                <EditIcon fontSize="small"/>
+            </IconButton>
+            <IconButton
+                size="small"
+                color="error"
+                onClick={() => onRemove(index)}
+                className="action-item"
+                sx={{ visibility: 'hidden', mr: 1 }}
+            >
+                <DeleteIcon fontSize="small"/>
+            </IconButton>
+        </>
+    );
+    
     return (
-        <TableRow
-            ref={setNodeRef}
-            style={style}
-            hover
-        >
-            <TableCell padding="none">
-                <IconButton
-                    size="small"
-                    {...attributes}
-                    {...listeners}
-                    sx={{cursor: 'grab'}}
-                >
-                    <DragIndicatorIcon fontSize="small"/>
-                </IconButton>
-            </TableCell>
+        <SortableRowWithActions id={id} actions={actions}>
             <TableCell>
                 {activity.learning_outcome ? (
                     <Tooltip
@@ -69,10 +59,12 @@ const SortableActivityRow: React.FC<SortableActivityRowProps> = ({
                             {activity.learning_outcome}
                         </Box>
                     </Tooltip>
-                ) : ('')}
+                ) : (
+                    ''
+                )}
             </TableCell>
-            <TableCell sx={{p: 1}}>
-                <Box sx={{whiteSpace: 'normal', wordBreak: 'break-word'}}>
+            <TableCell>
+                <Box sx={{maxHeight: '100px', overflow: 'auto'}}>
                     <ReactMarkdown>
                         {typeof activity.activities === 'string'
                             ? activity.activities
@@ -83,24 +75,7 @@ const SortableActivityRow: React.FC<SortableActivityRowProps> = ({
             <TableCell>{activity.time}</TableCell>
             <TableCell>{activity.type}</TableCell>
             <TableCell>{activity.level}</TableCell>
-            <TableCell align="right">
-                <IconButton
-                    size="small"
-                    color="primary"
-                    onClick={() => onEdit(activity, index)}
-                    sx={{mr: 1}}
-                >
-                    <EditIcon fontSize="small"/>
-                </IconButton>
-                <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => onRemove(index)}
-                >
-                    <DeleteIcon fontSize="small"/>
-                </IconButton>
-            </TableCell>
-        </TableRow>
+        </SortableRowWithActions>
     );
 };
 

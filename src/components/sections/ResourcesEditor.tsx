@@ -32,8 +32,7 @@ import {
     useSensors
 } from '@dnd-kit/core';
 import {arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable';
-import SortableTableRow from '../common/SortableTableRow';
-import DragHandle from '../common/DragHandle';
+import SortableRowWithActions from '../common/SortableRowWithActions';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 
 interface ResourcesEditorProps {
@@ -220,11 +219,10 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({document, onChange}) =
                         <Table sx={{width: '100%'}} aria-label="resources table">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell padding="none" width="40px"></TableCell>
                                     <TableCell>Title</TableCell>
                                     <TableCell width="280px">Author</TableCell>
                                     <TableCell width="280px">URL/DOI</TableCell>
-                                    <TableCell align="right" width="100px"></TableCell>
+                                    <TableCell width="120px"></TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -233,8 +231,32 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({document, onChange}) =
                                     strategy={verticalListSortingStrategy}
                                 >
                                     {document.additionalResources?.map((resource, index) => (
-                                        <SortableTableRow key={index} id={`${index}`}>
-                                            <DragHandle/>
+                                        <SortableRowWithActions 
+                                            key={index} 
+                                            id={`${index}`}
+                                            actions={
+                                                <>
+                                                    <IconButton
+                                                        size="small"
+                                                        color="primary"
+                                                        onClick={() => handleOpenDialog(index)}
+                                                        className="action-item"
+                                                        sx={{ visibility: 'hidden', mr: 1 }}
+                                                    >
+                                                        <EditIcon fontSize="small"/>
+                                                    </IconButton>
+                                                    <IconButton
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={() => handleRemoveResource(index)}
+                                                        className="action-item"
+                                                        sx={{ visibility: 'hidden', mr: 1 }}
+                                                    >
+                                                        <DeleteIcon fontSize="small"/>
+                                                    </IconButton>
+                                                </>
+                                            }
+                                        >
                                             <TableCell>{resource.title}</TableCell>
                                             <TableCell>{resource.author || '-'}</TableCell>
                                             <TableCell sx={{overflow: 'hidden'}}>
@@ -265,24 +287,7 @@ const ResourcesEditor: React.FC<ResourcesEditorProps> = ({document, onChange}) =
                                                          sx={{fontStyle: 'italic', color: 'text.secondary'}}>-</Box>
                                                 )}
                                             </TableCell>
-                                            <TableCell align="right">
-                                                <IconButton
-                                                    size="small"
-                                                    color="primary"
-                                                    onClick={() => handleOpenDialog(index)}
-                                                    sx={{mr: 1}}
-                                                >
-                                                    <EditIcon fontSize="small"/>
-                                                </IconButton>
-                                                <IconButton
-                                                    size="small"
-                                                    color="error"
-                                                    onClick={() => handleRemoveResource(index)}
-                                                >
-                                                    <DeleteIcon fontSize="small"/>
-                                                </IconButton>
-                                            </TableCell>
-                                        </SortableTableRow>
+                                        </SortableRowWithActions>
                                     ))}
                                 </SortableContext>
                             </TableBody>

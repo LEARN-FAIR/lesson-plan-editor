@@ -1,9 +1,13 @@
 import React, {useState} from 'react';
-import {Box, Button, IconButton, List, ListItemSecondaryAction, ListItemText, Typography} from '@mui/material';
+import {
+    Box, Button, IconButton, Typography, Table, TableBody, TableCell, 
+    TableContainer, TableHead, TableRow
+} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import ChecklistIcon from '@mui/icons-material/Checklist';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import SectionHeader from '../common/SectionHeader';
 import PrerequisiteEditorModal from '../modals/PrerequisiteEditorModal';
 import {FairMarkdownDocument} from '../../types';
@@ -17,7 +21,9 @@ import {
     useSensors
 } from '@dnd-kit/core';
 import {arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable';
-import SortableListItem from '../common/SortableListItem';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import SortablePrerequisiteRow from './SortablePrerequisiteRow';
 
 interface PrerequisitesEditorProps {
     document: FairMarkdownDocument;
@@ -129,30 +135,33 @@ const PrerequisitesEditor: React.FC<PrerequisitesEditorProps> = ({document, onCh
                     collisionDetection={closestCenter}
                     onDragEnd={handleDragEnd}
                 >
-                    <List sx={{bgcolor: 'background.paper', border: '1px solid #e0e0e0', borderRadius: 1}}>
-                        <SortableContext
-                            items={document.prerequisites.map((_, index) => index.toString())}
-                            strategy={verticalListSortingStrategy}
-                        >
-                            {document.prerequisites.map((prerequisite, index) => (
-                                <SortableListItem key={index} id={index.toString()}>
-                                    <ListItemText
-                                        primary={prerequisite}
-                                    />
-                                    <ListItemSecondaryAction>
-                                        <IconButton edge="end" aria-label="edit"
-                                                    onClick={() => handleOpenEditModal(index)} sx={{mr: 1}}>
-                                            <EditIcon/>
-                                        </IconButton>
-                                        <IconButton edge="end" aria-label="delete"
-                                                    onClick={() => handleRemovePrerequisite(index)}>
-                                            <DeleteIcon/>
-                                        </IconButton>
-                                    </ListItemSecondaryAction>
-                                </SortableListItem>
-                            ))}
-                        </SortableContext>
-                    </List>
+                    <TableContainer component={Box} sx={{width: '100%', mb: 2}}>
+                        <Table sx={{width: '100%'}} aria-label="prerequisites table">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Prerequisite</TableCell>
+                                    <TableCell align="right" width="120px"></TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                <SortableContext
+                                    items={document.prerequisites.map((_, index) => index.toString())}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    {document.prerequisites.map((prerequisite, index) => (
+                                        <SortablePrerequisiteRow 
+                                            key={index} 
+                                            id={index.toString()}
+                                            prerequisite={prerequisite}
+                                            onEdit={handleOpenEditModal}
+                                            onDelete={handleRemovePrerequisite}
+                                            index={index}
+                                        />
+                                    ))}
+                                </SortableContext>
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 </DndContext>
             ) : (
                 <Typography variant="body2" color="text.secondary" sx={{mt: 1, fontStyle: 'italic'}}>

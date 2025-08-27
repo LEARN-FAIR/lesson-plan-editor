@@ -5,7 +5,7 @@ import {CSS} from '@dnd-kit/utilities';
 
 interface SortableTableRowProps {
     id: string;
-    children: ReactNode;
+    children: ReactNode | ((props: { attributes: any, listeners: any }) => ReactNode);
 }
 
 const SortableTableRow: React.FC<SortableTableRowProps> = ({
@@ -34,15 +34,27 @@ const SortableTableRow: React.FC<SortableTableRowProps> = ({
         zIndex: isDragging ? 999 : 'auto'
     };
 
+    // Handle the case where children is a function
+    const renderChildren = () => {
+        if (typeof children === 'function') {
+            return children({ attributes, listeners });
+        }
+        return children;
+    };
+
     return (
         <TableRow
             ref={setNodeRef}
             style={style}
             hover
-            {...attributes}
-            {...listeners}
+            sx={{
+                '&:hover .action-item': {
+                    visibility: 'visible',
+                },
+                '&:last-child td, &:last-child th': { border: 0 },
+            }}
         >
-            {children}
+            {renderChildren()}
         </TableRow>
     );
 };

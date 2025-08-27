@@ -6,6 +6,7 @@ import ActivityEditorModal from '../modals/ActivityEditorModal';
 import SectionHeader from '../common/SectionHeader';
 import RestoreIcon from '@mui/icons-material/Restore';
 import UpdateIcon from '@mui/icons-material/Update';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import SortableActivityRow from './SortableActivityRow';
 import {
     closestCenter,
@@ -105,13 +106,12 @@ function ActivitySection(props: ActivitySectionProps) {
                         <Table sx={{minWidth: 650}} aria-label="activities table">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell padding="none" width="40px"></TableCell>
                                     <TableCell width="50px">LO</TableCell>
                                     <TableCell>Activity</TableCell>
                                     <TableCell width="100px">Time</TableCell>
                                     <TableCell width="140px">Type</TableCell>
                                     <TableCell width="120px">Level</TableCell>
-                                    <TableCell width="100px"></TableCell>
+                                    <TableCell width="120px"></TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -227,7 +227,7 @@ const ActivitiesEditor: React.FC<ActivitiesEditorProps> = ({document, onChange})
 
             <ActivitySection
                 title="Activities during the lesson"
-                icon={<UpdateIcon color="primary"/>}
+                icon={<AccessTimeIcon color="primary"/>}
                 section="during"
                 activities={document.activities?.during || []}
                 learningOutcomes={document.learning_outcomes || {}}

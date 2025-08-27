@@ -12,6 +12,7 @@ import {
     Typography
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import AddIcon from '@mui/icons-material/Add';
 import PeopleIcon from '@mui/icons-material/People';
 import RateReviewIcon from '@mui/icons-material/RateReview';
@@ -31,8 +32,7 @@ import {
     useSensors
 } from '@dnd-kit/core';
 import {arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable';
-import SortableTableRow from '../common/SortableTableRow';
-import DragHandle from '../common/DragHandle';
+import SortableRowWithActions from '../common/SortableRowWithActions';
 import {AuthorData} from '../../types/authorTypes';
 
 interface AuthorsEditorProps {
@@ -221,10 +221,9 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({document, onChange}) => {
                             <Table sx={{width: '100%'}} aria-label="authors table">
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell padding="none" width="40px"></TableCell>
                                         <TableCell>Name</TableCell>
-                                        <TableCell>ORCID</TableCell>
-                                        <TableCell align="right" width="100px"></TableCell>
+                                        <TableCell width="400px">ORCID</TableCell>
+                                        <TableCell width="120px"></TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -249,22 +248,26 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({document, onChange}) => {
                                             }
 
                                             return (
-                                                <SortableTableRow key={index} id={index.toString()}>
-                                                    <DragHandle/>
-                                                    <TableCell>{name}</TableCell>
-                                                    <TableCell>
-                                                        {orcid && orcid}
-                                                    </TableCell>
-                                                    <TableCell align="right">
+                                                <SortableRowWithActions 
+                                                    key={index} 
+                                                    id={index.toString()}
+                                                    actions={
                                                         <IconButton
                                                             size="small"
                                                             color="error"
                                                             onClick={() => handleRemoveAuthor(index)}
+                                                            className="action-item"
+                                                            sx={{ visibility: 'hidden', mr: 1 }}
                                                         >
                                                             <DeleteIcon fontSize="small"/>
                                                         </IconButton>
+                                                    }
+                                                >
+                                                    <TableCell>{name}</TableCell>
+                                                    <TableCell>
+                                                        {orcid && orcid}
                                                     </TableCell>
-                                                </SortableTableRow>
+                                                </SortableRowWithActions>
                                             );
                                         })}
                                     </SortableContext>
@@ -308,13 +311,12 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({document, onChange}) => {
                         onDragEnd={handleReviewersDragEnd}
                     >
                         <TableContainer component={Box} sx={{width: '100%', mb: 2}}>
-                            <Table sx={{width: '100%'}} aria-label="reviewers table" size="small">
+                            <Table sx={{width: '100%'}} aria-label="reviewers table">
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell padding="none" width="40px"></TableCell>
                                         <TableCell>Name</TableCell>
-                                        <TableCell width="200px">ORCID</TableCell>
-                                        <TableCell align="right" width="100px"></TableCell>
+                                        <TableCell width="400px">ORCID</TableCell>
+                                        <TableCell width="120px"></TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -339,22 +341,26 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({document, onChange}) => {
                                             }
 
                                             return (
-                                                <SortableTableRow key={index} id={index.toString()}>
-                                                    <DragHandle/>
-                                                    <TableCell>{name}</TableCell>
-                                                    <TableCell>
-                                                        {orcid && orcid}
-                                                    </TableCell>
-                                                    <TableCell align="right">
+                                                <SortableRowWithActions 
+                                                    key={index} 
+                                                    id={index.toString()}
+                                                    actions={
                                                         <IconButton
                                                             size="small"
                                                             color="error"
                                                             onClick={() => handleRemoveReviewer(index)}
+                                                            className="action-item"
+                                                            sx={{ visibility: 'hidden', mr: 1 }}
                                                         >
                                                             <DeleteIcon fontSize="small"/>
                                                         </IconButton>
+                                                    }
+                                                >
+                                                    <TableCell>{name}</TableCell>
+                                                    <TableCell>
+                                                        {orcid && orcid}
                                                     </TableCell>
-                                                </SortableTableRow>
+                                                </SortableRowWithActions>
                                             );
                                         })}
                                     </SortableContext>

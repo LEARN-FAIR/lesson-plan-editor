@@ -29,8 +29,7 @@ import {
     useSensors
 } from '@dnd-kit/core';
 import {arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable';
-import SortableTableRow from '../common/SortableTableRow';
-import DragHandle from '../common/DragHandle';
+import SortableRowWithActions from '../common/SortableRowWithActions';
 
 interface LearningOutcomesEditorProps {
     document: FairMarkdownDocument;
@@ -215,11 +214,10 @@ const LearningOutcomesEditor: FC<LearningOutcomesEditorProps> = ({document, onCh
                         <Table sx={{width: '100%'}} aria-label="learning outcomes table">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell padding="none" width="40px"></TableCell>
                                     <TableCell width="50px">LO</TableCell>
                                     <TableCell>Outcome</TableCell>
                                     <TableCell>Verbs</TableCell>
-                                    <TableCell align="right" width="100px"></TableCell>
+                                    <TableCell width="120px"></TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -235,8 +233,32 @@ const LearningOutcomesEditor: FC<LearningOutcomesEditorProps> = ({document, onCh
                                             return numA - numB;
                                         })
                                         .map(([key, outcome]) => (
-                                            <SortableTableRow key={key} id={key}>
-                                                <DragHandle/>
+                                            <SortableRowWithActions 
+                                                key={key} 
+                                                id={key}
+                                                actions={
+                                                    <>
+                                                        <IconButton
+                                                            size="small"
+                                                            color="primary"
+                                                            onClick={() => handleEditOutcome(outcome, key)}
+                                                            className="action-item"
+                                                            sx={{ visibility: 'hidden', mr: 1 }}
+                                                        >
+                                                            <EditIcon fontSize="small"/>
+                                                        </IconButton>
+                                                        <IconButton
+                                                            size="small"
+                                                            color="error"
+                                                            onClick={() => handleRemoveOutcome(key)}
+                                                            className="action-item"
+                                                            sx={{ visibility: 'hidden', mr: 1 }}
+                                                        >
+                                                            <DeleteIcon fontSize="small"/>
+                                                        </IconButton>
+                                                    </>
+                                                }
+                                            >
                                                 <TableCell>{key}</TableCell>
                                                 <TableCell>{outcome?.outcome || ''}</TableCell>
                                                 <TableCell>
@@ -255,28 +277,10 @@ const LearningOutcomesEditor: FC<LearningOutcomesEditorProps> = ({document, onCh
                                                             ))}
                                                         </Box>
                                                     ) : (
-                                                        <Typography variant="body2" color="text.secondary">No verbs
-                                                            defined</Typography>
+                                                        <Typography variant="body2" color="text.secondary">No verbs defined</Typography>
                                                     )}
                                                 </TableCell>
-                                                <TableCell align="right">
-                                                    <IconButton
-                                                        size="small"
-                                                        color="primary"
-                                                        onClick={() => handleEditOutcome(outcome, key)}
-                                                        sx={{mr: 1}}
-                                                    >
-                                                        <EditIcon fontSize="small"/>
-                                                    </IconButton>
-                                                    <IconButton
-                                                        size="small"
-                                                        color="error"
-                                                        onClick={() => handleRemoveOutcome(key)}
-                                                    >
-                                                        <DeleteIcon fontSize="small"/>
-                                                    </IconButton>
-                                                </TableCell>
-                                            </SortableTableRow>
+                                            </SortableRowWithActions>
                                         ))}
                                 </SortableContext>
                             </TableBody>
