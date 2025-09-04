@@ -25,7 +25,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                // Check authentication status from the backend
+                // First check if we have a token in localStorage and initialize the service
+                await githubService.initialize();
+                
+                // Then check authentication status from the backend
                 const isAuth = await githubService.checkAuthenticationStatus();
                 setIsAuthenticated(isAuth);
 
@@ -40,6 +43,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
                 }
             } catch (error) {
                 console.error('Authentication check failed:', error);
+                // If authentication check fails, ensure we're marked as not authenticated
+                setIsAuthenticated(false);
+                setUser(null);
             } finally {
                 setIsLoading(false);
             }

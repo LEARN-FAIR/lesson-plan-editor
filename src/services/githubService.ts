@@ -1,6 +1,6 @@
 /**
  * GitHub service for handling GitHub API operations
- * Uses OAuth flow for authentication with JWT token storage
+ * Uses OAuth flow for authentication with session-based authentication
  * All GitHub API calls are now routed through the backend
  */
 
@@ -39,14 +39,13 @@ class GitHubService {
     }
 
     /**
-     * Initialize the GitHub service with JWT authentication
-     * Checks if a token exists and validates it
+     * Initialize the GitHub service with session-based authentication
+     * Checks authentication status with the backend
+     * @returns Promise<boolean> Whether the user is authenticated
      */
-    async initialize() {
-        // Check if we have a token and if it's valid
-        if (apiAdapter.getToken()) {
-            await this.checkAuthenticationStatus();
-        }
+    async initialize(): Promise<boolean> {
+        // Check authentication status with the backend
+        return await this.checkAuthenticationStatus();
     }
 
     /**
@@ -61,7 +60,7 @@ class GitHubService {
 
     /**
      * Handle the OAuth callback from GitHub
-     * With JWT authentication, the token is returned in the URL fragment
+     * With session-based authentication, the backend handles the token storage
      * @param code The OAuth code from the callback
      * @param state Optional state parameter for verification
      * @returns The redirect URL from the server response, if any
@@ -76,10 +75,15 @@ class GitHubService {
         try {
             console.log('Completing authentication via server...');
             
-            // Extract token from URL fragment (handled by GitHubCallback component)
-            // and verify authentication by getting user data
-            await this.getCurrentUser();
-            this.authenticated = true;
+            // Check if authentication was successful by checking URL fragment
+            if (apiAdapter.checkAuthSuccessInUrl()) {
+                // Verify authentication by getting user data
+                await this.getCurrentUser();
+                this.authenticated = true;
+            } else {
+                // If no success flag in URL, check authentication status directly
+                await this.checkAuthenticationStatus();
+            }
             
             return null;
         } catch (error) {
@@ -99,11 +103,11 @@ class GitHubService {
     
     /**
      * Check authentication status from the backend
-     * This makes an API call to verify the JWT token is valid
+     * This makes an API call to verify the session is valid
      */
     async checkAuthenticationStatus(): Promise<boolean> {
         try {
-            // Call the backend to check if the JWT token is valid
+            // Call the backend to check if the session is valid
             const response = await apiAdapter.checkAuthStatus();
             this.authenticated = response.authenticated === true;
             
@@ -115,12 +119,15 @@ class GitHubService {
                     avatar_url: response.user.avatarUrl || response.user.avatar_url,
                     email: response.user.email
                 };
+            } else {
+                this.user = null;
             }
             
             return this.authenticated;
         } catch (error) {
             console.error('Error checking authentication status:', error);
             this.authenticated = false;
+            this.user = null;
             return false;
         }
     }
@@ -136,13 +143,11 @@ class GitHubService {
      * Logout from GitHub
      */
     async logout() {
-        // Call the backend logout endpoint and remove the JWT token
+        // Call the backend logout endpoint to clear the session
         try {
             await apiAdapter.logout();
         } catch (error) {
             console.error('Error during logout:', error);
-            // Even if the backend call fails, we still want to remove the token
-            apiAdapter.removeToken();
         }
 
         // Clear local state

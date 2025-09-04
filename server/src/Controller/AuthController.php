@@ -8,6 +8,7 @@ use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -59,28 +60,40 @@ class AuthController extends AbstractController
             $client = $this->clientRegistry->getClient('github');
             $accessToken = $client->getAccessToken();
             
+            // Get GitHub access token
+            $githubAccessToken = $accessToken->getToken();
+            
+            // Store GitHub token in session for API calls
+            $session = $request->getSession();
+            $session->set('github_token', $githubAccessToken);
+            
             // Get user info from GitHub
-            $githubUser = $this->githubService->getUserInfo($accessToken->getToken());
+            $githubUser = $this->githubService->getUserInfo($githubAccessToken);
             
-            // Create a GithubUser object for JWT authentication
-            // Using the App\Security\GithubUser class which is different from App\Model\GitHubUser
-            $user = new GithubUser(
-                (string)$githubUser->getId(), // Convert to string as Security\GithubUser expects string identifier
-                $githubUser->getLogin(),
-                $githubUser->getEmail(),
-                $githubUser->getAvatarUrl()
-            );
+            // Store user ID in session for authentication
+            $session->set('github_user_id', (string)$githubUser->getId());
+            $session->set('github_username', $githubUser->getLogin());
+            $session->set('github_email', $githubUser->getEmail());
+            $session->set('github_avatar', $githubUser->getAvatarUrl());
             
-            // Generate JWT token
-            $token = $this->jwtManager->create($user);
+            // Debug: Verify token was stored
+            error_log('GitHub token stored in session: ' . substr($githubAccessToken, 0, 5) . '...');
+            error_log('GitHub user ID stored in session: ' . $githubUser->getId());
             
             // Get the frontend URL from environment variable
-            $frontendUrl = $_ENV['FRONTEND_URL'] ?? 'http://localhost:3000';
+            $frontendUrl = $_ENV['FRONTEND_URL'] ?? 'https://localhost:3000';
             
-            // Redirect to frontend with token in URL fragment
-            return $this->redirect($frontendUrl . '/auth/callback#token=' . $token);
+            // Redirect to frontend with authentication success indicator
+            return new RedirectResponse($frontendUrl . '/#auth=success');
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Authentication failed: ' . $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+            // Log the error
+            error_log('GitHub callback error: ' . $e->getMessage());
+            
+            // Get the frontend URL from environment variable
+            $frontendUrl = $_ENV['FRONTEND_URL'] ?? 'https://localhost:3000';
+            
+            // Redirect to frontend with error
+            return new RedirectResponse($frontendUrl . '/#error=' . urlencode($e->getMessage()));
         }
     }
     
@@ -90,67 +103,39 @@ class AuthController extends AbstractController
     #[Route('/status', name: 'app_auth_status', methods: ['GET'])]
     public function checkAuthStatus(Request $request): JsonResponse
     {
-        // Get the JWT token from the Authorization header
-        $authHeader = $request->headers->get('Authorization');
-        $token = null;
+        $session = $request->getSession();
         
-        if ($authHeader && strpos($authHeader, 'Bearer ') === 0) {
-            $token = substr($authHeader, 7);
-        }
-        
-        if (!$token) {
-            return $this->json([
-                'authenticated' => false,
-                'message' => 'No token provided'
-            ]);
-        }
-        
-        try {
-            // The JWT token will be automatically validated by the JWT firewall
-            // If we get here, the token is valid
-            $user = $this->getUser();
-            
-            if (!$user) {
-                return $this->json([
-                    'authenticated' => false,
-                    'message' => 'Invalid token'
-                ]);
-            }
-            
+        // Check if GitHub token exists in session
+        if ($session->has('github_token')) {
             return $this->json([
                 'authenticated' => true,
-                'user' => $user instanceof GithubUser ? $user->toArray() : null
+                'user' => [
+                    'id' => $session->get('github_user_id'),
+                    'login' => $session->get('github_username'),
+                    'email' => $session->get('github_email'),
+                    'avatar_url' => $session->get('github_avatar')
+                ]
             ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'authenticated' => false,
-                'message' => 'Invalid token: ' . $e->getMessage()
-            ], Response::HTTP_UNAUTHORIZED);
         }
+        
+        return $this->json(['authenticated' => false]);
     }
     
     /**
-     * Logout - invalidate token
-     * 
-     * Note: With JWT, we can't actually invalidate the token on the server side
-     * without implementing a token blacklist. The client should discard the token.
+     * Logout - clear session
      */
     #[Route('/logout', name: 'app_auth_logout', methods: ['POST'])]
-    public function logout(): JsonResponse
+    public function logout(Request $request): JsonResponse
     {
-        // For JWT, the client should discard the token
-        // We just return a success response
+        // Clear the session
+        $session = $request->getSession();
+        $session->remove('github_token');
+        $session->remove('github_user_id');
+        $session->remove('github_username');
+        $session->remove('github_email');
+        $session->remove('github_avatar');
+        
         return $this->json(['success' => true, 'message' => 'Logged out successfully']);
     }
     
-    /**
-     * Get token for authenticated user
-     */
-    #[Route('/token', name: 'app_auth_token', methods: ['POST'])]
-    public function getToken(): JsonResponse
-    {
-        // This endpoint is handled by the lexik_jwt_authentication bundle
-        // It will never be reached directly
-        return $this->json(['error' => 'This endpoint should not be called directly']);
-    }
 }

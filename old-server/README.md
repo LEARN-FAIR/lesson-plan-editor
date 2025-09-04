@@ -17,8 +17,8 @@ secure GitHub integration in the LEARN-FAIR Lesson Plan Editor.
 
 3. Register a new OAuth application on GitHub:
     - Go to GitHub > Settings > Developer settings > OAuth Apps > New OAuth App
-    - Set the Homepage URL to `http://localhost:3000`
-    - Set the Authorization callback URL to `http://localhost:3000/github-callback`
+    - Set the Homepage URL to `https://localhost:3000`
+    - Set the Authorization callback URL to `https://localhost:3000/github-callback`
     - Copy the Client ID and Client Secret to your `.env` file
 
 4. Update your `.env` file with the GitHub Client ID and Client Secret.

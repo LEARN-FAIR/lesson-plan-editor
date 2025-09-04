@@ -52,24 +52,27 @@ const GitHubCallback: React.FC = () => {
                 setProcessing(true);
                 processed.current = true;
                 
-                // Check for JWT token in URL fragment
-                const token = apiAdapter.extractTokenFromUrl();
+                // Check for authentication success in URL fragment
+                const authSuccess = apiAdapter.checkAuthSuccessInUrl();
                 
-                if (token) {
-                    console.log('JWT token received from backend');
-                    // Store the token
-                    apiAdapter.setToken(token);
+                if (authSuccess) {
+                    console.log('Authentication success flag received from backend');
                     
-                    // Verify the token by checking auth status
+                    // Verify authentication by checking auth status
                     const authStatus = await apiAdapter.checkAuthStatus();
                     console.log('Authentication status:', authStatus.authenticated ? 'authenticated' : 'not authenticated');
                     
                     if (!authStatus.authenticated) {
-                        throw new Error('Invalid token received from server');
+                        throw new Error('Authentication failed - session not established');
                     }
                 } else {
-                    console.log('No JWT token found in URL fragment');
-                    throw new Error('No authentication token received from server');
+                    console.log('No authentication success flag found in URL fragment');
+                    // Try checking auth status directly in case the flag was missed
+                    const authStatus = await apiAdapter.checkAuthStatus();
+                    
+                    if (!authStatus.authenticated) {
+                        throw new Error('Authentication failed - no session established');
+                    }
                 }
                 
                 // Clear the URL fragment to prevent token leakage

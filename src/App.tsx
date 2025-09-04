@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {BrowserRouter as Router, Navigate, Route, Routes} from 'react-router-dom';
 import {CssBaseline, ThemeProvider} from '@mui/material';
 import theme from './theme/theme';
@@ -18,6 +18,7 @@ import {AuthProvider} from './contexts/AuthContext';
 import {RepositoryProvider} from './contexts/RepositoryContext';
 
 function App() {
+    // App component is the root component, but authentication check is handled in AuthProvider
     return (
         <ThemeProvider theme={theme}>
             <AuthProvider>

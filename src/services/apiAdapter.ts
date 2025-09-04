@@ -1,4 +1,8 @@
 /**
+ * API Adapter for making requests to the backend
+ */
+
+/**
  * API Adapter Service
  * 
  * This service adapts frontend API calls to work with the new Symfony backend.
@@ -9,10 +13,12 @@
 // Backend API URL - Update this to point to the Symfony backend
 const API_URL = process.env.REACT_APP_API_URL || 'https://localhost:8000/api';
 
-// JWT token storage key
-const TOKEN_STORAGE_KEY = 'jwt_token';
 
 class ApiAdapter {
+    constructor() {
+        // Initialize the adapter
+        void this.checkAuthStatus();
+    }
     /**
      * Get the base API URL
      */
@@ -20,31 +26,28 @@ class ApiAdapter {
         return API_URL;
     }
     
+    // Session-based authentication doesn't need token storage methods
+    private isAuthenticated: boolean = false;
+    private userData: any = null;
+    
     /**
-     * Get the stored JWT token
+     * Get authentication status
      */
-    getToken(): string | null {
-        return localStorage.getItem(TOKEN_STORAGE_KEY);
+    getAuthStatus(): boolean {
+        return this.isAuthenticated;
     }
     
     /**
-     * Store the JWT token
+     * Get user data if authenticated
      */
-    setToken(token: string): void {
-        localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    getUserData(): any {
+        return this.userData;
     }
     
     /**
-     * Remove the stored JWT token
+     * Add necessary headers to request options
      */
-    removeToken(): void {
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
-    }
-    
-    /**
-     * Add authorization header with JWT token to request options
-     */
-    private addAuthHeader(options: RequestInit = {}): RequestInit {
+    private addHeaders(options: RequestInit = {}): RequestInit {
         const headers: Record<string, string> = {};
         
         // Only add Content-Type for POST or PUT requests
@@ -52,26 +55,21 @@ class ApiAdapter {
             headers['Content-Type'] = 'application/json';
         }
         
-        // Add Authorization header if token exists
-        const token = this.getToken();
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        
         return {
             ...options,
             headers: {
                 ...options.headers,
                 ...headers
-            }
+            },
+            credentials: 'include' // Include cookies in all requests
         };
     }
 
     /**
-     * Make an authenticated API request using JWT token
+     * Make an authenticated API request using session cookies
      */
     private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-        const response = await fetch(`${API_URL}${endpoint}`, this.addAuthHeader(options));
+        const response = await fetch(`${API_URL}${endpoint}`, this.addHeaders(options));
         
         if (!response.ok) {
             let errorMessage = `API request failed: ${response.status}`;
@@ -79,9 +77,10 @@ class ApiAdapter {
                 const errorData = await response.json();
                 errorMessage = errorData.error || errorData.message || errorMessage;
                 
-                // If unauthorized and we have a token, it might be expired
-                if (response.status === 401 && this.getToken()) {
-                    this.removeToken(); // Clear invalid token
+                // If unauthorized, update authentication status
+                if (response.status === 401) {
+                    this.isAuthenticated = false;
+                    this.userData = null;
                 }
             } catch (e) {
                 // If parsing fails, use the default error message
@@ -109,18 +108,17 @@ class ApiAdapter {
     }
 
     /**
-     * Extract JWT token from URL fragment after OAuth callback
-     * Returns the token if found, null otherwise
+     * Check for authentication success in URL fragment after OAuth callback
+     * Returns true if authentication was successful
      */
-    extractTokenFromUrl(): string | null {
+    checkAuthSuccessInUrl(): boolean {
         const hash = window.location.hash;
-        if (hash && hash.includes('token=')) {
-            const token = hash.split('token=')[1];
-            // Remove the token from the URL to avoid leaking it in browser history
+        if (hash && hash.includes('auth=success')) {
+            // Remove the auth parameter from the URL
             window.history.replaceState({}, document.title, window.location.pathname);
-            return token;
+            return true;
         }
-        return null;
+        return false;
     }
 
     // ===== GitHub User Endpoints =====
@@ -133,38 +131,35 @@ class ApiAdapter {
     }
     
     /**
-     * Check if the user is authenticated using JWT token
+     * Check if the user is authenticated using session
      */
     async checkAuthStatus(): Promise<any> {
-        // If no token exists, user is not authenticated
-        if (!this.getToken()) {
-            return { authenticated: false };
-        }
-        
         try {
-            return this.request('/auth/status');
+            const response = await this.request<{authenticated: boolean, user?: any}>('/auth/status');
+            this.isAuthenticated = response.authenticated;
+            this.userData = response.user || null;
+            return response;
         } catch (error) {
-            // If request fails, token might be invalid
-            this.removeToken();
+            this.isAuthenticated = false;
+            this.userData = null;
             return { authenticated: false };
         }
     }
     
     /**
-     * Logout user by removing JWT token and notifying backend
+     * Logout user by clearing session on the server
      */
     async logout(): Promise<any> {
         try {
-            // Notify backend about logout (optional with JWT)
+            // Notify backend to clear session
             await this.request('/auth/logout', { method: 'POST' });
+            this.isAuthenticated = false;
+            this.userData = null;
+            return { success: true };
         } catch (error) {
-            // Even if backend call fails, we still want to remove the token
             console.error('Logout error:', error);
+            return { success: false, error: 'Failed to logout' };
         }
-        
-        // Remove token from local storage
-        this.removeToken();
-        return { success: true };
     }
 
     // ===== GitHub Repository Endpoints =====
@@ -275,3 +270,5 @@ class ApiAdapter {
 // Create singleton instance
 const apiAdapter = new ApiAdapter();
 export default apiAdapter;
+
+// Initialize the API adapter when this module is loaded

@@ -26,9 +26,8 @@ class GitHubController extends AbstractController
     #[Route('/user', name: 'app_github_user', methods: ['GET'])]
     public function getUserInfo(Request $request): JsonResponse
     {
-        $token = $this->getTokenFromSession($request);
-
         try {
+            $token = $this->getTokenFromSession($request);
             $user = $this->githubService->getUserInfo($token);
             return $this->json($user->toArray());
         } catch (\Exception $e) {
@@ -75,15 +74,25 @@ class GitHubController extends AbstractController
     }
 
     /**
-     * Get token from session
+     * Get GitHub token from session for authenticated users
      */
     private function getTokenFromSession(Request $request = null): string
     {
+        // First check if we have a user from JWT authentication
+        $user = $this->getUser();
+        
+        if (!$user) {
+            throw new AccessDeniedException('Not authenticated. Please login first.');
+        }
+        
+        // Get the request if not provided
         $request = $request ?? $this->container->get('request_stack')->getCurrentRequest();
+        
+        // Get GitHub token from session
         $token = $request->getSession()->get('github_token');
         
         if (!$token) {
-            throw new AccessDeniedException('Not authenticated. Please login first.');
+            throw new AccessDeniedException('GitHub token not found in session. Please login again.');
         }
         
         return $token;

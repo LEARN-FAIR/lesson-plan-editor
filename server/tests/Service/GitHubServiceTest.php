@@ -17,7 +17,7 @@ class GitHubServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->mockHttpClient = new MockHttpClient();
-        $this->githubService = new GitHubService($this->mockHttpClient, 'test_client_id', 'test_client_secret', 'http://localhost:3000/oauth/callback');
+        $this->githubService = new GitHubService($this->mockHttpClient, 'test_client_id', 'test_client_secret', 'https://localhost:3000/oauth/callback');
     }
 
     public function testExtractTokenFromRequest()
