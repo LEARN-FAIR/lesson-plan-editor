@@ -230,7 +230,22 @@ class GitHubService {
         const {owner, repo, path, message, content, branch = 'main'} = params;
 
         try {
-            return await apiAdapter.saveLessonPlan(owner, repo, path, content, message, undefined, branch);
+            // Get the file SHA from GitHub API first
+            let sha: string | undefined;
+            try {
+                const lessonPlan = await apiAdapter.getLessonPlan(owner, repo, path, branch);
+                if (lessonPlan && lessonPlan.sha) {
+                    sha = lessonPlan.sha;
+                    console.log('Retrieved SHA for file update:', sha);
+                }
+            } catch (shaError) {
+                // If we can't get the SHA, it might be a new file
+                console.warn('Could not get file SHA, might be a new file:', shaError);
+                // Continue without SHA for new files
+            }
+
+            // Now commit the file with the SHA if available
+            return await apiAdapter.saveLessonPlan(owner, repo, path, content, message, sha, branch);
         } catch (error) {
             console.error('Error committing file:', error);
             throw error;
