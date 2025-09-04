@@ -4,6 +4,9 @@
  * All GitHub API calls are now routed through the backend
  */
 
+// Import the API adapter
+import apiAdapter from './apiAdapter';
+
 // Local storage keys
 const TOKEN_STORAGE_KEY = 'github_oauth_token';
 const USER_STORAGE_KEY = 'github_user';
@@ -11,9 +14,6 @@ const USER_STORAGE_KEY = 'github_user';
 // Configuration for GitHub OAuth callback
 // The actual OAuth redirection is handled by the backend
 const GITHUB_CALLBACK_PATH = '/github-callback';
-
-// Import the API adapter
-import apiAdapter from './apiAdapter';
 
 // Types for file parameters
 export interface CommitFileParams {
@@ -72,9 +72,11 @@ class GitHubService {
     /**
      * Handle the OAuth callback from GitHub
      * With the Symfony backend, the token is directly returned in the URL
+     * @param token The OAuth token from the callback
+     * @param state Optional state parameter for verification
      * @returns The redirect URL from the server response, if any
      */
-    async handleAuthCallback(token: string): Promise<string | null> {
+    async handleAuthCallback(token: string, state?: string): Promise<string | null> {
         // If we already have a token, don't try to set it again
         if (this.token && this.isAuthenticated()) {
             console.log('Already authenticated, skipping token setup');
@@ -234,6 +236,17 @@ class GitHubService {
             // If we can't get the commits, assume there are some
             return true;
         }
+    }
+    
+    /**
+     * Alias for hasBranchCommits - used for backward compatibility
+     * @param owner Repository owner
+     * @param repo Repository name
+     * @param branch Branch name
+     * @returns True if there are commits, false otherwise
+     */
+    async hasCommitsOnBranch(owner: string, repo: string, branch: string): Promise<boolean> {
+        return this.hasBranchCommits(owner, repo, branch);
     }
 
     /**

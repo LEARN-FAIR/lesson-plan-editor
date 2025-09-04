@@ -48,39 +48,44 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 
 ## GitHub Integration Setup
 
-### Backend Setup
+### Backend Setup (Symfony)
 
 1. Navigate to the server directory:
    ```
    cd server
    ```
 
-2. Install dependencies:
+2. Install PHP dependencies:
    ```
-   npm install
-   ```
-
-3. Create a `.env` file based on the `.env.example` file:
-   ```
-   cp .env.example .env
+   composer install
    ```
 
-4. Register a new OAuth application on GitHub:
-   - Go to GitHub > Settings > Developer settings > OAuth Apps > New OAuth App
-   - Set the Homepage URL to `http://localhost:3000`
-   - Set the Authorization callback URL to `http://localhost:3000/github-callback`
-   - Copy the Client ID and Client Secret to your `.env` file
-
-5. Start the backend server:
+3. Create a `.env.local` file based on the `.env` file:
    ```
-   npm run dev
+   cp .env .env.local
+   ```
+
+4. Configure your GitHub OAuth application in the `.env.local` file:
+   ```
+   GITHUB_CLIENT_ID=your_github_client_id
+   GITHUB_CLIENT_SECRET=your_github_client_secret
+   GITHUB_REDIRECT_URI=http://localhost:3000/github-callback
+   ```
+
+5. Start the Symfony development server:
+   ```
+   symfony server:start --port=8000
+   ```
+   or
+   ```
+   php -S localhost:8000 -t public
    ```
 
 ### Frontend Setup
 
-1. In the main project directory, update the GitHub client ID in `src/services/githubService.ts`:
-   ```typescript
-   const CLIENT_ID = 'your_github_client_id'; // Replace with your GitHub OAuth App client ID
+1. Create a `.env` file in the root directory with the API URL:
+   ```
+   REACT_APP_API_URL=http://localhost:8000/api
    ```
 
 2. Install dependencies and start the frontend application:
@@ -88,6 +93,8 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
    npm install
    npm start
    ```
+
+3. The frontend will communicate with the Symfony backend through the API adapter.
 
 ## Using GitHub Integration
 
