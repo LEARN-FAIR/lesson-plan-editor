@@ -141,26 +141,41 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
             hasCommits,
             hasUncommittedChanges,
             contentChanged,
-            contentLoaded
+            contentLoaded,
+            githubContentLength: githubContent?.length || 0,
+            localContentLength: content?.length || 0
         });
         
         // Only show PR mode if there are commits AND no uncommitted changes AND content hasn't changed
         const shouldShowPrMode = hasCommits && !hasUncommittedChanges && !contentChanged && contentLoaded;
+        console.log(`Setting PR mode to: ${shouldShowPrMode}`);
         setIsPrMode(shouldShowPrMode);
-    }, [hasCommits, hasUncommittedChanges, contentChanged, contentLoaded]);
+    }, [hasCommits, hasUncommittedChanges, contentChanged, contentLoaded, githubContent, content]);
 
     // Function to manually refresh GitHub information
-    const refreshGitHubInfo = () => {
+    const refreshGitHubInfo = async () => {
         setIsRefreshing(true);
 
-        // Invalidate and refetch all queries
-        Promise.all([
-            refetchCommits(),
-            refetchContent(),
-            refetchChanges()
-        ]).finally(() => {
+        try {
+            // Invalidate and refetch all queries
+            await Promise.all([
+                refetchCommits(),
+                refetchContent(),
+                refetchChanges()
+            ]);
+            
+            // After refreshing content, reset the content changed flag if content matches
+            if (githubContent && content) {
+                const normalizedGithubContent = githubContent.replace(/\r\n/g, '\n').trim();
+                const normalizedLocalContent = content.replace(/\r\n/g, '\n').trim();
+                const hasChanged = normalizedGithubContent !== normalizedLocalContent;
+                
+                setContentChanged(hasChanged);
+                console.log('Content comparison after refresh:', { hasChanged });
+            }
+        } finally {
             setIsRefreshing(false);
-        });
+        }
     };
 
     const handleOpenDialog = () => {
@@ -173,8 +188,20 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
 
     const handleCloseDialog = () => {
         setIsDialogOpen(false);
-        setError(null);
-        setSuccess(false);
+        setError('');
+        
+        // If we had a successful commit, refresh the state to update button text
+        if (success) {
+            console.log('Commit was successful, refreshing state after dialog close');
+            // Force immediate state update for better UX
+            setContentChanged(false);
+            setIsPrMode(true);
+            
+            // Also trigger a refresh to ensure data is up-to-date
+            setTimeout(() => {
+                refreshGitHubInfo();
+            }, 100);
+        }
     };
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -272,6 +299,35 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
             if (selectedLessonPlan && selectedLessonPlan.path) {
                 queryClient.invalidateQueries({queryKey: ['lessonPlanContent', selectedLessonPlan.path]});
             }
+            
+            // Force immediate state update
+            setContentChanged(false);
+            
+            // Wait a moment for React Query to settle, then update state again
+            setTimeout(async () => {
+                console.log('Performing delayed state update after commit');
+                
+                // Explicitly refetch data to update UI state
+                const [contentResult, changesResult, commitsResult] = await Promise.all([
+                    refetchContent(),
+                    refetchChanges(),
+                    refetchCommits()
+                ]);
+                
+                console.log('State after refetch:', {
+                    hasCommits: commitsResult.data,
+                    hasUncommittedChanges: changesResult.data,
+                    githubContentUpdated: !!contentResult.data
+                });
+                
+                // Force PR mode update based on new data
+                const shouldShowPrMode = !!commitsResult.data && 
+                                       !changesResult.data && 
+                                       !!contentResult.data;
+                                       
+                console.log(`Setting PR mode to ${shouldShowPrMode} after commit`);
+                setIsPrMode(shouldShowPrMode);
+            }, 500);
 
         } catch (err) {
             console.error('Commit error:', err);
