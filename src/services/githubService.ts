@@ -12,8 +12,8 @@ const USER_STORAGE_KEY = 'github_user';
 // The actual OAuth redirection is handled by the backend
 const GITHUB_CALLBACK_PATH = '/github-callback';
 
-// Backend API URL - Update this if your backend is running on a different port/host
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+// Import the API adapter
+import apiAdapter from './apiAdapter';
 
 // Types for file parameters
 export interface CommitFileParams {
@@ -64,54 +64,27 @@ class GitHubService {
      * @param redirectUrl Optional URL to redirect to after successful authentication
      */
     redirectToGitHub(redirectUrl?: string) {
-        // Use the backend endpoint to handle GitHub OAuth redirection
-        let loginUrl = `${API_URL}/auth/github/login`;
-
-        // Add redirect_url as a query parameter if provided
-        if (redirectUrl) {
-            // Encode the redirect URL to ensure it's properly passed
-            const encodedRedirectUrl = encodeURIComponent(redirectUrl);
-            loginUrl += `?redirect_url=${encodedRedirectUrl}`;
-        }
-
+        // Use the API adapter to get the login URL
+        const loginUrl = apiAdapter.getGitHubLoginUrl(redirectUrl);
         window.location.href = loginUrl;
     }
 
     /**
      * Handle the OAuth callback from GitHub
-     * Uses our backend to securely exchange the code for an access token
+     * With the Symfony backend, the token is directly returned in the URL
      * @returns The redirect URL from the server response, if any
      */
-    async handleAuthCallback(code: string, state?: string): Promise<string | null> {
-        // If we already have a token, don't try to exchange the code again
+    async handleAuthCallback(token: string): Promise<string | null> {
+        // If we already have a token, don't try to set it again
         if (this.token && this.isAuthenticated()) {
-            console.log('Already authenticated, skipping code exchange');
+            console.log('Already authenticated, skipping token setup');
             return null;
         }
 
         try {
-            console.log('Exchanging code for token...');
-            console.log('State parameter received:', state);
-
-            // The state parameter is just a random string for security, not JSON
-            // We don't need to try to extract anything from it
-
-            // Exchange the code for an access token via our backend
-            const tokenResponse = await fetch(`${API_URL}/auth/github/callback`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({code, state})
-            });
-
-            if (!tokenResponse.ok) {
-                const errorData = await tokenResponse.json();
-                throw new Error(errorData.error || 'Failed to exchange code for token');
-            }
-
-            const tokenData = await tokenResponse.json();
-            this.token = tokenData.access_token;
+            console.log('Setting up token from callback...');
+            
+            this.token = token;
 
             // Save token to local storage
             if (this.token) {
@@ -121,12 +94,6 @@ class GitHubService {
 
             // Get user data from GitHub API
             await this.getCurrentUser();
-
-            // Use the redirect URL from the server response if available
-            if (tokenData.redirect_url) {
-                console.log('Using redirect_url from server response:', tokenData.redirect_url);
-                return tokenData.redirect_url;
-            }
 
             return null;
         } catch (error) {
@@ -173,22 +140,13 @@ class GitHubService {
                 return this.user;
             }
 
-            // Get user data from our backend
-            const userResponse = await fetch(`${API_URL}/github/user`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-
-            if (!userResponse.ok) {
-                throw new Error('Failed to get user information from backend');
-            }
-
-            const userData = await userResponse.json();
+            // Get user data from our backend via the API adapter
+            const userData = await apiAdapter.getUserInfo();
+            
             this.user = {
                 login: userData.login,
                 name: userData.name || undefined,
-                avatar_url: userData.avatar_url,
+                avatar_url: userData.avatarUrl,
                 email: userData.email || undefined
             };
 
@@ -213,18 +171,8 @@ class GitHubService {
         }
 
         try {
-            const response = await fetch(`${API_URL}/github/repo/${owner}/${repo}/access`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to check repository access');
-            }
-
-            const data = await response.json();
-            return data.hasAccess === true;
+            const repoInfo = await apiAdapter.checkRepositoryAccess(owner, repo);
+            return repoInfo.hasWriteAccess === true;
         } catch (error) {
             console.error('Error checking repository permissions:', error);
             return false;
@@ -259,26 +207,7 @@ class GitHubService {
         const {owner, repo, path, message, content, branch = 'main'} = params;
 
         try {
-            const response = await fetch(`${API_URL}/github/repo/${owner}/${repo}/commit`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.token}`
-                },
-                body: JSON.stringify({
-                    path,
-                    message,
-                    content,
-                    branch
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to commit file');
-            }
-
-            return await response.json();
+            return await apiAdapter.saveLessonPlan(owner, repo, path, content, message, undefined, branch);
         } catch (error) {
             console.error('Error committing file:', error);
             throw error;
@@ -290,29 +219,20 @@ class GitHubService {
      * @param owner Repository owner
      * @param repo Repository name
      * @param branch Branch name
-     * @returns True if there are commits on the branch, false otherwise
+     * @returns True if there are commits, false otherwise
      */
-    async hasCommitsOnBranch(owner: string, repo: string, branch: string): Promise<boolean> {
+    async hasBranchCommits(owner: string, repo: string, branch: string): Promise<boolean> {
         if (!this.token) {
             throw new Error('Not authenticated with GitHub');
         }
 
         try {
-            const response = await fetch(`${API_URL}/github/repo/${owner}/${repo}/commits?branch=${encodeURIComponent(branch)}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to check branch commits');
-            }
-
-            const commits = await response.json();
-            return Array.isArray(commits) && commits.length > 0;
+            const commits = await apiAdapter.getBranchCommits(owner, repo, branch);
+            return commits.length > 0;
         } catch (error) {
             console.error('Error checking branch commits:', error);
-            return false;
+            // If we can't get the commits, assume there are some
+            return true;
         }
     }
 
@@ -338,18 +258,7 @@ class GitHubService {
      */
     async getFileContent(owner: string, repo: string, path: string, branch: string): Promise<string> {
         try {
-            const response = await fetch(`${API_URL}/github/repo/${owner}/${repo}/content?path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to get file content from GitHub');
-            }
-
-            const fileData = await response.json();
-            return fileData.content;
+            return await apiAdapter.getFileContent(owner, repo, path, branch);
         } catch (error) {
             console.error('Error getting file content:', error);
             throw error;

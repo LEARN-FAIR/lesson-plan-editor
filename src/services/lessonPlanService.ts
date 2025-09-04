@@ -3,6 +3,7 @@
  */
 
 import githubRepoService from './githubRepoService';
+import apiAdapter from './apiAdapter';
 
 // Local storage keys
 const SELECTED_LESSON_PLAN_KEY = 'selected_lesson_plan';
@@ -57,19 +58,13 @@ class LessonPlanService {
             // Get the selected branch or fall back to default branch
             const selectedBranch = githubRepoService.getSelectedBranch() || selectedRepo.default_branch;
 
-            // Get lesson plans from the backend API
-            const response = await fetch(`http://localhost:4000/api/lesson-plans?owner=${encodeURIComponent(selectedRepo.owner.login)}&repo=${encodeURIComponent(selectedRepo.name)}&branch=${encodeURIComponent(selectedBranch)}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('github_oauth_token')}`
-                }
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to fetch lesson plans');
-            }
-
-            const lessonPlans = await response.json();
+            // Get lesson plans from the backend API via the adapter
+            const lessonPlans = await apiAdapter.getLessonPlans(
+                selectedRepo.owner.login,
+                selectedRepo.name,
+                selectedBranch
+            );
+            
             return lessonPlans;
         } catch (error) {
             console.error('Error fetching lesson plans:', error);
@@ -103,20 +98,14 @@ class LessonPlanService {
         try {
             const branch = githubRepoService.getSelectedBranch() || repo.default_branch;
 
-            // Get lesson plan from the backend API using the new /file endpoint
-            // We're using a query parameter approach to avoid path encoding issues
-            const response = await fetch(`http://localhost:4000/api/lesson-plans/file?path=${encodeURIComponent(path)}&owner=${encodeURIComponent(repo.owner.login)}&repo=${encodeURIComponent(repo.name)}&branch=${encodeURIComponent(branch)}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('github_oauth_token')}`
-                }
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to fetch lesson plan');
-            }
-
-            const lessonPlan = await response.json();
+            // Get lesson plan from the backend API via the adapter
+            const lessonPlan = await apiAdapter.getLessonPlan(
+                repo.owner.login,
+                repo.name,
+                path,
+                branch
+            );
+            
             return lessonPlan;
         } catch (error) {
             console.error('Error fetching lesson plan:', error);

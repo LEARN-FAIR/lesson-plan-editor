@@ -4,6 +4,7 @@
  */
 
 import githubService from './githubService';
+import apiAdapter from './apiAdapter';
 
 // Target repository and its forks
 const TARGET_REPO = 'ELIXIR-TrP-FAIR-Converge';
@@ -12,9 +13,6 @@ const TARGET_OWNER = 'elixir-europe-training';
 // Local storage keys
 const SELECTED_REPO_KEY = 'selected_github_repo';
 const SELECTED_BRANCH_KEY = 'selected_github_branch';
-
-// Backend API URL - Update this if your backend is running on a different port/host
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
 
 // Extended interface for GitHub repository with additional properties we need
 export interface Repository {
@@ -107,22 +105,7 @@ class GitHubRepoService {
         }
 
         try {
-            const token = localStorage.getItem('github_oauth_token');
-            if (!token) {
-                throw new Error('GitHub token not found');
-            }
-
-            const response = await fetch(`${API_URL}/github/repos/target-and-forks`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch repositories: ${response.status}`);
-            }
-
-            const repos = await response.json();
+            const repos = await apiAdapter.getTargetRepoAndForks();
             return repos;
         } catch (error) {
             console.error('Error fetching repositories:', error);
@@ -139,22 +122,7 @@ class GitHubRepoService {
                 throw new Error('Not authenticated with GitHub');
             }
 
-            const token = localStorage.getItem('github_oauth_token');
-            if (!token) {
-                throw new Error('GitHub token not found');
-            }
-
-            const response = await fetch(`${API_URL}/github/repos/search?q=${encodeURIComponent(query)}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to search repositories: ${response.status}`);
-            }
-
-            const data = await response.json();
+            const data = await apiAdapter.searchRepositories(query);
             return data;
         } catch (error) {
             console.error('Error searching repositories:', error);
@@ -171,24 +139,9 @@ class GitHubRepoService {
                 throw new Error('Not authenticated with GitHub');
             }
 
-            const token = localStorage.getItem('github_oauth_token');
-            if (!token) {
-                throw new Error('GitHub token not found');
-            }
-
             console.log(`Fetching branches for ${owner}/${repo}`);
 
-            const response = await fetch(`${API_URL}/github/repo/${owner}/${repo}/branches`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch branches: ${response.status}`);
-            }
-
-            const branches = await response.json();
+            const branches = await apiAdapter.getRepositoryBranches(owner, repo);
             return branches;
         } catch (error) {
             console.error('Error fetching branches:', error);
@@ -297,24 +250,7 @@ class GitHubRepoService {
         }
 
         try {
-            const token = localStorage.getItem('github_oauth_token');
-            if (!token) {
-                throw new Error('GitHub token not found');
-            }
-
-            const response = await fetch(`${API_URL}/github/repos/fork`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to create fork: ${response.status}`);
-            }
-
-            const newFork = await response.json();
+            const newFork = await apiAdapter.createFork();
             this.setSelectedRepo(newFork);
 
             return newFork;
@@ -342,31 +278,10 @@ class GitHubRepoService {
         }
 
         try {
-            const token = localStorage.getItem('github_oauth_token');
-            if (!token) {
-                throw new Error('GitHub token not found');
-            }
-
             // If no source branch is provided, use the current branch or default branch
             const sourceRef = sourceBranch || this.getSelectedBranch() || repo.default_branch;
 
-            const response = await fetch(`${API_URL}/github/repo/${repo.owner.login}/${repo.name}/branches`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    branchName,
-                    sourceBranch: sourceRef
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to create branch: ${response.status}`);
-            }
-
-            const newBranch = await response.json();
+            const newBranch = await apiAdapter.createBranch(repo.owner.login, repo.name, branchName, sourceRef);
 
             // Set this as the selected branch
             this.setSelectedBranch(branchName);
