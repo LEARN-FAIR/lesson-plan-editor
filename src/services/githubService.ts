@@ -1,14 +1,11 @@
 /**
  * GitHub service for handling GitHub API operations
- * Uses OAuth flow for authentication
+ * Uses OAuth flow for authentication with JWT token storage
  * All GitHub API calls are now routed through the backend
  */
 
 // Import the API adapter
 import apiAdapter from './apiAdapter';
-
-// Local storage key for user data only
-const USER_STORAGE_KEY = 'github_user';
 
 // Configuration for GitHub OAuth callback
 // The actual OAuth redirection is handled by the backend
@@ -37,24 +34,19 @@ class GitHubService {
     private user: GitHubUser | null = null;
 
     constructor() {
-        // Try to load user from local storage on initialization
-        const userJson = localStorage.getItem(USER_STORAGE_KEY);
-        if (userJson) {
-            try {
-                this.user = JSON.parse(userJson);
-                this.authenticated = true; // If we have user data, assume we're authenticated
-            } catch (e) {
-                console.error('Failed to parse stored user:', e);
-            }
-        }
+        // We'll check authentication status by making an API call when needed
+        // No longer loading user data from localStorage
     }
 
     /**
-     * Initialize the GitHub service with session-based authentication
-     * This is now a no-op since we rely on server-side sessions
+     * Initialize the GitHub service with JWT authentication
+     * Checks if a token exists and validates it
      */
-    initialize() {
-        // No-op - authentication is now handled by the server via sessions
+    async initialize() {
+        // Check if we have a token and if it's valid
+        if (apiAdapter.getToken()) {
+            await this.checkAuthenticationStatus();
+        }
     }
 
     /**
@@ -69,7 +61,7 @@ class GitHubService {
 
     /**
      * Handle the OAuth callback from GitHub
-     * With the Symfony backend, authentication is handled via server-side session
+     * With JWT authentication, the token is returned in the URL fragment
      * @param code The OAuth code from the callback
      * @param state Optional state parameter for verification
      * @returns The redirect URL from the server response, if any
@@ -84,8 +76,8 @@ class GitHubService {
         try {
             console.log('Completing authentication via server...');
             
-            // The server will handle the token exchange and store it in the session
-            // We just need to get the user data to confirm authentication
+            // Extract token from URL fragment (handled by GitHubCallback component)
+            // and verify authentication by getting user data
             await this.getCurrentUser();
             this.authenticated = true;
             
@@ -97,10 +89,40 @@ class GitHubService {
     }
 
     /**
-     * Check if the user is authenticated
+     * Check if the user is authenticated with GitHub
+     * For immediate UI feedback, returns the cached authentication state
+     * For a fresh check, use checkAuthenticationStatus()
      */
     isAuthenticated(): boolean {
         return this.authenticated;
+    }
+    
+    /**
+     * Check authentication status from the backend
+     * This makes an API call to verify the JWT token is valid
+     */
+    async checkAuthenticationStatus(): Promise<boolean> {
+        try {
+            // Call the backend to check if the JWT token is valid
+            const response = await apiAdapter.checkAuthStatus();
+            this.authenticated = response.authenticated === true;
+            
+            // If authenticated, update user data from the response
+            if (this.authenticated && response.user) {
+                this.user = {
+                    login: response.user.username || response.user.login,
+                    name: response.user.name,
+                    avatar_url: response.user.avatarUrl || response.user.avatar_url,
+                    email: response.user.email
+                };
+            }
+            
+            return this.authenticated;
+        } catch (error) {
+            console.error('Error checking authentication status:', error);
+            this.authenticated = false;
+            return false;
+        }
     }
 
     /**
@@ -111,23 +133,21 @@ class GitHubService {
     }
 
     /**
-     * Logout user
+     * Logout from GitHub
      */
     async logout() {
+        // Call the backend logout endpoint and remove the JWT token
         try {
-            // Call logout endpoint on the server to clear the session
-            await fetch(`${apiAdapter.getBaseUrl()}/auth/logout`, {
-                method: 'POST',
-                credentials: 'include'
-            });
+            await apiAdapter.logout();
         } catch (error) {
-            console.error('Error logging out:', error);
+            console.error('Error during logout:', error);
+            // Even if the backend call fails, we still want to remove the token
+            apiAdapter.removeToken();
         }
-        
+
         // Clear local state
         this.authenticated = false;
         this.user = null;
-        localStorage.removeItem(USER_STORAGE_KEY);
     }
 
     /**
@@ -135,12 +155,8 @@ class GitHubService {
      */
     async getCurrentUser(): Promise<GitHubUser> {
         try {
-            // If we already have user data, return it
-            if (this.user) {
-                return this.user;
-            }
-
-            // Get user data from our backend via the API adapter
+            // Always fetch fresh user data from the backend
+            // This ensures we have the most up-to-date information
             const userData = await apiAdapter.getUserInfo();
             
             this.user = {
@@ -153,8 +169,6 @@ class GitHubService {
             // Mark as authenticated if we successfully got user data
             this.authenticated = true;
 
-            // Save to local storage
-            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user));
             return this.user;
         } catch (error) {
             console.error('Failed to get user information:', error);

@@ -29,3 +29,7 @@ services:
             $debug: '%kernel.debug%'
         tags:
             - { name: kernel.event_listener, event: kernel.exception }
+            
+    # Enable SessionInterface for autowiring
+    Symfony\Component\HttpFoundation\Session\SessionInterface:
+        alias: 'session'

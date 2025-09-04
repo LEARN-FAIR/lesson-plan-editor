@@ -26,7 +26,7 @@ class GitHubController extends AbstractController
     #[Route('/user', name: 'app_github_user', methods: ['GET'])]
     public function getUserInfo(Request $request): JsonResponse
     {
-        $token = $this->getTokenFromRequest($request);
+        $token = $this->getTokenFromSession($request);
 
         try {
             $user = $this->githubService->getUserInfo($token);
@@ -42,7 +42,7 @@ class GitHubController extends AbstractController
     #[Route('/repositories', name: 'app_github_repositories', methods: ['GET'])]
     public function getRepositories(Request $request): JsonResponse
     {
-        $token = $this->getTokenFromRequest($request);
+        $token = $this->getTokenFromSession($request);
 
         try {
             $repositories = $this->githubService->getUserRepositories($token);
@@ -60,7 +60,7 @@ class GitHubController extends AbstractController
     {
         $owner = $request->query->get('owner');
         $repo = $request->query->get('repo');
-        $token = $this->getTokenFromRequest($request);
+        $token = $this->getTokenFromSession($request);
 
         if (!$owner || !$repo) {
             return $this->json(['error' => 'Owner and repo parameters are required'], Response::HTTP_BAD_REQUEST);
@@ -75,22 +75,17 @@ class GitHubController extends AbstractController
     }
 
     /**
-     * Extract token from Authorization header or request body
+     * Get token from session
      */
-    private function getTokenFromRequest(Request $request): string
+    private function getTokenFromSession(Request $request = null): string
     {
-        // First try to get from Authorization header
-        $authHeader = $request->headers->get('Authorization');
-        if ($authHeader && strpos($authHeader, 'Bearer ') === 0) {
-            return substr($authHeader, 7);
+        $request = $request ?? $this->container->get('request_stack')->getCurrentRequest();
+        $token = $request->getSession()->get('github_token');
+        
+        if (!$token) {
+            throw new AccessDeniedException('Not authenticated. Please login first.');
         }
         
-        // Then try to get from request body
-        $content = json_decode($request->getContent(), true);
-        if (isset($content['token'])) {
-            return $content['token'];
-        }
-        
-        throw new AccessDeniedException('No valid GitHub token provided');
+        return $token;
     }
 }

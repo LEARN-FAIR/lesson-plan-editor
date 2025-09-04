@@ -25,11 +25,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const isAuth = githubService.isAuthenticated();
+                // Check authentication status from the backend
+                const isAuth = await githubService.checkAuthenticationStatus();
                 setIsAuthenticated(isAuth);
 
                 if (isAuth) {
                     try {
+                        // Fetch fresh user data from the backend
                         const userInfo = await githubService.getCurrentUser();
                         setUser(userInfo);
                     } catch (userError) {

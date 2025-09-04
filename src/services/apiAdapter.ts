@@ -9,6 +9,9 @@
 // Backend API URL - Update this to point to the Symfony backend
 const API_URL = process.env.REACT_APP_API_URL || 'https://localhost:8000/api';
 
+// JWT token storage key
+const TOKEN_STORAGE_KEY = 'jwt_token';
+
 class ApiAdapter {
     /**
      * Get the base API URL
@@ -18,9 +21,30 @@ class ApiAdapter {
     }
     
     /**
-     * Add credentials to request options to include cookies for session-based auth
+     * Get the stored JWT token
      */
-    private addCredentials(options: RequestInit = {}): RequestInit {
+    getToken(): string | null {
+        return localStorage.getItem(TOKEN_STORAGE_KEY);
+    }
+    
+    /**
+     * Store the JWT token
+     */
+    setToken(token: string): void {
+        localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    }
+    
+    /**
+     * Remove the stored JWT token
+     */
+    removeToken(): void {
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+    
+    /**
+     * Add authorization header with JWT token to request options
+     */
+    private addAuthHeader(options: RequestInit = {}): RequestInit {
         const headers: Record<string, string> = {};
         
         // Only add Content-Type for POST or PUT requests
@@ -28,9 +52,14 @@ class ApiAdapter {
             headers['Content-Type'] = 'application/json';
         }
         
+        // Add Authorization header if token exists
+        const token = this.getToken();
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
         return {
             ...options,
-            credentials: 'include', // This ensures cookies are sent with requests
             headers: {
                 ...options.headers,
                 ...headers
@@ -39,16 +68,21 @@ class ApiAdapter {
     }
 
     /**
-     * Make an authenticated API request using session cookies
+     * Make an authenticated API request using JWT token
      */
     private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-        const response = await fetch(`${API_URL}${endpoint}`, this.addCredentials(options));
+        const response = await fetch(`${API_URL}${endpoint}`, this.addAuthHeader(options));
         
         if (!response.ok) {
             let errorMessage = `API request failed: ${response.status}`;
             try {
                 const errorData = await response.json();
                 errorMessage = errorData.error || errorData.message || errorMessage;
+                
+                // If unauthorized and we have a token, it might be expired
+                if (response.status === 401 && this.getToken()) {
+                    this.removeToken(); // Clear invalid token
+                }
             } catch (e) {
                 // If parsing fails, use the default error message
             }
@@ -75,21 +109,62 @@ class ApiAdapter {
     }
 
     /**
-     * Exchange OAuth code for token
+     * Extract JWT token from URL fragment after OAuth callback
+     * Returns the token if found, null otherwise
      */
-    async exchangeCodeForToken(code: string, state?: string): Promise<any> {
-        // This is now handled by the Symfony backend directly
-        // The frontend will receive the token in the URL after OAuth redirect
-        throw new Error('This method is no longer needed with the Symfony backend');
+    extractTokenFromUrl(): string | null {
+        const hash = window.location.hash;
+        if (hash && hash.includes('token=')) {
+            const token = hash.split('token=')[1];
+            // Remove the token from the URL to avoid leaking it in browser history
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return token;
+        }
+        return null;
     }
 
     // ===== GitHub User Endpoints =====
 
     /**
-     * Get authenticated user info
+     * Get user information from GitHub
      */
     async getUserInfo(): Promise<any> {
         return this.request('/github/user');
+    }
+    
+    /**
+     * Check if the user is authenticated using JWT token
+     */
+    async checkAuthStatus(): Promise<any> {
+        // If no token exists, user is not authenticated
+        if (!this.getToken()) {
+            return { authenticated: false };
+        }
+        
+        try {
+            return this.request('/auth/status');
+        } catch (error) {
+            // If request fails, token might be invalid
+            this.removeToken();
+            return { authenticated: false };
+        }
+    }
+    
+    /**
+     * Logout user by removing JWT token and notifying backend
+     */
+    async logout(): Promise<any> {
+        try {
+            // Notify backend about logout (optional with JWT)
+            await this.request('/auth/logout', { method: 'POST' });
+        } catch (error) {
+            // Even if backend call fails, we still want to remove the token
+            console.error('Logout error:', error);
+        }
+        
+        // Remove token from local storage
+        this.removeToken();
+        return { success: true };
     }
 
     // ===== GitHub Repository Endpoints =====

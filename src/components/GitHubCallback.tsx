@@ -3,6 +3,7 @@ import {useLocation, useNavigate} from 'react-router-dom';
 import {Box, CircularProgress, Paper, Typography} from '@mui/material';
 import githubService from '../services/githubService';
 import {useAuth} from '../contexts/AuthContext';
+import apiAdapter from '../services/apiAdapter';
 
 /**
  * Component to handle GitHub OAuth callback.
@@ -50,73 +51,57 @@ const GitHubCallback: React.FC = () => {
                 console.log('Starting GitHub OAuth callback processing');
                 setProcessing(true);
                 processed.current = true;
-
-                // Get the code and state from URL query params
-                const searchParams = new URLSearchParams(location.search);
-                const code = searchParams.get('code');
-                const state = searchParams.get('state');
-
-                if (!code) {
-                    throw new Error('No authorization code received from GitHub');
+                
+                // Check for JWT token in URL fragment
+                const token = apiAdapter.extractTokenFromUrl();
+                
+                if (token) {
+                    console.log('JWT token received from backend');
+                    // Store the token
+                    apiAdapter.setToken(token);
+                    
+                    // Verify the token by checking auth status
+                    const authStatus = await apiAdapter.checkAuthStatus();
+                    console.log('Authentication status:', authStatus.authenticated ? 'authenticated' : 'not authenticated');
+                    
+                    if (!authStatus.authenticated) {
+                        throw new Error('Invalid token received from server');
+                    }
+                } else {
+                    console.log('No JWT token found in URL fragment');
+                    throw new Error('No authentication token received from server');
                 }
-
-                console.log('Received state parameter:', state);
-
-                // The state parameter contains our redirect URL
-                // But we'll let the server decode it for us
-                console.log('Using session storage redirect URL as fallback:', redirectUrl);
-
-                console.log('Sending code to backend for authentication');
-                // Send code to backend which will exchange it for token and store in session
-                const serverRedirectUrl = await githubService.handleAuthCallback(code, state || undefined);
-                console.log('Successfully authenticated with backend');
-
-                // If we got a redirect URL from the server, use it instead of the stored one
-                if (serverRedirectUrl) {
-                    console.log('Using redirect URL from server response:', serverRedirectUrl);
-                    setRedirectUrl(serverRedirectUrl);
-                }
-
-                // Clear the code from the URL to prevent reprocessing on refresh
+                
+                // Clear the URL fragment to prevent token leakage
                 window.history.replaceState({}, document.title, '/github-callback');
 
-                // Wait a bit to ensure the session is established and auth state is updated
-                setTimeout(() => {
-                    // Directly check if authenticated using the service
-                    const isAuth = githubService.isAuthenticated();
-                    console.log('Authentication state after session establishment:', isAuth ? 'authenticated' : 'not authenticated');
+                // Get the final redirect URL to use
+                const sessionRedirectUrl = localStorage.getItem('redirect_url');
+                console.log('Session storage redirect URL at redirect time:', sessionRedirectUrl);
 
-                    // Get the final redirect URL to use
-                    // Check local storage again in case it was updated
-                    const sessionRedirectUrl = localStorage.getItem('redirect_url');
-                    console.log('Session storage redirect URL at redirect time:', sessionRedirectUrl);
+                // If we have a complex editor URL in session storage, prioritize it
+                const isEditorUrl = sessionRedirectUrl && sessionRedirectUrl.startsWith('/editor/');
 
-                    // If we have a complex editor URL in session storage, prioritize it
-                    const isEditorUrl = sessionRedirectUrl && sessionRedirectUrl.startsWith('/editor/');
+                // Always prioritize local storage for authenticated users
+                const finalRedirectUrl = sessionRedirectUrl || redirectUrl || '/';
+                console.log('Final redirect URL decision:', {
+                    redirectUrl,
+                    sessionRedirectUrl,
+                    isEditorUrl,
+                    finalRedirectUrl
+                });
 
-                    // Always prioritize local storage for authenticated users
-                    const finalRedirectUrl = sessionRedirectUrl || serverRedirectUrl || redirectUrl || '/';
-                    console.log('Final redirect URL decision:', {
-                        serverRedirectUrl,
-                        redirectUrl,
-                        sessionRedirectUrl,
-                        isEditorUrl,
-                        finalRedirectUrl
-                    });
+                // Now clear the local storage
+                localStorage.removeItem('redirect_url');
 
-                    // Now clear the local storage
-                    localStorage.removeItem('redirect_url');
-
-                    try {
-                        const decodedUrl = decodeURIComponent(finalRedirectUrl);
-                        console.log('Redirecting to:', decodedUrl);
-                        window.location.href = decodedUrl; // Use direct location change instead of navigate
-                    } catch (error) {
-                        console.error('Error decoding redirect URL:', error);
-                        window.location.href = finalRedirectUrl; // Use direct location change instead of navigate
-                    }
-                }, 1500); // Increased timeout to ensure auth state is updated
-
+                try {
+                    const decodedUrl = decodeURIComponent(finalRedirectUrl);
+                    console.log('Redirecting to:', decodedUrl);
+                    window.location.href = decodedUrl; // Use direct location change instead of navigate
+                } catch (error) {
+                    console.error('Error decoding redirect URL:', error);
+                    window.location.href = finalRedirectUrl; // Use direct location change instead of navigate
+                }
             } catch (err) {
                 console.error('GitHub OAuth callback error:', err);
                 setError(`Authentication failed: ${(err as Error).message}`);
@@ -126,7 +111,7 @@ const GitHubCallback: React.FC = () => {
 
         // Execute the callback handler once
         handleCallback();
-    }, [location, processing, redirectUrl]);
+    }, [location.search, processing, redirectUrl]);
 
     // No manual redirect function needed anymore
 
