@@ -66,10 +66,10 @@ const GitHubCallback: React.FC = () => {
                 // But we'll let the server decode it for us
                 console.log('Using session storage redirect URL as fallback:', redirectUrl);
 
-                console.log('Exchanging GitHub code for token');
-                // Exchange code for token and get redirect URL from server response
+                console.log('Sending code to backend for authentication');
+                // Send code to backend which will exchange it for token and store in session
                 const serverRedirectUrl = await githubService.handleAuthCallback(code, state || undefined);
-                console.log('Successfully exchanged code for token');
+                console.log('Successfully authenticated with backend');
 
                 // If we got a redirect URL from the server, use it instead of the stored one
                 if (serverRedirectUrl) {
@@ -80,11 +80,11 @@ const GitHubCallback: React.FC = () => {
                 // Clear the code from the URL to prevent reprocessing on refresh
                 window.history.replaceState({}, document.title, '/github-callback');
 
-                // Wait a bit to ensure the token is properly stored and auth state is updated
+                // Wait a bit to ensure the session is established and auth state is updated
                 setTimeout(() => {
                     // Directly check if authenticated using the service
                     const isAuth = githubService.isAuthenticated();
-                    console.log('Authentication state after token exchange:', isAuth ? 'authenticated' : 'not authenticated');
+                    console.log('Authentication state after session establishment:', isAuth ? 'authenticated' : 'not authenticated');
 
                     // Get the final redirect URL to use
                     // Check local storage again in case it was updated

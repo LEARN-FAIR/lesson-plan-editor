@@ -11,43 +11,38 @@ const API_URL = process.env.REACT_APP_API_URL || 'https://localhost:8000/api';
 
 class ApiAdapter {
     /**
-     * Get the stored authentication token
+     * Get the base API URL
      */
-    private getToken(): string | null {
-        return localStorage.getItem('github_oauth_token');
+    getBaseUrl(): string {
+        return API_URL;
     }
-
+    
     /**
-     * Add authorization header to request options if token exists
+     * Add credentials to request options to include cookies for session-based auth
      */
-    private addAuthHeader(options: RequestInit = {}): RequestInit {
-        const token = this.getToken();
-        if (token) {
-            const headers: Record<string, string> = {
-                'Authorization': `Bearer ${token}`
-            };
-            
-            // Only add Content-Type for POST or PUT requests
-            if (options.method === 'POST' || options.method === 'PUT') {
-                headers['Content-Type'] = 'application/json';
-            }
-            
-            return {
-                ...options,
-                headers: {
-                    ...options.headers,
-                    ...headers
-                }
-            };
+    private addCredentials(options: RequestInit = {}): RequestInit {
+        const headers: Record<string, string> = {};
+        
+        // Only add Content-Type for POST or PUT requests
+        if (options.method === 'POST' || options.method === 'PUT') {
+            headers['Content-Type'] = 'application/json';
         }
-        return options;
+        
+        return {
+            ...options,
+            credentials: 'include', // This ensures cookies are sent with requests
+            headers: {
+                ...options.headers,
+                ...headers
+            }
+        };
     }
 
     /**
-     * Make an authenticated API request
+     * Make an authenticated API request using session cookies
      */
     private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-        const response = await fetch(`${API_URL}${endpoint}`, this.addAuthHeader(options));
+        const response = await fetch(`${API_URL}${endpoint}`, this.addCredentials(options));
         
         if (!response.ok) {
             let errorMessage = `API request failed: ${response.status}`;

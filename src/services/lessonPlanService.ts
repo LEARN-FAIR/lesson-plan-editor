@@ -4,6 +4,7 @@
 
 import githubRepoService from './githubRepoService';
 import apiAdapter from './apiAdapter';
+import githubService from './githubService';
 
 // Local storage keys
 const SELECTED_LESSON_PLAN_KEY = 'selected_lesson_plan';
@@ -43,8 +44,8 @@ class LessonPlanService {
      * Get all lesson plans from the repository by recursively searching through the directory structure
      */
     async getLessonPlans(): Promise<LessonPlan[]> {
-        // Check if we have a GitHub token
-        if (!localStorage.getItem('github_oauth_token')) {
+        // Check if we are authenticated with GitHub
+        if (!githubService.isAuthenticated()) {
             throw new Error('Not authenticated with GitHub');
         }
 
@@ -84,8 +85,8 @@ class LessonPlanService {
      * Get a specific lesson plan by path
      */
     async getLessonPlan(path: string): Promise<LessonPlan> {
-        // Check if we have a GitHub token
-        if (!localStorage.getItem('github_oauth_token')) {
+        // Check if we are authenticated with GitHub
+        if (!githubService.isAuthenticated()) {
             throw new Error('Not authenticated with GitHub');
         }
 

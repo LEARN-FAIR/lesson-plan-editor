@@ -1,6 +1,7 @@
 import {useQuery} from '@tanstack/react-query';
 import lessonPlanService, {LessonPlan} from './lessonPlanService';
 import githubRepoService from './githubRepoService';
+import githubService from './githubService';
 
 /**
  * React Query hook to fetch lesson plan content
@@ -36,6 +37,6 @@ export const useLessonPlans = () => {
             return lessonPlanService.getLessonPlans();
         },
         staleTime: 5 * 60 * 1000, // 5 minutes
-        enabled: !!localStorage.getItem('github_oauth_token'), // Only run if authenticated
+        enabled: githubService.isAuthenticated(), // Only run if authenticated
     });
 };

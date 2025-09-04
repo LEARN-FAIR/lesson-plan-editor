@@ -7,8 +7,7 @@
 // Import the API adapter
 import apiAdapter from './apiAdapter';
 
-// Local storage keys
-const TOKEN_STORAGE_KEY = 'github_oauth_token';
+// Local storage key for user data only
 const USER_STORAGE_KEY = 'github_user';
 
 // Configuration for GitHub OAuth callback
@@ -34,16 +33,16 @@ interface GitHubUser {
 }
 
 class GitHubService {
-    private token: string | null = null;
+    private authenticated: boolean = false;
     private user: GitHubUser | null = null;
 
     constructor() {
-        // Try to load token and user from local storage on initialization
-        this.token = localStorage.getItem(TOKEN_STORAGE_KEY);
+        // Try to load user from local storage on initialization
         const userJson = localStorage.getItem(USER_STORAGE_KEY);
         if (userJson) {
             try {
                 this.user = JSON.parse(userJson);
+                this.authenticated = true; // If we have user data, assume we're authenticated
             } catch (e) {
                 console.error('Failed to parse stored user:', e);
             }
@@ -51,12 +50,11 @@ class GitHubService {
     }
 
     /**
-     * Initialize the GitHub service with authentication token
-     * @param params Authentication parameters
+     * Initialize the GitHub service with session-based authentication
+     * This is now a no-op since we rely on server-side sessions
      */
-    initialize(params: { token: string }) {
-        this.token = params.token;
-        localStorage.setItem(TOKEN_STORAGE_KEY, params.token);
+    initialize() {
+        // No-op - authentication is now handled by the server via sessions
     }
 
     /**
@@ -71,32 +69,26 @@ class GitHubService {
 
     /**
      * Handle the OAuth callback from GitHub
-     * With the Symfony backend, the token is directly returned in the URL
-     * @param token The OAuth token from the callback
+     * With the Symfony backend, authentication is handled via server-side session
+     * @param code The OAuth code from the callback
      * @param state Optional state parameter for verification
      * @returns The redirect URL from the server response, if any
      */
-    async handleAuthCallback(token: string, state?: string): Promise<string | null> {
-        // If we already have a token, don't try to set it again
-        if (this.token && this.isAuthenticated()) {
-            console.log('Already authenticated, skipping token setup');
+    async handleAuthCallback(code: string, state?: string): Promise<string | null> {
+        // If we're already authenticated, don't try to authenticate again
+        if (this.authenticated && this.user) {
+            console.log('Already authenticated, skipping authentication');
             return null;
         }
 
         try {
-            console.log('Setting up token from callback...');
+            console.log('Completing authentication via server...');
             
-            this.token = token;
-
-            // Save token to local storage
-            if (this.token) {
-                localStorage.setItem(TOKEN_STORAGE_KEY, this.token);
-                console.log('Token saved to local storage');
-            }
-
-            // Get user data from GitHub API
+            // The server will handle the token exchange and store it in the session
+            // We just need to get the user data to confirm authentication
             await this.getCurrentUser();
-
+            this.authenticated = true;
+            
             return null;
         } catch (error) {
             console.error('Error handling GitHub callback:', error);
@@ -108,7 +100,7 @@ class GitHubService {
      * Check if the user is authenticated
      */
     isAuthenticated(): boolean {
-        return !!this.token;
+        return this.authenticated;
     }
 
     /**
@@ -121,10 +113,20 @@ class GitHubService {
     /**
      * Logout user
      */
-    logout() {
-        this.token = null;
+    async logout() {
+        try {
+            // Call logout endpoint on the server to clear the session
+            await fetch(`${apiAdapter.getBaseUrl()}/auth/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
+        
+        // Clear local state
+        this.authenticated = false;
         this.user = null;
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
         localStorage.removeItem(USER_STORAGE_KEY);
     }
 
@@ -132,10 +134,6 @@ class GitHubService {
      * Get current authenticated user information
      */
     async getCurrentUser(): Promise<GitHubUser> {
-        if (!this.token) {
-            throw new Error('Not authenticated with GitHub');
-        }
-
         try {
             // If we already have user data, return it
             if (this.user) {
@@ -152,11 +150,15 @@ class GitHubService {
                 email: userData.email || undefined
             };
 
+            // Mark as authenticated if we successfully got user data
+            this.authenticated = true;
+
             // Save to local storage
             localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user));
             return this.user;
         } catch (error) {
             console.error('Failed to get user information:', error);
+            this.authenticated = false;
             throw error;
         }
     }
@@ -168,7 +170,7 @@ class GitHubService {
      * @returns True if the user has write access, false otherwise
      */
     async checkRepositoryWriteAccess(owner: string, repo: string): Promise<boolean> {
-        if (!this.token) {
+        if (!this.authenticated) {
             throw new Error('Not authenticated with GitHub');
         }
 
@@ -202,7 +204,7 @@ class GitHubService {
      * Commit a file to a GitHub repository
      */
     async commitFile(params: CommitFileParams) {
-        if (!this.token) {
+        if (!this.authenticated) {
             throw new Error('Not authenticated with GitHub');
         }
 
@@ -224,7 +226,7 @@ class GitHubService {
      * @returns True if there are commits, false otherwise
      */
     async hasBranchCommits(owner: string, repo: string, branch: string): Promise<boolean> {
-        if (!this.token) {
+        if (!this.authenticated) {
             throw new Error('Not authenticated with GitHub');
         }
 
@@ -270,6 +272,10 @@ class GitHubService {
      * Get file content from GitHub
      */
     async getFileContent(owner: string, repo: string, path: string, branch: string): Promise<string> {
+        if (!this.authenticated) {
+            throw new Error('Not authenticated with GitHub');
+        }
+        
         try {
             return await apiAdapter.getFileContent(owner, repo, path, branch);
         } catch (error) {

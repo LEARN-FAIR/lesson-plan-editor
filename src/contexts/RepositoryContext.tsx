@@ -1,6 +1,7 @@
 import React, {createContext, useContext, useEffect} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import githubRepoService, {Repository} from '../services/githubRepoService';
+import githubService from '../services/githubService';
 
 interface RepositoryContextType {
     repositories: Repository[];
@@ -30,7 +31,7 @@ export const RepositoryProvider: React.FC<{ children: React.ReactNode }> = ({chi
         queryKey: ['repositories'],
         queryFn: () => githubRepoService.getTargetRepoAndForks(),
         staleTime: 5 * 60 * 1000, // 5 minutes
-        enabled: !!localStorage.getItem('github_oauth_token'), // Only fetch if authenticated
+        enabled: githubService.isAuthenticated(), // Only fetch if authenticated
     });
 
     // When repositories load, log them for debugging
