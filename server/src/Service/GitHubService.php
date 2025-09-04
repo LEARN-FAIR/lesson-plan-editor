@@ -345,22 +345,6 @@ class GitHubService
                     continue;
                 }
             }
-            
-            // For repositories that don't have parent info loaded, make an additional API call
-//            if ($repo['fork'] && (!isset($repo['parent']) || !is_array($repo['parent']))) {
-//                try {
-//                    // Get detailed repository info including parent
-//                    $detailedRepo = $this->makeRequest('GET', "/repos/{$repo['full_name']}", $accessToken);
-//
-//                    if (isset($detailedRepo['parent']) &&
-//                        is_array($detailedRepo['parent']) &&
-//                        $detailedRepo['parent']['full_name'] === $targetRepoFullName) {
-//                        $filteredRepositories[] = $repo;
-//                    }
-//                } catch (\Exception $e) {
-//                    // Skip if we can't get detailed info
-//                }
-//            }
         }
         
         return $filteredRepositories;

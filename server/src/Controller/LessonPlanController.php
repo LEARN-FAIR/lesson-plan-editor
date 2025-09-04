@@ -105,22 +105,24 @@ class LessonPlanController extends AbstractController
     }
 
     /**
-     * Extract token from Authorization header or request body
+     * Get GitHub token from session for authenticated users
      */
     private function getTokenFromRequest(Request $request): string
     {
-        // First try to get from Authorization header
-        $authHeader = $request->headers->get('Authorization');
-        if ($authHeader && strpos($authHeader, 'Bearer ') === 0) {
-            return substr($authHeader, 7);
+        // First check if we have a user from JWT authentication
+        $user = $this->getUser();
+        
+        if (!$user) {
+            throw new AccessDeniedException('Not authenticated. Please login first.');
         }
         
-        // Then try to get from request body
-        $content = json_decode($request->getContent(), true);
-        if (isset($content['token'])) {
-            return $content['token'];
+        // Get GitHub token from session
+        $token = $request->getSession()->get('github_token');
+        
+        if (!$token) {
+            throw new AccessDeniedException('GitHub token not found in session. Please login again.');
         }
         
-        throw new AccessDeniedException('No valid GitHub token provided');
+        return $token;
     }
 }

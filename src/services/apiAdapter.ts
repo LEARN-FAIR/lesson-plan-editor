@@ -190,7 +190,17 @@ class ApiAdapter {
      */
     async getRepositoryBranches(owner: string, repo: string): Promise<any> {
         const repoInfo = await this.checkRepositoryAccess(owner, repo);
-        return repoInfo.branches || [];
+        const branchNames = repoInfo.branches || [];
+        
+        // Convert string branch names to Branch objects
+        return branchNames.map((branchName: string) => ({
+            name: branchName,
+            commit: {
+                sha: '', // We don't have this information from the backend
+                url: ''
+            },
+            protected: false // We don't have this information from the backend
+        }));
     }
 
     /**
