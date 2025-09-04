@@ -65,6 +65,9 @@ class GitHubService
                 'html_url' => $repo['html_url'],
                 'description' => $repo['description'],
                 'default_branch' => $repo['default_branch'],
+                'fork' => $repo['fork'] ?? false,
+                'source' => $repo['source'] ?? null,
+                'parent' => $repo['parent'] ?? null,
                 'permissions' => $repo['permissions'] ?? []
             ];
         }
@@ -272,6 +275,8 @@ class GitHubService
 
     /**
      * Make a request to the GitHub API
+     * 
+     * @throws HttpException If the request fails
      */
     private function makeRequest(string $method, string $endpoint, string $accessToken, array $params = []): array
     {
@@ -307,5 +312,57 @@ class GitHubService
     private function endsWith(string $haystack, string $needle): bool
     {
         return substr_compare($haystack, $needle, -strlen($needle)) === 0;
+    }
+    
+    /**
+     * Get target repository and its forks
+     * 
+     * Filters repositories to only include elixir-europe-training/ELIXIR-TrP-FAIR-Converge
+     * or forks of this repository
+     */
+    public function getTargetRepoAndForks(string $accessToken): array
+    {
+        // Get all user repositories
+        $allRepositories = $this->getUserRepositories($accessToken);
+        
+        // Target repository full name
+        $targetRepoFullName = 'elixir-europe-training/ELIXIR-TrP-FAIR-Converge';
+        
+        // Filter repositories
+        $filteredRepositories = [];
+        
+        foreach ($allRepositories as $repo) {
+            // Include the target repository itself
+            if ($repo['full_name'] === $targetRepoFullName) {
+                $filteredRepositories[] = $repo;
+                continue;
+            }
+            
+            // For fork repositories, check if they are forks of the target
+            if ($repo['fork'] && isset($repo['parent']) && is_array($repo['parent'])) {
+                if ($repo['parent']['full_name'] === $targetRepoFullName) {
+                    $filteredRepositories[] = $repo;
+                    continue;
+                }
+            }
+            
+            // For repositories that don't have parent info loaded, make an additional API call
+//            if ($repo['fork'] && (!isset($repo['parent']) || !is_array($repo['parent']))) {
+//                try {
+//                    // Get detailed repository info including parent
+//                    $detailedRepo = $this->makeRequest('GET', "/repos/{$repo['full_name']}", $accessToken);
+//
+//                    if (isset($detailedRepo['parent']) &&
+//                        is_array($detailedRepo['parent']) &&
+//                        $detailedRepo['parent']['full_name'] === $targetRepoFullName) {
+//                        $filteredRepositories[] = $repo;
+//                    }
+//                } catch (\Exception $e) {
+//                    // Skip if we can't get detailed info
+//                }
+//            }
+        }
+        
+        return $filteredRepositories;
     }
 }

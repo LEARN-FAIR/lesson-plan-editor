@@ -105,8 +105,7 @@ class GitHubRepoService {
         }
 
         try {
-            const repos = await apiAdapter.getTargetRepoAndForks();
-            return repos;
+            return await apiAdapter.getTargetRepoAndForks();
         } catch (error) {
             console.error('Error fetching repositories:', error);
             throw error;

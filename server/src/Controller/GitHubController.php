@@ -37,6 +37,8 @@ class GitHubController extends AbstractController
 
     /**
      * Get repositories for the authenticated user
+     * 
+     * Only returns elixir-europe-training/ELIXIR-TrP-FAIR-Converge or its forks
      */
     #[Route('/repositories', name: 'app_github_repositories', methods: ['GET'])]
     public function getRepositories(Request $request): JsonResponse
@@ -44,7 +46,8 @@ class GitHubController extends AbstractController
         $token = $this->getTokenFromSession($request);
 
         try {
-            $repositories = $this->githubService->getUserRepositories($token);
+            // Use the new method that filters for target repository and its forks
+            $repositories = $this->githubService->getTargetRepoAndForks($token);
             return $this->json($repositories);
         } catch (\Exception $e) {
             return $this->json(['error' => 'Failed to fetch repositories: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

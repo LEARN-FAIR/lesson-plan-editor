@@ -167,7 +167,7 @@ class GitHubService {
             this.user = {
                 login: userData.login,
                 name: userData.name || undefined,
-                avatar_url: userData.avatarUrl,
+                avatar_url: userData.avatar_url,
                 email: userData.email || undefined
             };
 
