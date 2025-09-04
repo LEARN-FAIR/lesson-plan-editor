@@ -250,12 +250,24 @@ class GitHubService {
         }
 
         try {
+            // Try to get commits from the API
             const commits = await apiAdapter.getBranchCommits(owner, repo, branch);
             return commits.length > 0;
         } catch (error) {
             console.error('Error checking branch commits:', error);
-            // If we can't get the commits, assume there are some
-            return true;
+            
+            // If the endpoint is not implemented yet (404 or 501), try an alternative approach
+            // Check if we can access the repository at all - if we can, assume it has commits
+            try {
+                const repoInfo = await apiAdapter.checkRepositoryAccess(owner, repo);
+                // If we can access the repo, assume the branch has commits
+                // This is a fallback until the commits endpoint is implemented
+                return true;
+            } catch (repoError) {
+                console.error('Error checking repository access:', repoError);
+                // If we can't even access the repo, assume there are no commits
+                return false;
+            }
         }
     }
     

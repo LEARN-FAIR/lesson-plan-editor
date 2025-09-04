@@ -265,8 +265,40 @@ class ApiAdapter {
      * Get file content from GitHub
      */
     async getFileContent(owner: string, repo: string, path: string, branch: string): Promise<string> {
-        const lessonPlan = await this.getLessonPlan(owner, repo, path, branch);
-        return lessonPlan.decodedContent || '';
+        try {
+            const lessonPlan = await this.getLessonPlan(owner, repo, path, branch);
+            // Log the response to help debug
+            console.log('File content response:', lessonPlan);
+            
+            // Check if we have decoded content
+            if (lessonPlan && lessonPlan.decodedContent !== undefined) {
+                return lessonPlan.decodedContent;
+            } else if (lessonPlan && lessonPlan.content) {
+                // Try to use content if decodedContent is not available
+                try {
+                    // Content might be base64 encoded
+                    // Use TextDecoder to properly handle UTF-8 encoding
+                    const base64 = lessonPlan.content.replace(/\s/g, '');
+                    const binary = atob(base64);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) {
+                        bytes[i] = binary.charCodeAt(i);
+                    }
+                    return new TextDecoder('utf-8').decode(bytes);
+                } catch (e) {
+                    console.warn('Error decoding base64 content:', e);
+                    // If not base64, return as is
+                    return lessonPlan.content;
+                }
+            }
+            
+            // If we can't get content, return empty string
+            console.warn('No content found for file:', path);
+            return '';
+        } catch (error) {
+            console.error('Error getting file content:', error);
+            throw error;
+        }
     }
 
     /**

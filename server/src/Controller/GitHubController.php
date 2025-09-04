@@ -75,6 +75,24 @@ class GitHubController extends AbstractController
             return $this->json(['error' => 'Failed to check repository access: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    /**
+     * Get commits for a branch
+     */
+    #[Route('/repository/{owner}/{repo}/commits', name: 'app_github_branch_commits', methods: ['GET'])]
+    public function getBranchCommits(Request $request, string $owner, string $repo): JsonResponse
+    {
+        $branch = $request->query->get('branch', 'main');
+        $perPage = (int)$request->query->get('per_page', 30);
+        $token = $this->getTokenFromSession($request);
+
+        try {
+            $commits = $this->githubService->getBranchCommits($token, $owner, $repo, $branch, $perPage);
+            return $this->json($commits);
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Failed to fetch commits: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     /**
      * Get GitHub token from session for authenticated users

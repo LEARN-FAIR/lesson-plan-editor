@@ -100,20 +100,54 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
     const {
         data: githubContent = '',
         isLoading: isLoadingContent,
+        isError: isErrorContent,
         refetch: refetchContent
     } = useFileContent(owner, repo, filePath, branch);
-
-    // Query for uncommitted changes
+    
+    // Only check for uncommitted changes when file content is loaded
+    const contentLoaded = githubContent !== undefined && githubContent !== '' && !isLoadingContent;
+    
+    // Query for uncommitted changes, but only when file content is loaded
     const {
         data: hasUncommittedChanges = true,
         isLoading: isLoadingChanges,
         refetch: refetchChanges
     } = useHasUncommittedChanges(owner, repo, filePath, content, branch);
 
+    // Manually track if content has changed from GitHub version
+    const [contentChanged, setContentChanged] = useState<boolean>(false);
+    
+    // Check if content has changed whenever local content or GitHub content changes
+    useEffect(() => {
+        if (githubContent && content) {
+            const normalizedGithubContent = githubContent.replace(/\r\n/g, '\n').trim();
+            const normalizedLocalContent = content.replace(/\r\n/g, '\n').trim();
+            const hasChanged = normalizedGithubContent !== normalizedLocalContent;
+            
+            console.log('Content comparison:', {
+                githubContentLength: githubContent.length,
+                localContentLength: content.length,
+                hasChanged
+            });
+            
+            setContentChanged(hasChanged);
+        }
+    }, [githubContent, content]);
+    
     // Update PR mode when data changes
     useEffect(() => {
-        setIsPrMode(hasCommits && !hasUncommittedChanges);
-    }, [hasCommits, hasUncommittedChanges]);
+        // Log the values that determine PR mode
+        console.log('PR mode determination:', {
+            hasCommits,
+            hasUncommittedChanges,
+            contentChanged,
+            contentLoaded
+        });
+        
+        // Only show PR mode if there are commits AND no uncommitted changes AND content hasn't changed
+        const shouldShowPrMode = hasCommits && !hasUncommittedChanges && !contentChanged && contentLoaded;
+        setIsPrMode(shouldShowPrMode);
+    }, [hasCommits, hasUncommittedChanges, contentChanged, contentLoaded]);
 
     // Function to manually refresh GitHub information
     const refreshGitHubInfo = () => {
@@ -294,6 +328,22 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
 
     // Determine if any loading is happening
     const isAnyLoading = isRefreshing || isLoadingCommits || isLoadingContent || isLoadingChanges;
+    
+    // Determine if content is ready for commit operations
+    const isContentReady = contentLoaded && !isLoadingChanges;
+    
+    // Debug logging to help diagnose issues
+    useEffect(() => {
+        console.log('GitHubCommitButton state:', {
+            contentLoaded,
+            isContentReady,
+            githubContentLength: githubContent?.length || 0,
+            localContentLength: content?.length || 0,
+            isLoadingContent,
+            isErrorContent,
+            hasUncommittedChanges
+        });
+    }, [contentLoaded, isContentReady, githubContent, content, isLoadingContent, isErrorContent, hasUncommittedChanges]);
 
     // Split button implementation with main action and dropdown
     const handleMainButtonClick = () => {
@@ -311,7 +361,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                     variant="contained"
                     color={isPrMode ? "success" : (color || 'primary')}
                     onClick={handleMainButtonClick}
-                    disabled={disabled || isLoading || !isAuthenticated || isAnyLoading}
+                    disabled={disabled || isLoading || !isAuthenticated || isAnyLoading || !isContentReady}
                     startIcon={isAnyLoading ? <CircularProgress size={20} color="inherit"/> : <GitHubIcon/>}
                     sx={{borderTopRightRadius: 0, borderBottomRightRadius: 0}}
                 >
@@ -322,7 +372,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                     variant="contained"
                     color={isPrMode ? "success" : (color || 'primary')}
                     onClick={handleMenuOpen}
-                    disabled={disabled || isLoading || !isAuthenticated || isAnyLoading}
+                    disabled={disabled || isLoading || !isAuthenticated || isAnyLoading || !isContentReady}
                     sx={{
                         minWidth: '36px',
                         borderTopLeftRadius: 0,

@@ -349,4 +349,44 @@ class GitHubService
         
         return $filteredRepositories;
     }
+
+    /**
+     * Get commits for a branch
+     * 
+     * @param string $accessToken GitHub access token
+     * @param string $owner Repository owner
+     * @param string $repo Repository name
+     * @param string $branch Branch name
+     * @param int $perPage Number of commits per page (default: 30)
+     * @return array List of commits
+     */
+    public function getBranchCommits(string $accessToken, string $owner, string $repo, string $branch, int $perPage = 30): array
+    {
+        try {
+            $response = $this->makeRequest('GET', "/repos/{$owner}/{$repo}/commits", $accessToken, [
+                'sha' => $branch,
+                'per_page' => $perPage
+            ]);
+            
+            $commits = [];
+            foreach ($response as $commit) {
+                $commits[] = [
+                    'sha' => $commit['sha'],
+                    'commit' => [
+                        'message' => $commit['commit']['message'] ?? '',
+                        'author' => $commit['commit']['author'] ?? [],
+                        'committer' => $commit['commit']['committer'] ?? []
+                    ],
+                    'author' => $commit['author'] ?? [],
+                    'committer' => $commit['committer'] ?? [],
+                    'html_url' => $commit['html_url'] ?? ''
+                ];
+            }
+            
+            return $commits;
+        } catch (\Exception $e) {
+            // If there's an error (e.g., branch doesn't exist), return an empty array
+            return [];
+        }
+    }
 }
