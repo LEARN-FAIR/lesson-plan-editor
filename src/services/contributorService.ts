@@ -1,4 +1,5 @@
 import githubRepoService from './githubRepoService';
+import apiAdapter from './apiAdapter';
 
 export interface Contributor {
     id: string;
@@ -7,8 +8,6 @@ export interface Contributor {
     lastName: string;
     git?: string;
 }
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
 
 /**
  * Fetch contributors from the backend API
@@ -20,33 +19,14 @@ export const fetchContributors = async (): Promise<Contributor[]> => {
         const selectedRepo = githubRepoService.getSelectedRepo();
         const selectedBranch = githubRepoService.getSelectedBranch();
 
-        // Build the URL with query parameters if repo and branch are selected
-        let url = `${API_URL}/contributors`;
-        const params = new URLSearchParams();
-
-        if (selectedRepo) {
-            params.append('owner', selectedRepo.owner.login);
-            params.append('repo', selectedRepo.name);
-
-            if (selectedBranch) {
-                params.append('branch', selectedBranch);
-            }
-        }
-
-        // Add query parameters if any were set
-        if (params.toString()) {
-            url = `${url}?${params.toString()}`;
-        }
-
-        console.log(`Fetching contributors from: ${url}`);
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch contributors: ${response.status} ${response.statusText}`);
-        }
-
-        const contributors = await response.json() as Contributor[];
-        return contributors;
+        // Use the ApiAdapter to fetch contributors
+        const contributors = await apiAdapter.getContributors(
+            selectedRepo?.owner.login,
+            selectedRepo?.name,
+            selectedBranch || undefined
+        );
+        
+        return contributors as Contributor[];
     } catch (error) {
         console.error('Error fetching contributors:', error);
         // Fallback to empty array if the API fails

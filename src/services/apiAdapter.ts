@@ -262,6 +262,27 @@ class ApiAdapter {
     }
 
     /**
+     * Get contributors from GitHub repository
+     * @param owner Repository owner (organization or username)
+     * @param repo Repository name
+     * @param branch Branch name
+     * @returns Array of contributors
+     */
+    async getContributors(owner?: string, repo?: string, branch?: string): Promise<any[]> {
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (owner) params.append('owner', owner);
+        if (repo) params.append('repo', repo);
+        if (branch) params.append('branch', branch);
+
+        // Create endpoint with query parameters
+        const endpoint = `/contributors${params.toString() ? `?${params.toString()}` : ''}`;
+        
+        console.log(`Fetching contributors from API: ${endpoint}`);
+        return this.request<any[]>(endpoint);
+    }
+
+    /**
      * Get file content from GitHub
      */
     async getFileContent(owner: string, repo: string, path: string, branch: string): Promise<string> {
