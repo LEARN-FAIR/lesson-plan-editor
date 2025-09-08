@@ -216,6 +216,20 @@ const EditorPage: React.FC = () => {
                     if (lessonPlanData.decoded_content) {
                         setMarkdownContent(lessonPlanData.decoded_content);
                         lessonPlanService.setSelectedLessonPlan(lessonPlanData);
+                        
+                        // Fetch original GitHub content directly
+                        try {
+                            const content = await githubService.getFileContent(
+                                selectedRepo.owner.login,
+                                selectedRepo.name,
+                                fullLessonPath,
+                                branch
+                            );
+                            setOriginalGithubContent(content);
+                            console.log('Fetched original GitHub content in EditorPage');
+                        } catch (error) {
+                            console.error('Error fetching original GitHub content:', error);
+                        }
                     } else {
                         // If we have lesson plan data but no decoded content, fetch it directly
                         try {
@@ -450,6 +464,7 @@ const EditorPage: React.FC = () => {
                     {markdownContent && (
                         <GitHubCommitButton
                             content={markdownContent}
+                            originalGithubContent={originalGithubContent}
                             filePath={getCurrentFilename()}
                             color="secondary"
                             onExport={handleExportMarkdown}
