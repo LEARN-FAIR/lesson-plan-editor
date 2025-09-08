@@ -16,8 +16,8 @@ const API_URL = process.env.REACT_APP_API_URL || 'https://localhost:8000/api';
 
 class ApiAdapter {
     constructor() {
-        // Initialize the adapter
-        void this.checkAuthStatus();
+        // Initialize the adapter without making an immediate API call
+        // Auth status will be checked when needed
     }
     /**
      * Get the base API URL
@@ -30,9 +30,10 @@ class ApiAdapter {
     private isAuthenticated: boolean = false;
     private userData: any = null;
     
-    // Cache for auth status to prevent multiple calls
+    // Cache for API calls to prevent multiple calls
     private authStatusCache: { timestamp: number; data: any } | null = null;
-    private readonly AUTH_CACHE_TTL = 30000; // 30 seconds cache TTL
+    private userInfoCache: { timestamp: number; data: any } | null = null;
+    private readonly CACHE_TTL = 30000; // 30 seconds cache TTL
     
     /**
      * Get authentication status
@@ -129,9 +130,32 @@ class ApiAdapter {
 
     /**
      * Get user information from GitHub
+     * Uses a cache to prevent multiple calls within a short time period
      */
     async getUserInfo(): Promise<any> {
-        return this.request('/github/user');
+        // Check if we have a valid cache entry
+        const now = Date.now();
+        if (this.userInfoCache && (now - this.userInfoCache.timestamp < this.CACHE_TTL)) {
+            console.log('Using cached user info');
+            return this.userInfoCache.data;
+        }
+
+        try {
+            console.log('Fetching fresh user info');
+            const userData = await this.request('/github/user');
+            
+            // Update the cache
+            this.userInfoCache = {
+                timestamp: now,
+                data: userData
+            };
+            
+            return userData;
+        } catch (error) {
+            console.error('Error fetching user info:', error);
+            this.userInfoCache = null; // Clear cache on error
+            throw error;
+        }
     }
     
     /**
@@ -141,7 +165,7 @@ class ApiAdapter {
     async checkAuthStatus(): Promise<any> {
         // Check if we have a valid cache entry
         const now = Date.now();
-        if (this.authStatusCache && (now - this.authStatusCache.timestamp < this.AUTH_CACHE_TTL)) {
+        if (this.authStatusCache && (now - this.authStatusCache.timestamp < this.CACHE_TTL)) {
             console.log('Using cached auth status');
             return this.authStatusCache.data;
         }
@@ -178,6 +202,7 @@ class ApiAdapter {
             this.isAuthenticated = false;
             this.userData = null;
             this.authStatusCache = null; // Clear auth cache on logout
+            this.userInfoCache = null; // Clear user info cache on logout
             return { success: true };
         } catch (error) {
             console.error('Logout error:', error);
