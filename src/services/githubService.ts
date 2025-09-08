@@ -141,18 +141,42 @@ class GitHubService {
 
     /**
      * Logout from GitHub
+     * Note: This only clears local state, use authService.performLogout for full logout with cache invalidation
      */
-    async logout() {
-        // Call the backend logout endpoint to clear the session
-        try {
-            await apiAdapter.logout();
-        } catch (error) {
-            console.error('Error during logout:', error);
-        }
-
-        // Clear local state
+    logout() {
+        // Clear local state only
+        this.clearAuthState();
+    }
+    
+    /**
+     * Clear local authentication state
+     */
+    clearAuthState() {
         this.authenticated = false;
         this.user = null;
+    }
+    
+    /**
+     * Set authentication status
+     */
+    setAuthenticated(status: boolean) {
+        this.authenticated = status;
+    }
+    
+    /**
+     * Set user data
+     */
+    setUser(userData: any) {
+        if (userData) {
+            this.user = {
+                login: userData.username || userData.login,
+                name: userData.name,
+                avatar_url: userData.avatarUrl || userData.avatar_url,
+                email: userData.email
+            };
+        } else {
+            this.user = null;
+        }
     }
 
     /**

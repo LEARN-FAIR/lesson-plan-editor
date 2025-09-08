@@ -30,11 +30,6 @@ class ApiAdapter {
     private isAuthenticated: boolean = false;
     private userData: any = null;
     
-    // Cache for API calls to prevent multiple calls
-    private authStatusCache: { timestamp: number; data: any } | null = null;
-    private userInfoCache: { timestamp: number; data: any } | null = null;
-    private readonly CACHE_TTL = 30000; // 30 seconds cache TTL
-    
     /**
      * Get authentication status
      */
@@ -130,64 +125,26 @@ class ApiAdapter {
 
     /**
      * Get user information from GitHub
-     * Uses a cache to prevent multiple calls within a short time period
+     * React Query will handle caching
      */
     async getUserInfo(): Promise<any> {
-        // Check if we have a valid cache entry
-        const now = Date.now();
-        if (this.userInfoCache && (now - this.userInfoCache.timestamp < this.CACHE_TTL)) {
-            console.log('Using cached user info');
-            return this.userInfoCache.data;
-        }
-
-        try {
-            console.log('Fetching fresh user info');
-            const userData = await this.request('/github/user');
-            
-            // Update the cache
-            this.userInfoCache = {
-                timestamp: now,
-                data: userData
-            };
-            
-            return userData;
-        } catch (error) {
-            console.error('Error fetching user info:', error);
-            this.userInfoCache = null; // Clear cache on error
-            throw error;
-        }
+        return this.request('/github/user');
     }
     
     /**
      * Check if the user is authenticated using session
-     * Uses a cache to prevent multiple calls within a short time period
+     * React Query will handle caching
      */
     async checkAuthStatus(): Promise<any> {
-        // Check if we have a valid cache entry
-        const now = Date.now();
-        if (this.authStatusCache && (now - this.authStatusCache.timestamp < this.CACHE_TTL)) {
-            console.log('Using cached auth status');
-            return this.authStatusCache.data;
-        }
-
         try {
-            console.log('Fetching fresh auth status');
             const response = await this.request<{authenticated: boolean, user?: any}>('/auth/status');
             this.isAuthenticated = response.authenticated;
             this.userData = response.user || null;
-            
-            // Update the cache
-            this.authStatusCache = {
-                timestamp: now,
-                data: response
-            };
-            
             return response;
         } catch (error) {
             console.error('Error checking auth status:', error);
             this.isAuthenticated = false;
             this.userData = null;
-            this.authStatusCache = null; // Clear cache on error
             throw error;
         }
     }
@@ -201,8 +158,7 @@ class ApiAdapter {
             await this.request('/auth/logout', { method: 'POST' });
             this.isAuthenticated = false;
             this.userData = null;
-            this.authStatusCache = null; // Clear auth cache on logout
-            this.userInfoCache = null; // Clear user info cache on logout
+            // React Query will handle cache invalidation
             return { success: true };
         } catch (error) {
             console.error('Logout error:', error);

@@ -1,5 +1,8 @@
-import React, {createContext, ReactNode, useContext, useEffect, useState} from 'react';
+import React, {createContext, ReactNode, useContext, useState} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
 import githubService from '../services/githubService';
+import {useAuthStatus, useGitHubUserInfo} from '../services/authQueryHooks';
+import {performLogout, refreshAuthState} from '../services/authService';
 
 interface AuthContextType {
     isAuthenticated: boolean;
@@ -18,50 +21,42 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [user, setUser] = useState<any | null>(null);
-
-    useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                // First check if we have a token in localStorage and initialize the service
-                await githubService.initialize();
-                
-                // Then check authentication status from the backend
-                const isAuth = await githubService.checkAuthenticationStatus();
-                setIsAuthenticated(isAuth);
-
-                if (isAuth) {
-                    try {
-                        // Fetch fresh user data from the backend
-                        const userInfo = await githubService.getCurrentUser();
-                        setUser(userInfo);
-                    } catch (userError) {
-                        console.error('Error fetching user info:', userError);
-                    }
-                }
-            } catch (error) {
-                console.error('Authentication check failed:', error);
-                // If authentication check fails, ensure we're marked as not authenticated
-                setIsAuthenticated(false);
-                setUser(null);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        checkAuth();
-    }, []);
+    const queryClient = useQueryClient();
+    
+    // Use React Query hooks for auth status and user info
+    const { 
+        data: authData,
+        isLoading: isAuthLoading,
+        isError: isAuthError
+    } = useAuthStatus();
+    
+    const {
+        data: userData,
+        isLoading: isUserLoading
+    } = useGitHubUserInfo();
+    
+    // Derive state from React Query results
+    const isAuthenticated = authData?.authenticated || false;
+    const user = userData || null;
+    const isLoading = isAuthLoading || isUserLoading;
+    
+    // Update githubService with the latest auth state
+    if (authData) {
+        githubService.setAuthenticated(authData.authenticated);
+    }
+    
+    // Update githubService with the latest user data
+    if (userData) {
+        githubService.setUser(userData);
+    }
 
     const login = () => {
         githubService.redirectToGitHub();
     };
 
-    const logout = () => {
-        githubService.logout();
-        setIsAuthenticated(false);
-        setUser(null);
+    const logout = async () => {
+        // Use the performLogout utility which handles API call and cache invalidation
+        await performLogout(queryClient);
     };
 
     const setRedirectPath = (path: string) => {

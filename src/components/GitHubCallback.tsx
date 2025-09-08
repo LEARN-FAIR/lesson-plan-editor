@@ -1,9 +1,11 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {Box, CircularProgress, Paper, Typography} from '@mui/material';
+import {useQueryClient} from '@tanstack/react-query';
 import githubService from '../services/githubService';
 import {useAuth} from '../contexts/AuthContext';
 import apiAdapter from '../services/apiAdapter';
+import {refreshAuthState} from '../services/authService';
 
 /**
  * Component to handle GitHub OAuth callback.
@@ -13,6 +15,7 @@ const GitHubCallback: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const {isAuthenticated} = useAuth();
+    const queryClient = useQueryClient();
     const [error, setError] = useState<string | null>(null);
     const [processing, setProcessing] = useState<boolean>(false);
     const processed = useRef<boolean>(false);
@@ -55,24 +58,12 @@ const GitHubCallback: React.FC = () => {
                 // Check for authentication success in URL fragment
                 const authSuccess = apiAdapter.checkAuthSuccessInUrl();
                 
-                if (authSuccess) {
-                    console.log('Authentication success flag received from backend');
-                    
-                    // Verify authentication by checking auth status
-                    const authStatus = await apiAdapter.checkAuthStatus();
-                    console.log('Authentication status:', authStatus.authenticated ? 'authenticated' : 'not authenticated');
-                    
-                    if (!authStatus.authenticated) {
-                        throw new Error('Authentication failed - session not established');
-                    }
-                } else {
-                    console.log('No authentication success flag found in URL fragment');
-                    // Try checking auth status directly in case the flag was missed
-                    const authStatus = await apiAdapter.checkAuthStatus();
-                    
-                    if (!authStatus.authenticated) {
-                        throw new Error('Authentication failed - no session established');
-                    }
+                // Use refreshAuthState to update auth state and invalidate queries
+                const authResult = await refreshAuthState(queryClient);
+                console.log('Authentication refresh result:', authResult);
+                
+                if (!authResult.authenticated) {
+                    throw new Error('Authentication failed - session not established');
                 }
                 
                 // Clear the URL fragment to prevent token leakage
