@@ -6,7 +6,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Component\Yaml\Yaml;
 use Psr\Log\LoggerInterface;
@@ -14,6 +14,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Controller for fetching contributors data from GitHub
  */
+#[Route('/api')]
 class ContributorsController extends AbstractController
 {
     private HttpClientInterface $httpClient;
@@ -34,9 +35,8 @@ class ContributorsController extends AbstractController
     /**
      * Fetch contributors from a GitHub repository's YAML file
      * This endpoint matches the existing API at http://localhost:4000/api/contributors
-     * 
-     * @Route("/api/contributors", name="get_contributors", methods={"GET"})
      */
+    #[Route('/contributors', name: 'get_contributors', methods: ['GET'])]
     public function getContributors(Request $request): JsonResponse
     {
         // Get parameters from request or use defaults

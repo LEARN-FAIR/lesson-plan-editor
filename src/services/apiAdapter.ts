@@ -30,6 +30,10 @@ class ApiAdapter {
     private isAuthenticated: boolean = false;
     private userData: any = null;
     
+    // Cache for auth status to prevent multiple calls
+    private authStatusCache: { timestamp: number; data: any } | null = null;
+    private readonly AUTH_CACHE_TTL = 30000; // 30 seconds cache TTL
+    
     /**
      * Get authentication status
      */
@@ -132,20 +136,38 @@ class ApiAdapter {
     
     /**
      * Check if the user is authenticated using session
+     * Uses a cache to prevent multiple calls within a short time period
      */
     async checkAuthStatus(): Promise<any> {
+        // Check if we have a valid cache entry
+        const now = Date.now();
+        if (this.authStatusCache && (now - this.authStatusCache.timestamp < this.AUTH_CACHE_TTL)) {
+            console.log('Using cached auth status');
+            return this.authStatusCache.data;
+        }
+
         try {
+            console.log('Fetching fresh auth status');
             const response = await this.request<{authenticated: boolean, user?: any}>('/auth/status');
             this.isAuthenticated = response.authenticated;
             this.userData = response.user || null;
+            
+            // Update the cache
+            this.authStatusCache = {
+                timestamp: now,
+                data: response
+            };
+            
             return response;
         } catch (error) {
+            console.error('Error checking auth status:', error);
             this.isAuthenticated = false;
             this.userData = null;
-            return { authenticated: false };
+            this.authStatusCache = null; // Clear cache on error
+            throw error;
         }
     }
-    
+
     /**
      * Logout user by clearing session on the server
      */
@@ -155,6 +177,7 @@ class ApiAdapter {
             await this.request('/auth/logout', { method: 'POST' });
             this.isAuthenticated = false;
             this.userData = null;
+            this.authStatusCache = null; // Clear auth cache on logout
             return { success: true };
         } catch (error) {
             console.error('Logout error:', error);
