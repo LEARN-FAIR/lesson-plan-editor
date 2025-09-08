@@ -6,7 +6,6 @@
 
 // Import the API adapter
 import apiAdapter from './apiAdapter';
-import fileContentCache from './fileContentCache';
 
 // Configuration for GitHub OAuth callback
 // The actual OAuth redirection is handled by the backend
@@ -319,8 +318,8 @@ class GitHubService {
      * Get file content from GitHub
      */
     async getFileContent(owner: string, repo: string, path: string, branch: string): Promise<string> {
-        // Use the file content cache to prevent duplicate API calls
-        return fileContentCache.getFileContent(owner, repo, path, branch);
+        // Make direct API call to get file content
+        return apiAdapter.getFileContent(owner, repo, path, branch);
     }
 }
 

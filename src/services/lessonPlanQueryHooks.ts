@@ -2,7 +2,6 @@ import {useQuery} from '@tanstack/react-query';
 import lessonPlanService, {LessonPlan} from './lessonPlanService';
 import githubRepoService from './githubRepoService';
 import githubService from './githubService';
-import fileContentCache from './fileContentCache';
 
 /**
  * React Query hook to fetch lesson plan content
@@ -17,22 +16,8 @@ export const useLessonPlanContent = (filePath: string) => {
     return useQuery<LessonPlan, Error>({
         queryKey: ['lessonPlanContent', filePath],
         queryFn: async () => {
-            // Check if we already have this content in the cache
-            if (repo && filePath && branch) {
-                try {
-                    // Try to get the content from the cache first
-                    // This will prevent duplicate API calls
-                    await fileContentCache.getFileContent(
-                        repo.owner.login,
-                        repo.name,
-                        filePath,
-                        branch
-                    );
-                } catch (error) {
-                    console.warn('Error pre-fetching file content for lesson plan:', error);
-                    // Continue with normal flow if pre-fetch fails
-                }
-            }
+            // No need to pre-fetch content anymore
+            // Just continue with normal flow
             
             // Get the lesson plan through the normal service
             return lessonPlanService.getLessonPlan(filePath);
