@@ -32,8 +32,9 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import githubService, {CommitFileParams} from '../services/githubService';
 import githubRepoService from '../services/githubRepoService';
 import lessonPlanService from '../services/lessonPlanService';
-import {useHasCommitsOnBranch} from '../services/githubQueryHooks';
+import {useHasCommitsOnBranch, useHasUncommittedChanges, useFileContent} from '../services/githubQueryHooks';
 import {useQueryClient} from '@tanstack/react-query';
+import {prefetchFileContent, setFileContentInCache} from '../utils/queryUtils';
 import ReactDiffViewer from 'react-diff-viewer-continued';
 
 interface GitHubCommitButtonProps {
@@ -99,21 +100,34 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         refetch: refetchCommits
     } = useHasCommitsOnBranch(owner, repo, branch);
 
-    // Use the original GitHub content directly from props
-    const [isLoadingContent, setIsLoadingContent] = useState<boolean>(!propOriginalContent);
+    // Use React Query to fetch file content
+    const {
+        data: fileContent,
+        isLoading: isLoadingFileContent,
+        refetch: refetchFileContent
+    } = useFileContent(owner, repo, filePath, branch, {
+        // Only enable if we don't have content from props
+        enabled: !propOriginalContent && !!owner && !!repo && !!filePath && !!branch
+    });
     
-    // Update loading state when prop changes
+    // Use the original GitHub content from props or from the query
+    const [isLoadingContent, setIsLoadingContent] = useState<boolean>(!propOriginalContent && !fileContent);
+    
+    // Update loading state when prop or query data changes
     useEffect(() => {
-        if (propOriginalContent) {
+        if (propOriginalContent || fileContent) {
             setIsLoadingContent(false);
-            console.log('Using GitHub content from prop:', { contentLength: propOriginalContent.length });
+            console.log('Using GitHub content:', { 
+                source: propOriginalContent ? 'prop' : 'query',
+                contentLength: (propOriginalContent || fileContent || '').length 
+            });
         } else {
             setIsLoadingContent(true);
         }
-    }, [propOriginalContent]);
+    }, [propOriginalContent, fileContent]);
     
-    // For UI purposes, we use the prop content directly
-    const effectiveGithubContent = propOriginalContent || '';
+    // For UI purposes, we use the prop content or query data
+    const effectiveGithubContent = propOriginalContent || fileContent || '';
     
     // Only check for uncommitted changes when file content is loaded
     const contentLoaded = effectiveGithubContent !== undefined && effectiveGithubContent !== '' && !isLoadingContent;
@@ -182,32 +196,21 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         setIsPrMode(shouldShowPrMode);
     }, [hasCommits, hasUncommittedChanges, contentChanged, contentLoaded, effectiveGithubContent, content]);
 
-    // Function to manually refresh GitHub information
+    // Function to manually refresh GitHub information using prefetching
     const refreshGitHubInfo = async () => {
         setIsRefreshing(true);
 
         try {
-            // Create a single promise for GitHub content to avoid duplicate calls
-            let contentPromise = null;
-            if (owner && repo && filePath && branch) {
-                // No need to invalidate cache anymore - direct fetch
-                
-                contentPromise = githubService.getFileContent(owner, repo, filePath, branch)
-                    .then(content => {
-                        console.log('Refreshed GitHub content:', { contentLength: content.length });
-                        return content;
-                    })
-                    .catch(error => {
-                        console.error('Error refreshing GitHub content:', error);
-                        return propOriginalContent; // Return existing content on error
-                    });
-            }
+            // Use prefetching utility to refresh file content
+            // This will only fetch if needed and update the cache
+            await prefetchFileContent(owner, repo, filePath, branch);
             
             // Refetch commits in parallel
-            const [newContent, commitsResult] = await Promise.all([
-                contentPromise || Promise.resolve(propOriginalContent),
-                refetchCommits()
-            ]);
+            const commitsResult = await refetchCommits();
+            
+            // Get the latest content from the query
+            const fileContentResult = await refetchFileContent();
+            const newContent = fileContentResult.data || propOriginalContent || '';
             
             // After refreshing content, reset the content changed flag if content matches
             if (newContent && content) {
@@ -217,7 +220,15 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                 
                 setContentChanged(hasChanged);
                 setHasUncommittedChanges(hasChanged);
-                console.log('Content comparison after refresh:', { hasChanged });
+                console.log('Content comparison after refresh:', { 
+                    hasChanged,
+                    contentLength: newContent.length
+                });
+                
+                // If content has changed, update the cache
+                if (hasChanged) {
+                    setFileContentInCache(owner, repo, filePath, branch, newContent);
+                }
             }
         } finally {
             setIsRefreshing(false);
@@ -355,27 +366,26 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
             setTimeout(async () => {
                 console.log('Performing delayed state update after commit');
                 
-                // Create a single promise for GitHub content to avoid duplicate calls
-                let contentPromise = null;
-                if (owner && repo && filePath && branch) {
-                    // No need to invalidate cache anymore - direct fetch
-                    
-                    contentPromise = githubService.getFileContent(owner, repo, filePath, branch)
-                        .then(content => {
-                            console.log('Updated GitHub content after commit:', { contentLength: content.length });
-                            return content;
-                        })
-                        .catch(error => {
-                            console.error('Error refreshing GitHub content after commit:', error);
-                            return propOriginalContent;
-                        });
-                }
+                // Use prefetching utility to refresh file content
+                // This will force a refresh by invalidating the cache first
+                queryClient.removeQueries({ queryKey: ['fileContent', owner, repo, filePath, branch] });
+                await prefetchFileContent(owner, repo, filePath, branch);
                 
-                // Fetch commits in parallel
-                const [newContent, commitsResult] = await Promise.all([
-                    contentPromise || Promise.resolve(propOriginalContent),
+                // Then refetch both file content and commits in parallel
+                const [fileContentResult, commitsResult] = await Promise.all([
+                    refetchFileContent(),
                     refetchCommits()
                 ]);
+                
+                // Get the latest content from the query or prop
+                const newContent = fileContentResult.data || propOriginalContent || '';
+                
+                // Update the cache with the new content
+                setFileContentInCache(owner, repo, filePath, branch, newContent);
+                console.log('Updated GitHub content after commit:', { 
+                    source: fileContentResult.data ? 'query' : 'prop',
+                    contentLength: newContent.length 
+                });
                 
                 // Manually check for uncommitted changes
                 let hasChanges = false;

@@ -17,15 +17,25 @@ export const useHasCommitsOnBranch = (owner: string, repo: string, branch: strin
 
 /**
  * React Query hook for getting file content from GitHub
+ * Uses a singleton pattern to ensure only one instance of the query exists
  */
 export const useFileContent = (owner: string, repo: string, path: string, branch: string, options?: { enabled?: boolean }) => {
     return useQuery({
         queryKey: ['fileContent', owner, repo, path, branch],
-        queryFn: () => githubService.getFileContent(owner, repo, path, branch),
+        queryFn: () => {
+            console.log(`🔍 Fetching file content for ${path}`);
+            return githubService.getFileContent(owner, repo, path, branch);
+        },
         // Only run if all parameters are provided and not explicitly disabled
         enabled: options?.enabled !== undefined ? options.enabled : (!!owner && !!repo && !!path && !!branch),
-        // Keep data fresh for 5 minutes
-        staleTime: 5 * 60 * 1000,
+        // Keep data fresh for 10 minutes
+        staleTime: 10 * 60 * 1000,
+        // Prevent garbage collection for 15 minutes
+        gcTime: 15 * 60 * 1000,
+        // Don't retry failed queries automatically
+        retry: false,
+        // Use structural sharing for better performance
+        structuralSharing: true,
     });
 };
 

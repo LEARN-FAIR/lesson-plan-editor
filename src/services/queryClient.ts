@@ -1,6 +1,6 @@
 import {QueryClient} from '@tanstack/react-query';
 
-// Create a client
+// Create a client with improved caching
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -10,6 +10,7 @@ const queryClient = new QueryClient({
             refetchOnWindowFocus: false,
             refetchOnMount: false, // Prevent refetching when components mount
             refetchOnReconnect: false, // Prevent refetching on reconnect
+            structuralSharing: true, // Enable structural sharing
         },
     },
 });

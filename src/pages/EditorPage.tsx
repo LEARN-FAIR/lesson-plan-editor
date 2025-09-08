@@ -30,8 +30,10 @@ import {useRepositories} from '../contexts/RepositoryContext';
 import githubRepoService, {Repository} from '../services/githubRepoService';
 import lessonPlanService from '../services/lessonPlanService';
 import githubService from '../services/githubService';
+import {useHasCommitsOnBranch, useFileContent} from '../services/githubQueryHooks';
 import {useLessonPlanContent} from '../services/lessonPlanQueryHooks';
 import {exportMarkdownFile, getCurrentFilename} from '../services/markdownService';
+import {prefetchFileContent, setFileContentInCache} from '../utils/queryUtils';
 import {parseMarkdown, serializeMarkdown} from '../utils/markdownUtils';
 import {constructLessonPath} from '../utils/urlUtils';
 import {FairMarkdownDocument} from '../types';
@@ -94,19 +96,34 @@ const StyledTab = styled((props: StyledTabProps) => <Tab disableRipple {...props
 
 const EditorPage: React.FC = () => {
     const [markdownContent, setMarkdownContent] = useState<string | null>(null);
-    const [originalGithubContent, setOriginalGithubContent] = useState<string>('');
+    const params = useParams<{owner: string, repo: string, branch: string, category: string, lesson: string}>();
+    const {owner, repo, branch, category, lesson} = params;
+    const fullLessonPath = category && lesson ? constructLessonPath(category, lesson) : '';
+
+    // Use React Query hook for file content
+    const {
+        data: fileContent,
+        isLoading: isLoadingFileContent
+    } = useFileContent(
+        owner || '',
+        repo || '',
+        fullLessonPath,
+        branch || '',
+        { enabled: !!owner && !!repo && !!branch && !!fullLessonPath }
+    );
+
+    // State for original GitHub content (for comparison)
+    // Now we'll use the React Query result
+    const originalGithubContent = fileContent || '';
     const [document, setDocument] = useState<FairMarkdownDocument | null>(null);
     const [tabValue, setTabValue] = useState<number>(0);
     const [manualError, setManualError] = useState<string | null>(null);
     const navigate = useNavigate();
-    const params = useParams();
-    const {owner, repo, branch, category, lesson} = params;
 
     // React Query client for invalidation
     const queryClient = useQueryClient();
 
-    // Construct the lesson path using the category and lesson from URL
-    const fullLessonPath = category && lesson ? constructLessonPath(category, lesson) : '';
+    // Lesson path is already constructed above
 
     // Use Repository Context to access repositories
     const {
@@ -217,18 +234,29 @@ const EditorPage: React.FC = () => {
                         setMarkdownContent(lessonPlanData.decoded_content);
                         lessonPlanService.setSelectedLessonPlan(lessonPlanData);
                         
-                        // Fetch original GitHub content directly
-                        try {
-                            const content = await githubService.getFileContent(
+                        // Use the prefetching utility to ensure file content is in the cache
+                        // This will only fetch if the content isn't already cached
+                        prefetchFileContent(
+                            selectedRepo.owner.login,
+                            selectedRepo.name,
+                            fullLessonPath,
+                            branch
+                        ).then(() => {
+                            console.log('File content prefetching complete');
+                        }).catch(error => {
+                            console.error('Error prefetching file content:', error);
+                        });
+                        
+                        // If we have decoded content from the lesson plan, set it in the cache
+                        // This helps prevent unnecessary API calls
+                        if (lessonPlanData.decoded_content) {
+                            setFileContentInCache(
                                 selectedRepo.owner.login,
                                 selectedRepo.name,
                                 fullLessonPath,
-                                branch
+                                branch,
+                                lessonPlanData.decoded_content
                             );
-                            setOriginalGithubContent(content);
-                            console.log('Fetched original GitHub content in EditorPage');
-                        } catch (error) {
-                            console.error('Error fetching original GitHub content:', error);
                         }
                     } else {
                         // If we have lesson plan data but no decoded content, fetch it directly
