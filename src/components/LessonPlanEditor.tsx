@@ -64,10 +64,13 @@ const StyledTab = styled((props: StyledTabProps) => <Tab disableRipple {...props
 );
 
 export function EditorTabs(props: {
-    document: FairMarkdownDocument,
+    document?: FairMarkdownDocument,
     onDocumentChange: (updatedDocument: Partial<FairMarkdownDocument>) => void
 }) {
     const [tabValue, setTabValue] = useState<number>(0);
+        if(props.document === undefined) {
+            return <>No document</>;
+        }
 
         return <Paper elevation={3} sx={{mb: 4}}>
         <Box sx={{borderBottom: 1, borderColor: "divider"}}>

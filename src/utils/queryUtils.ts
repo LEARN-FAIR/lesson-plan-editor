@@ -27,7 +27,6 @@ export const prefetchFileContent = async (
     }
     
     // Prefetch and add to cache
-    console.log(`Prefetching file content for ${path}`);
     return queryClient.prefetchQuery({
         queryKey,
         queryFn: () => githubService.getFileContent(owner, repo, path, branch),

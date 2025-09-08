@@ -23,7 +23,6 @@ export const useFileContent = (owner: string, repo: string, path: string, branch
     return useQuery({
         queryKey: ['fileContent', owner, repo, path, branch],
         queryFn: () => {
-            console.log(`🔍 Fetching file content for ${path}`);
             return githubService.getFileContent(owner, repo, path, branch);
         },
         // Only run if all parameters are provided and not explicitly disabled

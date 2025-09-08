@@ -282,7 +282,6 @@ class ApiAdapter {
         // Create endpoint with query parameters
         const endpoint = `/contributors${params.toString() ? `?${params.toString()}` : ''}`;
         
-        console.log(`Fetching contributors from API: ${endpoint}`);
         return this.request<any[]>(endpoint);
     }
 
@@ -290,15 +289,9 @@ class ApiAdapter {
      * Get file content from GitHub
      */
     async getFileContent(owner: string, repo: string, path: string, branch: string): Promise<string> {
-        // Add stack trace to debug where the API call is coming from
-        const stackTrace = new Error().stack;
-        console.log('🚨 ACTUAL API CALL to file endpoint:', { owner, repo, path, branch });
-        console.log('Called from:', stackTrace);
-        
         try {
             const lessonPlan = await this.getLessonPlan(owner, repo, path, branch);
-            console.log('File content response received');
-            
+
             // Process the response
             let content = '';
             

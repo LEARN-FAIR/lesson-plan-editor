@@ -21,8 +21,12 @@ import GitHubCommitButton from '../components/GitHubCommitButton';
 import {EditorTabs} from "../components/LessonPlanEditor";
 
 const EditorPage: React.FC = () => {
-    const [markdownContent, setMarkdownContent] = useState<string | null>(null);
-    const params = useParams<{owner: string, repo: string, branch: string, category: string, lesson: string}>();
+    const navigate = useNavigate();
+    const [document, setDocument] = useState<FairMarkdownDocument>();
+    const [manualError, setManualError] = useState<string | null>(null);
+
+    const [markdownContent, setMarkdownContent] = useState<string>('');
+    const params = useParams<{ owner: string, repo: string, branch: string, category: string, lesson: string }>();
     const {owner, repo, branch, category, lesson} = params;
     const fullLessonPath = category && lesson ? constructLessonPath(category, lesson) : '';
 
@@ -35,54 +39,33 @@ const EditorPage: React.FC = () => {
         repo || '',
         fullLessonPath,
         branch || '',
-        { enabled: !!owner && !!repo && !!branch && !!fullLessonPath }
+        {enabled: !!owner && !!repo && !!branch && !!fullLessonPath}
     );
 
-    // State for original GitHub content (for comparison)
-    // Now we'll use the React Query result
+    useEffect(() => {
+        if (fileContent !== undefined) {
+            setDocument(parseMarkdown(fileContent));
+        }
+    }, [fileContent]);
+
+    if (isLoadingFileContent || fileContent === undefined || document === undefined) {
+        return <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh'
+        }}>
+            <CircularProgress/>
+        </Box>
+    }
+
     const originalGithubContent = fileContent || '';
-    const [document, setDocument] = useState<FairMarkdownDocument | null>(null);
-    const [manualError, setManualError] = useState<string | null>(null);
-    const navigate = useNavigate();
 
-    // React Query client for invalidation
-    const queryClient = useQueryClient();
-
-    // Lesson path is already constructed above
-
-    // Use Repository Context to access repositories
-    const {
-        repositories = [],
-        isLoading: isLoadingRepos,
-        error: reposError
-    } = useRepositories();
-
-    // Use React Query to fetch lesson plan content
-    const {
-        data: lessonPlanData,
-        isLoading: isLoadingLessonPlan,
-        error: lessonPlanError
-    } = useLessonPlanContent(fullLessonPath);
-
-    // Track loading states for repositories and lesson plan content
-    const [isLoadingRepository, setIsLoadingRepository] = useState<boolean>(false);
-    const [isLoadingLessonPlanContent, setIsLoadingLessonPlanContent] = useState<boolean>(false);
-
-    // Combine loading states
-    const loading = isLoadingRepos || isLoadingLessonPlan || isLoadingRepository || isLoadingLessonPlanContent;
-
-    // Combine error states - only show errors if we're not loading
-    const error = !loading ? (
-        manualError ||
-        (reposError ? (reposError as Error).message : null) ||
-        (lessonPlanError ? (lessonPlanError as Error).message : null)
+    const error = !isLoadingFileContent ? (
+        manualError
     ) : null;
 
-    // Access stored data for use in component
-    const storedRepo = githubRepoService.getSelectedRepo();
-    const storedLessonPlan = lessonPlanService.getSelectedLessonPlan();
-
-    // Handle document change
     const handleDocumentChange = (updatedDocument: Partial<FairMarkdownDocument>) => {
         if (document) {
             const newDocument = {...document, ...updatedDocument};
@@ -100,269 +83,15 @@ const EditorPage: React.FC = () => {
         }
     };
 
-    // Main effect to handle all loading scenarios
-    const loadRepositoryAndLessonPlan = async () => {
-        try {
-            // Debug URL parameters
-            console.log('URL parameters:', {owner, repo, branch, category, lesson});
-            console.log('Current path:', window.location.pathname);
-
-            // First check if we have URL parameters
-            if (owner && repo && branch && category && lesson) {
-                setIsLoadingRepository(true);
-
-                // 1. Load repositories if needed
-                let selectedRepo;
-                if (repositories.length > 0) {
-                    // Find the repository that matches the URL parameters
-                    selectedRepo = repositories.find((r: Repository) =>
-                        r.owner.login.toLowerCase() === owner.toLowerCase() &&
-                        r.name.toLowerCase() === repo.toLowerCase()
-                    );
-
-                    if (!selectedRepo) {
-                        // If we can't find the repository in the loaded repositories,
-                        // create a temporary repository object to use for API calls
-                        selectedRepo = {
-                            owner: {login: owner},
-                            name: repo,
-                            default_branch: branch
-                        } as Repository;
-
-                        // Note: We're not setting an error here anymore, as we're creating a temporary repo object
-                        console.log(`Creating temporary repository object for ${owner}/${repo}`);
-                    }
-                } else {
-                    // If repositories haven't loaded yet, create a temporary repository object
-                    selectedRepo = {
-                        owner: {login: owner},
-                        name: repo,
-                        default_branch: branch
-                    } as Repository;
-                    console.log(`Creating temporary repository object for ${owner}/${repo} (no repositories loaded yet)`);
-                }
-
-                // 2. Set the selected repository and branch
-                githubRepoService.setSelectedRepo(selectedRepo);
-                githubRepoService.setSelectedBranch(branch);
-                setIsLoadingRepository(false);
-
-                // 3. Load lesson plan content
-                setIsLoadingLessonPlanContent(true);
-                if (lessonPlanData) {
-                    if (lessonPlanData.decoded_content) {
-                        setMarkdownContent(lessonPlanData.decoded_content);
-                        lessonPlanService.setSelectedLessonPlan(lessonPlanData);
-                        
-                        // Use the prefetching utility to ensure file content is in the cache
-                        // This will only fetch if the content isn't already cached
-                        prefetchFileContent(
-                            selectedRepo.owner.login,
-                            selectedRepo.name,
-                            fullLessonPath,
-                            branch
-                        ).then(() => {
-                            console.log('File content prefetching complete');
-                        }).catch(error => {
-                            console.error('Error prefetching file content:', error);
-                        });
-                        
-                        // If we have decoded content from the lesson plan, set it in the cache
-                        // This helps prevent unnecessary API calls
-                        if (lessonPlanData.decoded_content) {
-                            setFileContentInCache(
-                                selectedRepo.owner.login,
-                                selectedRepo.name,
-                                fullLessonPath,
-                                branch,
-                                lessonPlanData.decoded_content
-                            );
-                        }
-                    } else {
-                        // If we have lesson plan data but no decoded content, fetch it directly
-                        try {
-                            const fullLessonPlan = await lessonPlanService.getLessonPlan(fullLessonPath);
-                            if (fullLessonPlan.decoded_content) {
-                                setMarkdownContent(fullLessonPlan.decoded_content);
-                                lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
-                            } else {
-                                throw new Error('Could not load lesson plan content');
-                            }
-                        } catch (error) {
-                            setManualError('Could not load lesson plan content');
-                        }
-                    }
-                } else if (!isLoadingLessonPlan) {
-                    // If lesson plan data isn't loading but we don't have it, fetch it directly
-                    try {
-                        const fullLessonPlan = await lessonPlanService.getLessonPlan(fullLessonPath);
-                        if (fullLessonPlan.decoded_content) {
-                            setMarkdownContent(fullLessonPlan.decoded_content);
-                            lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
-                        } else {
-                            throw new Error('Could not load lesson plan content');
-                        }
-                    } catch (error) {
-                        setManualError('Could not load lesson plan content');
-                    }
-                }
-                setIsLoadingLessonPlanContent(false);
-            } else {
-                // No URL parameters, check if we have selections in session storage
-                // Note: We're using the storedRepo and storedLessonPlan variables defined at the component level
-                // to avoid inconsistencies between initial render and effect execution
-
-                if (storedRepo && storedLessonPlan) {
-                    // Check if the stored lesson plan has decoded content
-                    if (storedLessonPlan.decoded_content) {
-                        setMarkdownContent(storedLessonPlan.decoded_content);
-                    } else {
-                        // If we have a stored lesson plan but no decoded content, fetch it
-                        setIsLoadingLessonPlanContent(true);
-                        try {
-                            const fullLessonPlan = await lessonPlanService.getLessonPlan(storedLessonPlan.path);
-                            if (fullLessonPlan.decoded_content) {
-                                setMarkdownContent(fullLessonPlan.decoded_content);
-                                lessonPlanService.setSelectedLessonPlan(fullLessonPlan);
-                            } else {
-                                throw new Error('Could not load lesson plan content');
-                            }
-                        } catch (error) {
-                            setManualError('Could not load lesson plan content');
-                        }
-                        setIsLoadingLessonPlanContent(false);
-                    }
-                } else if (!isLoadingRepos) {
-                    // Only redirect if repositories have finished loading and we still don't have data
-                    // This prevents premature redirects when repositories are still being fetched
-                    console.log('No stored data and repositories finished loading, redirecting to setup');
-                    navigate('/');
-                }
-            }
-        } catch (error) {
-            setManualError(error instanceof Error ? error.message : 'Unknown error occurred');
-            setIsLoadingRepository(false);
-            setIsLoadingLessonPlanContent(false);
-        }
-    };
-
-    useEffect(() => {
-        loadRepositoryAndLessonPlan();
-    }, [owner, repo, branch, category, lesson, repositories, lessonPlanData, isLoadingLessonPlan, fullLessonPath, navigate]);
-
-    // Parse markdown when content is loaded
-    useEffect(() => {
-        if (markdownContent) {
-            try {
-                const parsedDocument = parseMarkdown(markdownContent);
-                setDocument(parsedDocument);
-            } catch (error) {
-                console.error('Error parsing markdown:', error);
-                // Handle error state
-            }
-        }
-    }, [markdownContent]);
-
-    // Check for stored data on component mount
-    useEffect(() => {
-        // If we already have stored data with content, set the markdown content
-        if (storedRepo && storedLessonPlan && storedLessonPlan.decoded_content) {
-            console.log('Found stored data with content on mount, setting markdown content');
-            setMarkdownContent(storedLessonPlan.decoded_content);
-        }
-    }, []);
-
-    // Show loading state
-    if (loading) {
-        return (
-            <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100vh'
-            }}>
-                <CircularProgress/>
-            </Box>
-        );
-    }
-
-    // Show error state
-    if (error) {
-        return (
-            <Box sx={{p: 3}}>
-                <Alert severity="error">
-                    <AlertTitle>Error</AlertTitle>
-                    {error}
-                    <Box sx={{mt: 2}}>
-                        <Button variant="contained" onClick={() => navigate('/')}>
-                            Go to Repository Selection
-                        </Button>
-                    </Box>
-                </Alert>
-            </Box>
-        );
-    }
-
-    // Handle markdown content update
-    const handleContentUpdate = (updatedContent: string) => {
-        setMarkdownContent(updatedContent);
-        // Invalidate the lesson plan content query to ensure it's updated when refetched
-        queryClient.setQueryData(['lessonPlanContent', fullLessonPath], (oldData: any) => {
-            if (oldData) {
-                return {
-                    ...oldData,
-                    decoded_content: updatedContent
-                };
-            }
-            return oldData;
-        });
-    };
-
     const handleExportMarkdown = () => {
         if (markdownContent) {
             exportMarkdownFile(markdownContent);
         }
     };
-
+    //
     const handleReturnToSelection = () => {
-        // Clear selected repo, branch, and lesson plan in service layer
-        githubRepoService.clearSelectedRepo();
-        githubRepoService.clearSelectedBranch();
-        lessonPlanService.clearSelectedLessonPlan();
-
-        // Reset UI state
-        setMarkdownContent(null);
-        setManualError(null);
-
-        // Invalidate queries to force refetch when returning
-        queryClient.invalidateQueries({queryKey: ['lessonPlanContent']});
-
-        // Navigate to setup page
         navigate('/');
     };
-
-    if (loading) {
-        // If we have URL parameters, show a more informative loading message
-        const isDirectNavigation = owner && repo && branch && category && lesson;
-
-        return (
-            <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100vh'
-            }}>
-                <CircularProgress/>
-                {isDirectNavigation && (
-                    <Typography variant="h6" sx={{mt: 2}}>
-                        Loading editor for {owner}/{repo}/{branch}/{category}/{lesson}...
-                    </Typography>
-                )}
-            </Box>
-        );
-    }
 
     return (
         <Box sx={{display: 'flex', flexDirection: 'column', height: '100vh'}}>
@@ -423,7 +152,7 @@ const EditorPage: React.FC = () => {
             </StyledAppBar>
 
             <Container maxWidth="lg" sx={{flexGrow: 1, display: 'flex', flexDirection: 'column', py: 2}}>
-                {loading ? (
+                {isLoadingFileContent ? (
                     <Container maxWidth="lg" sx={{
                         mt: 4,
                         display: 'flex',
@@ -441,9 +170,7 @@ const EditorPage: React.FC = () => {
                     </Alert>
                 ) : (
                     <Box sx={{flexGrow: 1, display: 'flex', flexDirection: 'column'}}>
-                        {markdownContent !== null && document && (
-                            <EditorTabs document={document} onDocumentChange={handleDocumentChange}/>
-                        )}
+                        <EditorTabs document={document} onDocumentChange={handleDocumentChange}/>
                     </Box>
                 )}
             </Container>

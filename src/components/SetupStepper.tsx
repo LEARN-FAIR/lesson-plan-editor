@@ -210,7 +210,7 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
         category: string;
         plans: LessonPlan[];
     }
-    
+
     const groupLessonPlansByCategory = (plans: LessonPlan[]): CategoryGroup[] => {
         const categorizedPlans: CategoryGroup[] = [];
         const uncategorizedPlans: LessonPlan[] = [];
@@ -355,100 +355,105 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
                                             </Alert>
                                         )}
 
-                                        {loadingLessonPlans && (
+                                        {loadingLessonPlans ? (
                                             <Box sx={{display: 'flex', justifyContent: 'center', my: 2}}>
                                                 <CircularProgress/>
                                             </Box>
-                                        )}
-
-                                        {selectedLessonPlan ? (
-                                            <Card variant="outlined" sx={{mt: 2, p: 2, borderRadius: 1}}>
-                                                {selectedLessonPlan.category && typeof selectedLessonPlan.category === 'object' && 'title' in selectedLessonPlan.category && (
-                                                    <Chip size="small" icon={<LocalOfferOutlinedIcon />} label={selectedLessonPlan.category.title} variant="outlined" />
-                                                )}
-                                                <Typography variant="subtitle1" sx={{fontWeight: 'bold', mt: 1}}>
-                                                    {selectedLessonPlan.name.replace(/\.md$/, '').replace(/-/g, ' ')}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary" sx={{mb: 2}}>
-                                                    {selectedLessonPlan.path}
-                                                </Typography>
-                                                <Button 
-                                                    variant="outlined" 
-                                                    size="small" 
-                                                    sx={{mt: 2}}
-                                                    onClick={() => setSelectedLessonPlan(null)}
-                                                    startIcon={<UndoIcon />}
-                                                >
-                                                    Change selection
-                                                </Button>
-                                            </Card>
                                         ) : (
-                                            <>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    placeholder="Search lesson plans..."
-                                                    value={searchQuery}
-                                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                                    sx={{mb: 2}}
-                                                    InputProps={{
-                                                        startAdornment: (
-                                                            <InputAdornment position="start">
-                                                                <SearchIcon/>
-                                                            </InputAdornment>
-                                                        ),
-                                                        endAdornment: searchQuery ? (
-                                                            <InputAdornment position="end">
-                                                                <IconButton onClick={() => setSearchQuery('')}
-                                                                            size="small">
-                                                                    ×
-                                                                </IconButton>
-                                                            </InputAdornment>
-                                                        ) : null
-                                                    }}
-                                                />
-{}
-                                                {groupLessonPlansByCategory(filterLessonPlans(lessonPlans)).map((categoryGroup) => (
-                                                    <Accordion
-                                                        key={categoryGroup.category}
-                                                        expanded={expandedCategory === categoryGroup.category}
-                                                        onChange={() => handleToggleCategory(categoryGroup.category)}
-                                                    >
-                                                        <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
-                                                            <Typography variant="subtitle1">
-                                                                {categoryGroup.category} ({categoryGroup.plans.length})
-                                                            </Typography>
-                                                        </AccordionSummary>
-                                                        <AccordionDetails sx={{p: 0}}>
-                                                            <List dense>
-                                                                {categoryGroup.plans.map((plan) => (
-                                                                    <ListItem key={plan.path} disablePadding>
-                                                                        <ListItemButton
-                                                                            onClick={() => handleLessonPlanSelected(plan)}
-                                                                            sx={{
-                                                                                borderRadius: 1,
-                                                                                mx: 1,
-                                                                                mb: 0.5
-                                                                            }}
-                                                                        >
-                                                                            <ListItemText
-                                                                                primary={plan.name.replace(/\.md$/, '').replace(/-/g, ' ')}
-                                                                                secondary={plan.path.split('/').slice(0, -1).join('/')}
-                                                                            />
-                                                                        </ListItemButton>
-                                                                    </ListItem>
-                                                                ))}
-                                                            </List>
-                                                        </AccordionDetails>
-                                                    </Accordion>
-                                                ))}
+                                            <Box>
+                                                {selectedLessonPlan ? (
+                                                    <Card variant="outlined" sx={{mt: 2, p: 2, borderRadius: 1}}>
+                                                        {selectedLessonPlan.category && typeof selectedLessonPlan.category === 'object' && 'title' in selectedLessonPlan.category && (
+                                                            <Chip size="small" icon={<LocalOfferOutlinedIcon/>}
+                                                                  label={selectedLessonPlan.category.title}
+                                                                  variant="outlined"/>
+                                                        )}
+                                                        <Typography variant="subtitle1"
+                                                                    sx={{fontWeight: 'bold', mt: 1}}>
+                                                            {selectedLessonPlan.name.replace(/\.md$/, '').replace(/-/g, ' ')}
+                                                        </Typography>
+                                                        <Typography variant="body2" color="text.secondary" sx={{mb: 2}}>
+                                                            {selectedLessonPlan.path}
+                                                        </Typography>
+                                                        <Button
+                                                            variant="outlined"
+                                                            size="small"
+                                                            sx={{mt: 2}}
+                                                            onClick={() => setSelectedLessonPlan(null)}
+                                                            startIcon={<UndoIcon/>}
+                                                        >
+                                                            Change selection
+                                                        </Button>
+                                                    </Card>
+                                                ) : (
+                                                    <>
+                                                        <TextField
+                                                            fullWidth
+                                                            variant="outlined"
+                                                            placeholder="Search lesson plans..."
+                                                            value={searchQuery}
+                                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                                            sx={{mb: 2}}
+                                                            InputProps={{
+                                                                startAdornment: (
+                                                                    <InputAdornment position="start">
+                                                                        <SearchIcon/>
+                                                                    </InputAdornment>
+                                                                ),
+                                                                endAdornment: searchQuery ? (
+                                                                    <InputAdornment position="end">
+                                                                        <IconButton onClick={() => setSearchQuery('')}
+                                                                                    size="small">
+                                                                            ×
+                                                                        </IconButton>
+                                                                    </InputAdornment>
+                                                                ) : null
+                                                            }}
+                                                        />
+                                                        {}
+                                                        {groupLessonPlansByCategory(filterLessonPlans(lessonPlans)).map((categoryGroup) => (
+                                                            <Accordion
+                                                                key={categoryGroup.category}
+                                                                expanded={expandedCategory === categoryGroup.category}
+                                                                onChange={() => handleToggleCategory(categoryGroup.category)}
+                                                            >
+                                                                <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+                                                                    <Typography variant="subtitle1">
+                                                                        {categoryGroup.category} ({categoryGroup.plans.length})
+                                                                    </Typography>
+                                                                </AccordionSummary>
+                                                                <AccordionDetails sx={{p: 0}}>
+                                                                    <List dense>
+                                                                        {categoryGroup.plans.map((plan) => (
+                                                                            <ListItem key={plan.path} disablePadding>
+                                                                                <ListItemButton
+                                                                                    onClick={() => handleLessonPlanSelected(plan)}
+                                                                                    sx={{
+                                                                                        borderRadius: 1,
+                                                                                        mx: 1,
+                                                                                        mb: 0.5
+                                                                                    }}
+                                                                                >
+                                                                                    <ListItemText
+                                                                                        primary={plan.name.replace(/\.md$/, '').replace(/-/g, ' ')}
+                                                                                        secondary={plan.path.split('/').slice(0, -1).join('/')}
+                                                                                    />
+                                                                                </ListItemButton>
+                                                                            </ListItem>
+                                                                        ))}
+                                                                    </List>
+                                                                </AccordionDetails>
+                                                            </Accordion>
+                                                        ))}
 
-                                                {filterLessonPlans(lessonPlans).length === 0 && (
-                                                    <Alert severity="info" sx={{mt: 2}}>
-                                                        No lesson plans found matching your search.
-                                                    </Alert>
+                                                        {filterLessonPlans(lessonPlans).length === 0 && (
+                                                            <Alert severity="info" sx={{mt: 2}}>
+                                                                No lesson plans found matching your search.
+                                                            </Alert>
+                                                        )}
+                                                    </>
                                                 )}
-                                            </>
+                                            </Box>
                                         )}
                                     </Box>
                                 )}
@@ -460,7 +465,7 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
                                             onClick={handleNext}
                                             sx={{mt: 1, mr: 1}}
                                             disabled={index === 0 && !selectedRepo || index === 1 && !selectedBranch || index === 2 && !selectedLessonPlan}
-                                            endIcon={<NavigateNextIcon />}
+                                            endIcon={<NavigateNextIcon/>}
                                         >
                                             {index === steps.length - 1 ? 'Finish' : 'Continue'}
                                         </Button>
@@ -477,32 +482,6 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
                         </Step>
                     ))}
                 </Stepper>
-
-                {activeStep === steps.length && (
-                    <Box sx={{mt: 3}}>
-                        <Typography variant="h6" gutterBottom>
-                            Setup Complete
-                        </Typography>
-                        <Typography variant="body1" paragraph>
-                            You've selected repository <strong>{selectedRepo?.full_name}</strong> and lesson plan{' '}
-                            <strong>{selectedLessonPlan?.name.replace(/\.md$/, '').replace(/-/g, ' ')}</strong>.
-                        </Typography>
-                        <Typography variant="body1" paragraph>
-                            You can now proceed to the editor or change your selections.
-                        </Typography>
-                        <ButtonGroup variant="outlined" sx={{mt: 2}}>
-                            <Button onClick={() => setActiveStep(0)} sx={{mr: 1}}>
-                                Change Repository
-                            </Button>
-                            <Button onClick={() => setActiveStep(1)} sx={{mr: 1}}>
-                                Change Lesson Plan
-                            </Button>
-                            <Button onClick={handleReset} color="secondary">
-                                Reset All
-                            </Button>
-                        </ButtonGroup>
-                    </Box>
-                )}
             </Paper>
         </Container>
     );
