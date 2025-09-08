@@ -1,5 +1,5 @@
 import React from 'react';
-import {Box, CssBaseline} from '@mui/material';
+import {Box, CircularProgress, CssBaseline, Typography} from '@mui/material';
 import {useLocation} from 'react-router-dom';
 import {useAuth} from '../contexts/AuthContext';
 
@@ -17,8 +17,14 @@ const Layout: React.FC<LayoutProps> = ({children}) => {
     // If we're still loading auth state, render a minimal layout
     if (isLoading && !isAuthPage) {
         return (
-            <Box sx={{display: 'flex', flexDirection: 'column', minHeight: '100vh'}}>
-                <CssBaseline/>
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                flexDirection: 'column'
+            }}>
+                <CircularProgress size={40} sx={{mb: 2}}/>
             </Box>
         );
     }

@@ -318,7 +318,7 @@ class GitHubService
      * Get target repository and its forks
      * 
      * Filters repositories to only include elixir-europe-training/ELIXIR-TrP-FAIR-Converge
-     * or forks of this repository
+     * or forks of this repository (including forks of forks)
      */
     public function getTargetRepoAndForks(string $accessToken): array
     {
@@ -327,10 +327,13 @@ class GitHubService
         
         // Target repository full name
         $targetRepoFullName = 'elixir-europe-training/ELIXIR-TrP-FAIR-Converge';
+        $targetRepoName = 'ELIXIR-TrP-FAIR-Converge';
         
         // Filter repositories
         $filteredRepositories = [];
+        $potentialForks = [];
         
+        // First pass: identify the target repo and potential forks
         foreach ($allRepositories as $repo) {
             // Include the target repository itself
             if ($repo['full_name'] === $targetRepoFullName) {
@@ -338,16 +341,62 @@ class GitHubService
                 continue;
             }
             
-            // For fork repositories, check if they are forks of the target
-            if ($repo['fork'] && isset($repo['parent']) && is_array($repo['parent'])) {
-                if ($repo['parent']['full_name'] === $targetRepoFullName) {
-                    $filteredRepositories[] = $repo;
-                    continue;
+            // Collect potential forks for further inspection
+            if ($repo['fork'] || $repo['name'] === $targetRepoName) {
+                $potentialForks[] = $repo;
+            }
+        }
+        
+        // Second pass: fetch detailed info for each potential fork
+        foreach ($potentialForks as $repo) {
+            try {
+                // Get detailed repository information
+                $detailedRepo = $this->makeRequest('GET', "/repos/{$repo['full_name']}", $accessToken);
+                
+                // Check if this is a fork of the target repo (directly or indirectly)
+                if ($this->isRelatedToTargetRepo($detailedRepo, $targetRepoFullName)) {
+                    $filteredRepositories[] = $detailedRepo;
                 }
+            } catch (\Exception $e) {
+                // Skip repositories we can't access
+                continue;
             }
         }
         
         return $filteredRepositories;
+    }
+    
+    /**
+     * Check if a repository is related to the target repository
+     * This checks the entire fork lineage to find any connection to the target
+     */
+    private function isRelatedToTargetRepo(array $repo, string $targetRepoFullName): bool
+    {
+        // Direct match
+        if ($repo['full_name'] === $targetRepoFullName) {
+            return true;
+        }
+        
+        // Not a fork
+        if (!isset($repo['fork']) || $repo['fork'] !== true) {
+            return false;
+        }
+        
+        // Check parent
+        if (isset($repo['parent']) && is_array($repo['parent'])) {
+            if ($repo['parent']['full_name'] === $targetRepoFullName) {
+                return true;
+            }
+        }
+        
+        // Check source (for forks of forks)
+        if (isset($repo['source']) && is_array($repo['source'])) {
+            if ($repo['source']['full_name'] === $targetRepoFullName) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**
