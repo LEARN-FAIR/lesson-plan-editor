@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
+import {useNavigate, useParams} from 'react-router-dom';
 import {
     Alert,
     AlertTitle,
@@ -14,25 +14,26 @@ import {
     Tabs,
     Typography
 } from '@mui/material';
-import {styled} from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import DescriptionIcon from '@mui/icons-material/Description';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import InfoOutlineIcon from '@mui/icons-material/InfoOutline';
+import DescriptionIcon from '@mui/icons-material/Description';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import AttributionIcon from '@mui/icons-material/Attribution';
-import ChecklistIcon from '@mui/icons-material/Checklist';
-import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import ChecklistIcon from '@mui/icons-material/Checklist';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 import SubjectIcon from '@mui/icons-material/Subject';
-import {useNavigate, useParams} from 'react-router-dom';
-import {constructLessonPath} from '../utils/urlUtils';
+import {useQueryClient} from '@tanstack/react-query';
+import {useRepositories} from '../contexts/RepositoryContext';
 import githubRepoService, {Repository} from '../services/githubRepoService';
 import lessonPlanService from '../services/lessonPlanService';
-import {useRepositories} from '../contexts/RepositoryContext';
+import githubService from '../services/githubService';
 import {useLessonPlanContent} from '../services/lessonPlanQueryHooks';
 import {exportMarkdownFile, getCurrentFilename} from '../services/markdownService';
 import {parseMarkdown, serializeMarkdown} from '../utils/markdownUtils';
+import {constructLessonPath} from '../utils/urlUtils';
 import {FairMarkdownDocument} from '../types';
 import UserMenu from '../components/navigation/UserMenu';
 import StyledAppBar from '../components/navigation/StyledAppBar';
@@ -93,9 +94,10 @@ const StyledTab = styled((props: StyledTabProps) => <Tab disableRipple {...props
 
 const EditorPage: React.FC = () => {
     const [markdownContent, setMarkdownContent] = useState<string | null>(null);
-    const [manualError, setManualError] = useState<string | null>(null);
+    const [originalGithubContent, setOriginalGithubContent] = useState<string>('');
     const [document, setDocument] = useState<FairMarkdownDocument | null>(null);
-    const [tabValue, setTabValue] = useState(0);
+    const [tabValue, setTabValue] = useState<number>(0);
+    const [manualError, setManualError] = useState<string | null>(null);
     const navigate = useNavigate();
     const params = useParams();
     const {owner, repo, branch, category, lesson} = params;
@@ -482,24 +484,14 @@ const EditorPage: React.FC = () => {
                                     <Tabs
                                         value={tabValue}
                                         onChange={handleTabChange}
-                                        aria-label="editor tabs"
-                                        variant="scrollable"
-                                        scrollButtons="auto"
                                     >
-                                        <StyledTab label="General info" icon={<InfoOutlineIcon/>}
-                                                   iconPosition="start"  {...a11yProps(0)} />
-                                        <StyledTab label="Authors" icon={<AttributionIcon/>}
-                                                   iconPosition="start" {...a11yProps(1)} />
-                                        <StyledTab label="Learning outcomes" icon={<TrackChangesIcon/>}
-                                                   iconPosition="start" {...a11yProps(2)} />
-                                        <StyledTab label="Activities" icon={<EventNoteOutlinedIcon/>}
-                                                   iconPosition="start" {...a11yProps(3)} />
-                                        <StyledTab label="Prerequisites" icon={<ChecklistIcon/>}
-                                                   iconPosition="start" {...a11yProps(4)} />
-                                        <StyledTab label="Resources" icon={<AttachmentIcon/>}
-                                                   iconPosition="start" {...a11yProps(5)} />
-                                        <StyledTab label="Content" icon={<SubjectIcon/>}
-                                                   iconPosition="start" {...a11yProps(6)} />
+                                        <StyledTab {...a11yProps(0)} icon={<InfoOutlinedIcon/>} iconPosition="start" label="General Info"/>
+                                        <StyledTab {...a11yProps(1)} icon={<AttributionIcon/>} iconPosition="start" label="Authors"/>
+                                        <StyledTab {...a11yProps(2)} icon={<TrackChangesIcon/>} iconPosition="start" label="Learning Outcomes"/>
+                                        <StyledTab {...a11yProps(3)} icon={<EventNoteOutlinedIcon/>} iconPosition="start" label="Activities"/>
+                                        <StyledTab {...a11yProps(4)} icon={<ChecklistIcon/>} iconPosition="start" label="Prerequisites"/>
+                                        <StyledTab {...a11yProps(5)} icon={<AttachmentIcon/>} iconPosition="start" label="Resources"/>
+                                        <StyledTab {...a11yProps(6)} icon={<SubjectIcon/>} iconPosition="start" label="Content"/>
                                     </Tabs>
                                 </Box>
 

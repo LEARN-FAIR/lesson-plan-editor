@@ -18,6 +18,7 @@ import {
     TextField,
     Typography
 } from '@mui/material';
+// Using standard Button instead of LoadingButton to avoid dependency issues
 import GitHubIcon from '@mui/icons-material/GitHub';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
@@ -31,13 +32,14 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import githubService, {CommitFileParams} from '../services/githubService';
 import githubRepoService from '../services/githubRepoService';
 import lessonPlanService from '../services/lessonPlanService';
-import {useFileContent, useHasCommitsOnBranch, useHasUncommittedChanges} from '../services/githubQueryHooks';
+import {useHasCommitsOnBranch} from '../services/githubQueryHooks';
 import {useQueryClient} from '@tanstack/react-query';
 import ReactDiffViewer from 'react-diff-viewer-continued';
 
 interface GitHubCommitButtonProps {
     content: string;
     filePath: string;
+    originalGithubContent?: string; // Add prop for original GitHub content
     disabled?: boolean;
     color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
     onExport: () => void;
@@ -46,6 +48,7 @@ interface GitHubCommitButtonProps {
 const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                                                                    content,
                                                                    filePath,
+                                                                   originalGithubContent: propOriginalContent,
                                                                    disabled = false,
                                                                    color,
                                                                    onExport
@@ -96,53 +99,102 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         refetch: refetchCommits
     } = useHasCommitsOnBranch(owner, repo, branch);
 
-    // Query for file content
-    const {
-        data: githubContent = '',
-        isLoading: isLoadingContent,
-        isError: isErrorContent,
-        refetch: refetchContent
-    } = useFileContent(owner, repo, filePath, branch);
+    // Track the original GitHub content from props or state
+    const [originalGithubContent, setOriginalGithubContent] = useState<string>(propOriginalContent || '');
+    const [isLoadingContent, setIsLoadingContent] = useState<boolean>(!propOriginalContent);
+    
+    // Update state when prop changes
+    useEffect(() => {
+        if (propOriginalContent) {
+            setOriginalGithubContent(propOriginalContent);
+            setIsLoadingContent(false);
+            console.log('Using GitHub content from prop:', { contentLength: propOriginalContent.length });
+        }
+    }, [propOriginalContent]);
+    
+    // Only fetch content if not provided via prop
+    useEffect(() => {
+        const fetchGithubContent = async () => {
+            // Only fetch if no prop content and we have all required params
+            if (!propOriginalContent && owner && repo && filePath && branch) {
+                setIsLoadingContent(true);
+                try {
+                    console.log('Fetching GitHub content as fallback:', { owner, repo, filePath, branch });
+                    const content = await githubService.getFileContent(owner, repo, filePath, branch);
+                    setOriginalGithubContent(content);
+                    console.log('Loaded GitHub content as fallback:', { contentLength: content.length });
+                } catch (error) {
+                    console.error('Error fetching GitHub content:', error);
+                } finally {
+                    setIsLoadingContent(false);
+                }
+            }
+        };
+        
+        fetchGithubContent();
+    }, [propOriginalContent, owner, repo, filePath, branch]);
+    
+    // For UI purposes, we can use the actual GitHub content or fall back to local content if GitHub content isn't loaded yet
+    const effectiveGithubContent = originalGithubContent || '';
     
     // Only check for uncommitted changes when file content is loaded
-    const contentLoaded = githubContent !== undefined && githubContent !== '' && !isLoadingContent;
+    const contentLoaded = effectiveGithubContent !== undefined && effectiveGithubContent !== '' && !isLoadingContent;
     
-    // Query for uncommitted changes, but only when file content is loaded
-    const {
-        data: hasUncommittedChanges = true,
-        isLoading: isLoadingChanges,
-        refetch: refetchChanges
-    } = useHasUncommittedChanges(owner, repo, filePath, content, branch);
+    // Manually check for uncommitted changes instead of using the hook
+    const [hasUncommittedChanges, setHasUncommittedChanges] = useState<boolean>(true);
+    const [isLoadingChanges, setIsLoadingChanges] = useState<boolean>(false);
+    
+    // Function to manually check for uncommitted changes
+    const checkUncommittedChanges = () => {
+        if (originalGithubContent && content) {
+            // Normalize line endings and whitespace for comparison
+            const normalizedGithubContent = originalGithubContent.replace(/\r\n/g, '\n').trim();
+            const normalizedLocalContent = content.replace(/\r\n/g, '\n').trim();
+            const hasChanged = normalizedGithubContent !== normalizedLocalContent;
+            
+            setHasUncommittedChanges(hasChanged);
+            return hasChanged;
+        }
+        return true;
+    };
+    
+    // Function to refetch changes
+    const refetchChanges = () => {
+        return {
+            data: checkUncommittedChanges()
+        };
+    };
 
     // Manually track if content has changed from GitHub version
     const [contentChanged, setContentChanged] = useState<boolean>(false);
     
-    // Check if content has changed whenever local content or GitHub content changes
+    // Compare GitHub content with local content to detect changes
     useEffect(() => {
-        if (githubContent && content) {
-            const normalizedGithubContent = githubContent.replace(/\r\n/g, '\n').trim();
+        if (effectiveGithubContent && content) {
+            // Normalize line endings and whitespace for comparison
+            const normalizedGithubContent = effectiveGithubContent.replace(/\r\n/g, '\n').trim();
             const normalizedLocalContent = content.replace(/\r\n/g, '\n').trim();
             const hasChanged = normalizedGithubContent !== normalizedLocalContent;
             
             console.log('Content comparison:', {
-                githubContentLength: githubContent.length,
+                githubContentLength: effectiveGithubContent.length,
                 localContentLength: content.length,
                 hasChanged
             });
             
             setContentChanged(hasChanged);
+            setHasUncommittedChanges(hasChanged);
         }
-    }, [githubContent, content]);
+    }, [effectiveGithubContent, content]);
     
-    // Update PR mode when data changes
+    // Update PR mode when commits, uncommitted changes, or content changes
     useEffect(() => {
-        // Log the values that determine PR mode
-        console.log('PR mode determination:', {
+        console.log('PR mode dependencies changed:', {
             hasCommits,
             hasUncommittedChanges,
             contentChanged,
             contentLoaded,
-            githubContentLength: githubContent?.length || 0,
+            githubContentLength: effectiveGithubContent?.length || 0,
             localContentLength: content?.length || 0
         });
         
@@ -150,27 +202,44 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         const shouldShowPrMode = hasCommits && !hasUncommittedChanges && !contentChanged && contentLoaded;
         console.log(`Setting PR mode to: ${shouldShowPrMode}`);
         setIsPrMode(shouldShowPrMode);
-    }, [hasCommits, hasUncommittedChanges, contentChanged, contentLoaded, githubContent, content]);
+    }, [hasCommits, hasUncommittedChanges, contentChanged, contentLoaded, effectiveGithubContent, content]);
 
     // Function to manually refresh GitHub information
     const refreshGitHubInfo = async () => {
         setIsRefreshing(true);
 
         try {
-            // Invalidate and refetch all queries
-            await Promise.all([
-                refetchCommits(),
-                refetchContent(),
-                refetchChanges()
+            // Create a single promise for GitHub content to avoid duplicate calls
+            let contentPromise = null;
+            if (owner && repo && filePath && branch) {
+                // No need to invalidate cache anymore - direct fetch
+                
+                contentPromise = githubService.getFileContent(owner, repo, filePath, branch)
+                    .then(content => {
+                        setOriginalGithubContent(content);
+                        console.log('Refreshed GitHub content:', { contentLength: content.length });
+                        return content;
+                    })
+                    .catch(error => {
+                        console.error('Error refreshing GitHub content:', error);
+                        return originalGithubContent; // Return existing content on error
+                    });
+            }
+            
+            // Refetch commits in parallel
+            const [newContent, commitsResult] = await Promise.all([
+                contentPromise || Promise.resolve(originalGithubContent),
+                refetchCommits()
             ]);
             
             // After refreshing content, reset the content changed flag if content matches
-            if (githubContent && content) {
-                const normalizedGithubContent = githubContent.replace(/\r\n/g, '\n').trim();
+            if (newContent && content) {
+                const normalizedGithubContent = newContent.replace(/\r\n/g, '\n').trim();
                 const normalizedLocalContent = content.replace(/\r\n/g, '\n').trim();
                 const hasChanged = normalizedGithubContent !== normalizedLocalContent;
                 
                 setContentChanged(hasChanged);
+                setHasUncommittedChanges(hasChanged);
                 console.log('Content comparison after refresh:', { hasChanged });
             }
         } finally {
@@ -293,6 +362,8 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
             queryClient.invalidateQueries({queryKey: ['fileContent']});
             queryClient.invalidateQueries({queryKey: ['hasUncommittedChanges']});
             queryClient.invalidateQueries({queryKey: ['hasCommitsOnBranch']});
+            
+            // No need to invalidate cache anymore - direct fetch
 
             // Invalidate lesson plan content if this is a lesson plan file
             const selectedLessonPlan = lessonPlanService.getSelectedLessonPlan();
@@ -303,28 +374,51 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
             // Force immediate state update
             setContentChanged(false);
             
-            // Wait a moment for React Query to settle, then update state again
+            // Wait a moment for React Query to settle, then update state once
             setTimeout(async () => {
                 console.log('Performing delayed state update after commit');
                 
-                // Explicitly refetch data to update UI state
-                const [contentResult, changesResult, commitsResult] = await Promise.all([
-                    refetchContent(),
-                    refetchChanges(),
+                // Create a single promise for GitHub content to avoid duplicate calls
+                let contentPromise = null;
+                if (owner && repo && filePath && branch) {
+                    // No need to invalidate cache anymore - direct fetch
+                    
+                    contentPromise = githubService.getFileContent(owner, repo, filePath, branch)
+                        .then(content => {
+                            setOriginalGithubContent(content);
+                            console.log('Updated GitHub content after commit:', { contentLength: content.length });
+                            return content;
+                        })
+                        .catch(error => {
+                            console.error('Error refreshing GitHub content after commit:', error);
+                            return originalGithubContent;
+                        });
+                }
+                
+                // Fetch commits in parallel
+                const [newContent, commitsResult] = await Promise.all([
+                    contentPromise || Promise.resolve(originalGithubContent),
                     refetchCommits()
                 ]);
                 
+                // Manually check for uncommitted changes
+                let hasChanges = false;
+                if (newContent && content) {
+                    const normalizedGithubContent = newContent.replace(/\r\n/g, '\n').trim();
+                    const normalizedLocalContent = content.replace(/\r\n/g, '\n').trim();
+                    hasChanges = normalizedGithubContent !== normalizedLocalContent;
+                    setHasUncommittedChanges(hasChanges);
+                    setContentChanged(hasChanges);
+                }
+                
                 console.log('State after refetch:', {
                     hasCommits: commitsResult.data,
-                    hasUncommittedChanges: changesResult.data,
-                    githubContentUpdated: !!contentResult.data
+                    hasUncommittedChanges: hasChanges,
+                    githubContentUpdated: !!newContent
                 });
                 
-                // Force PR mode update based on new data
-                const shouldShowPrMode = !!commitsResult.data && 
-                                       !changesResult.data && 
-                                       !!contentResult.data;
-                                       
+                // Update PR mode based on refetched data
+                const shouldShowPrMode = !!commitsResult.data && !hasChanges && !!newContent;
                 console.log(`Setting PR mode to ${shouldShowPrMode} after commit`);
                 setIsPrMode(shouldShowPrMode);
             }, 500);
@@ -373,17 +467,14 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         }
 
         if (!selectedRepo || !selectedBranch) {
-            setError('Repository or branch not selected');
+            setError('No repository or branch selected');
             return;
         }
-
-        // Open GitHub pull request page in a new tab
-        const prUrl = `https://github.com/${selectedRepo.owner.login}/${selectedRepo.name}/pull/new/${selectedBranch}`;
-        window.open(prUrl, '_blank');
+        
+        // Open GitHub PR creation page
+        const url = `https://github.com/${owner}/${repo}/pull/new/${branch}`;
+        window.open(url, '_blank');
     };
-
-    // Determine if any loading is happening
-    const isAnyLoading = isRefreshing || isLoadingCommits || isLoadingContent || isLoadingChanges;
     
     // Determine if content is ready for commit operations
     const isContentReady = contentLoaded && !isLoadingChanges;
@@ -393,13 +484,15 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         console.log('GitHubCommitButton state:', {
             contentLoaded,
             isContentReady,
-            githubContentLength: githubContent?.length || 0,
+            githubContentLength: originalGithubContent?.length || 0,
             localContentLength: content?.length || 0,
             isLoadingContent,
-            isErrorContent,
             hasUncommittedChanges
         });
-    }, [contentLoaded, isContentReady, githubContent, content, isLoadingContent, isErrorContent, hasUncommittedChanges]);
+    }, [contentLoaded, isContentReady, originalGithubContent, content, isLoadingContent, hasUncommittedChanges]);
+    
+    // Track if any loading is happening
+    const isAnyLoading = isRefreshing || isLoadingCommits || isLoadingContent || isLoadingChanges;
 
     // Split button implementation with main action and dropdown
     const handleMainButtonClick = () => {
@@ -409,6 +502,35 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
             handleOpenDialog();
         }
     };
+
+    // Content loading state
+    if (isLoadingContent && !originalGithubContent && !isPrMode) {
+        return (
+            <Button
+                variant="contained"
+                color={color}
+                startIcon={<CircularProgress size={16} color="inherit"/>}
+                disabled
+            >
+                Loading...
+            </Button>
+        );
+    }
+
+    // Error state
+    const hasError = !originalGithubContent && !isLoadingContent;
+    if (hasError) {
+        return (
+            <Button
+                variant="contained"
+                color={color}
+                startIcon={<GitHubIcon/>}
+                disabled
+            >
+                Error loading content
+            </Button>
+        );
+    }
 
     return (
         <>
@@ -583,7 +705,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                                             maxHeight: '400px'
                                         }}>
                                             <ReactDiffViewer
-                                                oldValue={githubContent || ''}
+                                                oldValue={originalGithubContent || ''}
                                                 newValue={content}
                                                 splitView={false}
                                                 showDiffOnly={false}

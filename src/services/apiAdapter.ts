@@ -261,44 +261,82 @@ class ApiAdapter {
         });
     }
 
+    // Track in-flight requests to prevent duplicates
+    private inFlightRequests: Record<string, Promise<string>> = {};
+    
+    /**
+     * Get a cache key for the file request
+     */
+    private getRequestKey(owner: string, repo: string, path: string, branch: string): string {
+        return `${owner}/${repo}/${branch}/${path}`;
+    }
+    
     /**
      * Get file content from GitHub
      */
     async getFileContent(owner: string, repo: string, path: string, branch: string): Promise<string> {
-        try {
-            const lessonPlan = await this.getLessonPlan(owner, repo, path, branch);
-            // Log the response to help debug
-            console.log('File content response:', lessonPlan);
-            
-            // Check if we have decoded content
-            if (lessonPlan && lessonPlan.decodedContent !== undefined) {
-                return lessonPlan.decodedContent;
-            } else if (lessonPlan && lessonPlan.content) {
-                // Try to use content if decodedContent is not available
-                try {
-                    // Content might be base64 encoded
-                    // Use TextDecoder to properly handle UTF-8 encoding
-                    const base64 = lessonPlan.content.replace(/\s/g, '');
-                    const binary = atob(base64);
-                    const bytes = new Uint8Array(binary.length);
-                    for (let i = 0; i < binary.length; i++) {
-                        bytes[i] = binary.charCodeAt(i);
-                    }
-                    return new TextDecoder('utf-8').decode(bytes);
-                } catch (e) {
-                    console.warn('Error decoding base64 content:', e);
-                    // If not base64, return as is
-                    return lessonPlan.content;
-                }
-            }
-            
-            // If we can't get content, return empty string
-            console.warn('No content found for file:', path);
-            return '';
-        } catch (error) {
-            console.error('Error getting file content:', error);
-            throw error;
+        const requestKey = this.getRequestKey(owner, repo, path, branch);
+        
+        // Check if we already have an in-flight request for this file
+        if (requestKey in this.inFlightRequests) {
+            console.log('🔒 REUSING in-flight request for:', requestKey);
+            return this.inFlightRequests[requestKey];
         }
+        
+        // Add stack trace to debug where the API call is coming from
+        const stackTrace = new Error().stack;
+        console.log('🚨 ACTUAL API CALL to file endpoint:', { owner, repo, path, branch });
+        console.log('Called from:', stackTrace);
+        
+        // Create a new request and store it
+        this.inFlightRequests[requestKey] = (async () => {
+            try {
+                const lessonPlan = await this.getLessonPlan(owner, repo, path, branch);
+                console.log('File content response received');
+                
+                // Process the response
+                let content = '';
+                
+                // Check if we have decoded content
+                if (lessonPlan && lessonPlan.decodedContent !== undefined) {
+                    content = lessonPlan.decodedContent;
+                } else if (lessonPlan && lessonPlan.content) {
+                    // Try to use content if decodedContent is not available
+                    try {
+                        // Content might be base64 encoded
+                        // Use TextDecoder to properly handle UTF-8 encoding
+                        const base64 = lessonPlan.content.replace(/\s/g, '');
+                        const binary = atob(base64);
+                        const bytes = new Uint8Array(binary.length);
+                        for (let i = 0; i < binary.length; i++) {
+                            bytes[i] = binary.charCodeAt(i);
+                        }
+                        content = new TextDecoder('utf-8').decode(bytes);
+                    } catch (e) {
+                        console.warn('Error decoding base64 content:', e);
+                        // If not base64, return as is
+                        content = lessonPlan.content;
+                    }
+                } else {
+                    // If we can't get content, return empty string
+                    console.warn('No content found for file:', path);
+                }
+                
+                // Clean up the in-flight request after a short delay
+                setTimeout(() => {
+                    delete this.inFlightRequests[requestKey];
+                }, 1000);
+                
+                return content;
+            } catch (error) {
+                console.error('Error getting file content:', error);
+                // Clean up the in-flight request immediately on error
+                delete this.inFlightRequests[requestKey];
+                throw error;
+            }
+        })();
+        
+        return this.inFlightRequests[requestKey];
     }
 
     /**

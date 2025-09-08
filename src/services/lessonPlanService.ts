@@ -85,6 +85,11 @@ class LessonPlanService {
      * Get a specific lesson plan by path
      */
     async getLessonPlan(path: string): Promise<LessonPlan> {
+        // Add stack trace to debug where the call is coming from
+        const stackTrace = new Error().stack;
+        console.log('📖 getLessonPlan called for:', path);
+        console.log('Called from:', stackTrace);
+        
         // Check if we are authenticated with GitHub
         if (!githubService.isAuthenticated()) {
             throw new Error('Not authenticated with GitHub');

@@ -18,12 +18,12 @@ export const useHasCommitsOnBranch = (owner: string, repo: string, branch: strin
 /**
  * React Query hook for getting file content from GitHub
  */
-export const useFileContent = (owner: string, repo: string, path: string, branch: string) => {
+export const useFileContent = (owner: string, repo: string, path: string, branch: string, options?: { enabled?: boolean }) => {
     return useQuery({
         queryKey: ['fileContent', owner, repo, path, branch],
         queryFn: () => githubService.getFileContent(owner, repo, path, branch),
-        // Only run if all parameters are provided
-        enabled: !!owner && !!repo && !!path && !!branch,
+        // Only run if all parameters are provided and not explicitly disabled
+        enabled: options?.enabled !== undefined ? options.enabled : (!!owner && !!repo && !!path && !!branch),
         // Keep data fresh for 5 minutes
         staleTime: 5 * 60 * 1000,
     });
@@ -37,10 +37,12 @@ export const useHasUncommittedChanges = (
     repo: string,
     path: string,
     content: string,
-    branch: string
+    branch: string,
+    options?: { githubContentOverride?: string; enabled?: boolean }
 ) => {
-    // Use the fileContent query to get the cached GitHub content
-    const fileContentQuery = useFileContent(owner, repo, path, branch);
+    // Use the fileContent query to get the cached GitHub content, but skip if we have an override
+    const skipFileContentFetch = !!options?.githubContentOverride;
+    const fileContentQuery = useFileContent(owner, repo, path, branch, { enabled: !skipFileContentFetch });
     
     // Compare local content with cached GitHub content
     return useQuery({
@@ -48,15 +50,15 @@ export const useHasUncommittedChanges = (
         queryFn: async () => {
             // Log the current state to help with debugging
             console.log('useHasUncommittedChanges state:', {
-                fileContentQueryStatus: fileContentQuery.status,
-                fileContentQueryData: fileContentQuery.data,
+                fileContentQueryStatus: skipFileContentFetch ? 'skipped' : fileContentQuery.status,
+                fileContentQueryData: skipFileContentFetch ? 'using override' : fileContentQuery.data,
                 hasLocalContent: !!content,
                 localContentLength: content?.length
             });
             
-            // If we have cached GitHub content, compare directly without an API call
-            if (fileContentQuery.data !== undefined) {
-                const githubContent = fileContentQuery.data || '';
+            // If we have an override or cached GitHub content, compare directly without an API call
+            if (options?.githubContentOverride !== undefined || fileContentQuery.data !== undefined) {
+                const githubContent = options?.githubContentOverride || fileContentQuery.data || '';
                 
                 // Normalize line endings and whitespace for comparison
                 const normalizedGithubContent = githubContent.replace(/\r\n/g, '\n').trim();
@@ -75,7 +77,7 @@ export const useHasUncommittedChanges = (
             if (fileContentQuery.isError) {
                 console.warn('File content query failed, attempting to refetch');
                 const refetchResult = await fileContentQuery.refetch();
-                
+
                 // If refetch succeeded, try again with the new data
                 if (refetchResult.data !== undefined) {
                     const githubContent = refetchResult.data || '';
@@ -89,8 +91,8 @@ export const useHasUncommittedChanges = (
             console.log('Falling back to direct API call for uncommitted changes check');
             return githubService.hasUncommittedChanges(owner, repo, path, content, branch);
         },
-        // Only run if all parameters are provided
-        enabled: !!owner && !!repo && !!path && !!content && !!branch,
+        // Only run if all parameters are provided and not explicitly disabled
+        enabled: options?.enabled !== undefined ? options.enabled : (!!owner && !!repo && !!path && !!content && !!branch),
         // Keep data fresh for 1 minute
         staleTime: 60 * 1000,
         // Retry failed queries
