@@ -18,7 +18,6 @@ import {AuthProvider} from './contexts/AuthContext';
 import {RepositoryProvider} from './contexts/RepositoryContext';
 
 function App() {
-    // App component is the root component, but authentication check is handled in AuthProvider
     return (
         <ThemeProvider theme={theme}>
             <AuthProvider>

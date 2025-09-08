@@ -19,7 +19,6 @@ const Layout: React.FC<LayoutProps> = ({children}) => {
         return (
             <Box sx={{display: 'flex', flexDirection: 'column', minHeight: '100vh'}}>
                 <CssBaseline/>
-                {children}
             </Box>
         );
     }
