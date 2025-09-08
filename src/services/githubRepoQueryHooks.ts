@@ -1,5 +1,6 @@
 import {useQuery} from '@tanstack/react-query';
 import githubRepoService, {Branch, Repository} from './githubRepoService';
+import {useAuth} from '../contexts/AuthContext';
 
 /**
  * React Query hook to fetch repositories and forks
@@ -32,4 +33,37 @@ export const useBranches = (owner?: string, repo?: string) => {
         staleTime: 1000 * 60 * 5, // 5 minutes
         enabled: !!owner && !!repo, // Only run the query if owner and repo are provided
     });
+};
+
+/**
+ * Enhanced React Query hook for repositories that can replace RepositoryContext
+ * This hook provides the same interface as useRepositories from RepositoryContext
+ * but uses React Query directly without the context wrapper
+ */
+export const useRepositories = () => {
+    // Get authentication state from AuthContext (still needed)
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
+    
+    // Use React Query to fetch repositories
+    const {
+        data: repositories = [],
+        isLoading: reposLoading,
+        error,
+        refetch
+    } = useQuery<Repository[], Error>({
+        queryKey: ['repositories', isAuthenticated], // Add isAuthenticated as part of the key
+        queryFn: () => githubRepoService.getTargetRepoAndForks(),
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        enabled: isAuthenticated, // Only fetch if authenticated
+    });
+
+    // Calculate combined loading state
+    const isLoading = authLoading || (isAuthenticated && reposLoading);
+
+    return {
+        repositories,
+        isLoading,
+        error: error as Error | null,
+        refetchRepositories: refetch
+    };
 };

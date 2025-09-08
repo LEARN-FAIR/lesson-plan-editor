@@ -5,7 +5,7 @@ import {useQueryClient} from '@tanstack/react-query';
 import {generateLessonPlanUrl} from '../utils/urlUtils';
 import githubRepoService, {Repository} from '../services/githubRepoService';
 import lessonPlanService, {LessonPlan} from '../services/lessonPlanService';
-import {useRepositories} from '../contexts/RepositoryContext';
+import {useRepositories} from '../services/githubRepoQueryHooks';
 import {useLessonPlans} from '../services/lessonPlanQueryHooks';
 import UserMenu from '../components/navigation/UserMenu';
 import SetupStepper from '../components/SetupStepper';

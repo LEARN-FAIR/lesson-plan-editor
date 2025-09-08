@@ -34,7 +34,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import githubRepoService, {Repository} from '../services/githubRepoService';
 import lessonPlanService, {LessonPlan} from '../services/lessonPlanService';
-import {useRepositories} from '../contexts/RepositoryContext';
+import {useRepositories} from '../services/githubRepoQueryHooks';
 import {useLessonPlans} from '../services/lessonPlanQueryHooks';
 import BranchSelector from '../components/BranchSelector';
 

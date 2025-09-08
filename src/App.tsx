@@ -15,35 +15,32 @@ import Layout from './components/Layout';
 
 // Context
 import {AuthProvider} from './contexts/AuthContext';
-import {RepositoryProvider} from './contexts/RepositoryContext';
 
 function App() {
     return (
         <ThemeProvider theme={theme}>
             <AuthProvider>
-                <RepositoryProvider>
-                    <Router>
-                        <Layout>
-                            <CssBaseline/>
-                            <Routes>
-                                {/* Login Page Route */}
-                                <Route path="/login" element={<LoginPage/>}/>
+                <Router>
+                    <Layout>
+                        <CssBaseline/>
+                        <Routes>
+                            {/* Login Page Route */}
+                            <Route path="/login" element={<LoginPage/>}/>
 
-                                {/* Setup Page Route */}
-                                <ProtectedRoute path="/" element={<SetupPage/>} />
+                            {/* Setup Page Route */}
+                            <Route path="/" element={<ProtectedRoute element={<SetupPage/>} />} />
 
-                                {/* Editor Page Route */}
-                                <ProtectedRoute path="/editor/:owner/:repo/:branch/:category/:lesson" element={<EditorPage/>} />
+                            {/* Editor Page Route */}
+                            <Route path="/editor/:owner/:repo/:branch/:category/:lesson" element={<ProtectedRoute element={<EditorPage/>} />} />
 
-                                {/* GitHub OAuth Callback */}
-                                <Route path="/github-callback" element={<GitHubCallback/>}/>
+                            {/* GitHub OAuth Callback */}
+                            <Route path="/github-callback" element={<GitHubCallback/>}/>
 
-                                {/* Catch-all redirect */}
-                                <Route path="*" element={<Navigate to="/" replace/>}/>
-                            </Routes>
-                        </Layout>
-                    </Router>
-                </RepositoryProvider>
+                            {/* Catch-all redirect */}
+                            <Route path="*" element={<Navigate to="/" replace/>}/>
+                        </Routes>
+                    </Layout>
+                </Router>
             </AuthProvider>
         </ThemeProvider>
     );

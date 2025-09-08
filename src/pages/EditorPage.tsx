@@ -5,7 +5,7 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DescriptionIcon from '@mui/icons-material/Description';
 import {useQueryClient} from '@tanstack/react-query';
-import {useRepositories} from '../contexts/RepositoryContext';
+import {useRepositories} from '../services/githubRepoQueryHooks';
 import githubRepoService, {Repository} from '../services/githubRepoService';
 import lessonPlanService from '../services/lessonPlanService';
 import {useFileContent} from '../services/githubQueryHooks';

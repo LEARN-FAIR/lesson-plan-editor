@@ -1,18 +1,18 @@
 import React from 'react';
-import { Navigate, Route, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Box, CircularProgress } from '@mui/material';
 
 /**
- * ProtectedRouteElement component for React Router v6
+ * ProtectedRoute component for React Router v6
  * It checks authentication status and redirects to login if not authenticated
- * This is used internally by the ProtectedRoute component
+ * Usage: <Route path="/" element={<ProtectedRoute element={<Component/>} />} />
  */
-interface ProtectedRouteElementProps {
+interface ProtectedRouteProps {
     element: React.ReactNode;
 }
 
-const ProtectedRouteElement: React.FC<ProtectedRouteElementProps> = ({ element }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element }) => {
     const { isAuthenticated, isLoading } = useAuth();
     const location = useLocation();
 
@@ -46,26 +46,4 @@ const ProtectedRouteElement: React.FC<ProtectedRouteElementProps> = ({ element }
     return <>{element}</>;
 };
 
-/**
- * ProtectedRoute component that extends Route
- * This allows using ProtectedRoute with the same syntax as Route
- * Usage: <ProtectedRoute path="/" element={<Component/>} />
- */
-type ProtectedRouteProps = {
-    path: string;
-    element: React.ReactNode;
-    index?: boolean;
-};
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, element, index }) => {
-    return (
-        <Route
-            path={path}
-            index={index}
-            element={<ProtectedRouteElement element={element} />}
-        />
-    );
-};
-
 export default ProtectedRoute;
-export { ProtectedRouteElement };
