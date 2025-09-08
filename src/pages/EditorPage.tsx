@@ -1,36 +1,14 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
-import {
-    Alert,
-    AlertTitle,
-    Box,
-    Button,
-    CircularProgress,
-    Container,
-    Divider,
-    Paper,
-    Stack,
-    Tab,
-    Tabs,
-    Typography
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
+import {Alert, AlertTitle, Box, Button, CircularProgress, Container, Divider, Stack, Typography} from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DescriptionIcon from '@mui/icons-material/Description';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import AttributionIcon from '@mui/icons-material/Attribution';
-import TrackChangesIcon from '@mui/icons-material/TrackChanges';
-import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
-import ChecklistIcon from '@mui/icons-material/Checklist';
-import AttachmentIcon from '@mui/icons-material/Attachment';
-import SubjectIcon from '@mui/icons-material/Subject';
 import {useQueryClient} from '@tanstack/react-query';
 import {useRepositories} from '../contexts/RepositoryContext';
 import githubRepoService, {Repository} from '../services/githubRepoService';
 import lessonPlanService from '../services/lessonPlanService';
-import githubService from '../services/githubService';
-import {useHasCommitsOnBranch, useFileContent} from '../services/githubQueryHooks';
+import {useFileContent} from '../services/githubQueryHooks';
 import {useLessonPlanContent} from '../services/lessonPlanQueryHooks';
 import {exportMarkdownFile, getCurrentFilename} from '../services/markdownService';
 import {prefetchFileContent, setFileContentInCache} from '../utils/queryUtils';
@@ -40,59 +18,7 @@ import {FairMarkdownDocument} from '../types';
 import UserMenu from '../components/navigation/UserMenu';
 import StyledAppBar from '../components/navigation/StyledAppBar';
 import GitHubCommitButton from '../components/GitHubCommitButton';
-import GeneralInfoEditor from '../components/sections/GeneralInfoEditor';
-import AuthorsEditor from '../components/sections/AuthorsEditor';
-import LearningOutcomesEditor from '../components/sections/LearningOutcomesEditor';
-import ActivitiesEditor from '../components/sections/ActivitiesEditor';
-import PrerequisitesEditor from '../components/sections/PrerequisitesEditor';
-import ResourcesEditor from '../components/sections/ResourcesEditor';
-import ContentEditor from '../components/sections/ContentEditor';
-
-interface TabPanelProps {
-    children?: React.ReactNode;
-    index: number;
-    value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-    const {children, value, index, ...other} = props;
-
-    return (
-        <div
-            role="tabpanel"
-            hidden={value !== index}
-            id={`editor-tabpanel-${index}`}
-            aria-labelledby={`editor-tab-${index}`}
-            {...other}
-        >
-            {value === index && (
-                <Box sx={{p: 3}}>
-                    {children}
-                </Box>
-            )}
-        </div>
-    );
-}
-
-function a11yProps(index: number) {
-    return {
-        id: `editor-tab-${index}`,
-        'aria-controls': `editor-tabpanel-${index}`,
-    };
-}
-
-interface StyledTabProps {
-    label: string;
-    icon?: React.ReactElement;
-    iconPosition?: 'start' | 'end' | 'top' | 'bottom';
-}
-
-const StyledTab = styled((props: StyledTabProps) => <Tab disableRipple {...props} />)(
-    ({theme}) => ({
-        minHeight: '48px',
-        textTransform: 'none',
-    }),
-);
+import {EditorTabs} from "../components/LessonPlanEditor";
 
 const EditorPage: React.FC = () => {
     const [markdownContent, setMarkdownContent] = useState<string | null>(null);
@@ -116,7 +42,6 @@ const EditorPage: React.FC = () => {
     // Now we'll use the React Query result
     const originalGithubContent = fileContent || '';
     const [document, setDocument] = useState<FairMarkdownDocument | null>(null);
-    const [tabValue, setTabValue] = useState<number>(0);
     const [manualError, setManualError] = useState<string | null>(null);
     const navigate = useNavigate();
 
@@ -156,11 +81,6 @@ const EditorPage: React.FC = () => {
     // Access stored data for use in component
     const storedRepo = githubRepoService.getSelectedRepo();
     const storedLessonPlan = lessonPlanService.getSelectedLessonPlan();
-
-    // Handle tab change
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-        setTabValue(newValue);
-    };
 
     // Handle document change
     const handleDocumentChange = (updatedDocument: Partial<FairMarkdownDocument>) => {
@@ -522,71 +442,7 @@ const EditorPage: React.FC = () => {
                 ) : (
                     <Box sx={{flexGrow: 1, display: 'flex', flexDirection: 'column'}}>
                         {markdownContent !== null && document && (
-                            <Paper elevation={3} sx={{mb: 4}}>
-                                <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
-                                    <Tabs
-                                        value={tabValue}
-                                        onChange={handleTabChange}
-                                    >
-                                        <StyledTab {...a11yProps(0)} icon={<InfoOutlinedIcon/>} iconPosition="start" label="General Info"/>
-                                        <StyledTab {...a11yProps(1)} icon={<AttributionIcon/>} iconPosition="start" label="Authors"/>
-                                        <StyledTab {...a11yProps(2)} icon={<TrackChangesIcon/>} iconPosition="start" label="Learning Outcomes"/>
-                                        <StyledTab {...a11yProps(3)} icon={<EventNoteOutlinedIcon/>} iconPosition="start" label="Activities"/>
-                                        <StyledTab {...a11yProps(4)} icon={<ChecklistIcon/>} iconPosition="start" label="Prerequisites"/>
-                                        <StyledTab {...a11yProps(5)} icon={<AttachmentIcon/>} iconPosition="start" label="Resources"/>
-                                        <StyledTab {...a11yProps(6)} icon={<SubjectIcon/>} iconPosition="start" label="Content"/>
-                                    </Tabs>
-                                </Box>
-
-                                <TabPanel value={tabValue} index={0}>
-                                    <GeneralInfoEditor
-                                        document={document}
-                                        onChange={handleDocumentChange}
-                                    />
-                                </TabPanel>
-
-                                <TabPanel value={tabValue} index={1}>
-                                    <AuthorsEditor
-                                        document={document}
-                                        onChange={handleDocumentChange}
-                                    />
-                                </TabPanel>
-
-                                <TabPanel value={tabValue} index={2}>
-                                    <LearningOutcomesEditor
-                                        document={document}
-                                        onChange={handleDocumentChange}
-                                    />
-                                </TabPanel>
-
-                                <TabPanel value={tabValue} index={3}>
-                                    <ActivitiesEditor
-                                        document={document}
-                                        onChange={handleDocumentChange}
-                                    />
-                                </TabPanel>
-
-                                <TabPanel value={tabValue} index={4}>
-                                    <PrerequisitesEditor
-                                        document={document}
-                                        onChange={handleDocumentChange}
-                                    />
-                                </TabPanel>
-
-                                <TabPanel value={tabValue} index={5}>
-                                    <ResourcesEditor
-                                        document={document}
-                                        onChange={handleDocumentChange}
-                                    />
-                                </TabPanel>
-
-                                <TabPanel value={tabValue} index={6}>
-                                    <ContentEditor
-                                        document={document}
-                                        onChange={handleDocumentChange}
-                                    />
-                                </TabPanel>
-                            </Paper>
+                            <EditorTabs document={document} onDocumentChange={handleDocumentChange}/>
                         )}
                     </Box>
                 )}

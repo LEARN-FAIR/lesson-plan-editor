@@ -13,7 +13,6 @@ import StyledAppBar from '../components/navigation/StyledAppBar';
 
 const SetupPage: React.FC = () => {
     const navigate = useNavigate();
-    const queryClient = useQueryClient();
 
     // Use Repository Context to access repositories
     const {

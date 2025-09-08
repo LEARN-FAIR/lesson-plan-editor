@@ -30,18 +30,10 @@ function App() {
                                 <Route path="/login" element={<LoginPage/>}/>
 
                                 {/* Setup Page Route */}
-                                <Route path="/" element={
-                                    <ProtectedRoute>
-                                        <SetupPage/>
-                                    </ProtectedRoute>
-                                }/>
+                                <ProtectedRoute path="/" element={<SetupPage/>} />
 
                                 {/* Editor Page Route */}
-                                <Route path="/editor/:owner/:repo/:branch/:category/:lesson" element={
-                                    <ProtectedRoute>
-                                        <EditorPage/>
-                                    </ProtectedRoute>
-                                }/>
+                                <ProtectedRoute path="/editor/:owner/:repo/:branch/:category/:lesson" element={<EditorPage/>} />
 
                                 {/* GitHub OAuth Callback */}
                                 <Route path="/github-callback" element={<GitHubCallback/>}/>
