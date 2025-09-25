@@ -1,0 +1,54 @@
+{
+    # Enable FrankenPHP
+    frankenphp
+    # Development mode
+    debug
+}
+
+:80 {
+    # Redirect HTTP to HTTPS
+    redir https://{host}{uri} permanent
+}
+
+:443 {
+    # SSL configuration
+    tls /app/ssl/localhost.crt /app/ssl/localhost.key
+    # Set the root directory
+    root * /app/public
+
+    # Proxy Vite dev server for hot reloading
+    handle /build/* {
+        reverse_proxy frontend-dev:3000
+    }
+
+    # Handle static files
+    @static {
+        file
+        path *.css *.js *.ico *.png *.jpg *.jpeg *.gif *.svg *.woff *.woff2 *.ttf *.eot
+    }
+    handle @static {
+        file_server
+    }
+
+    # Handle API routes with PHP
+    handle /api/* {
+        php {
+            root /app/public
+        }
+    }
+
+    # Handle all other requests with SPA fallback
+    handle {
+        try_files {path} /index.php
+        php {
+            root /app/public
+        }
+    }
+
+    # Logging for development
+    log {
+        output stdout
+        format console
+        level DEBUG
+    }
+}

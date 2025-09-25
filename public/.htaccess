@@ -1,0 +1,28 @@
+# Enable URL rewriting
+RewriteEngine On
+
+# Handle Angular and React Router
+# Send all requests to index.php, except for existing files and directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/api/
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+
+# Cache static assets
+<FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$">
+    ExpiresActive On
+    ExpiresDefault "access plus 1 year"
+    Header append Cache-Control "public, immutable"
+</FilesMatch>
+
+# Cache build assets with longer expiration
+<FilesMatch "^/build/.*\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$">
+    ExpiresActive On
+    ExpiresDefault "access plus 1 year"
+    Header append Cache-Control "public, immutable"
+</FilesMatch>

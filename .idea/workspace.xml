@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="7cf69c84-6d84-4c8d-91bb-0ddecc8a2b3c" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/favicon.ico" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/logo192.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/logo512.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/manifest.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/robots.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/.env" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/.env.dev" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/.env.example" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/bin/console" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/composer.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/composer.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/bundles.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/packages/cache.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/packages/framework.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/packages/knpu_oauth2_client.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/packages/lexik_jwt_authentication.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/packages/nelmio_cors.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/packages/nyholm_psr7.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/packages/routing.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/packages/security.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/packages/validator.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/preload.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/routes.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/routes/framework.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/routes/security.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/config/services.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/public/index.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Controller/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Controller/AuthController.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Controller/ContributorsController.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Controller/GitHubController.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Controller/LessonPlanController.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/EventListener/ExceptionListener.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Kernel.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Model/Category.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Model/GitHubUser.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Model/LessonPlan.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Model/Repository.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Security/GithubAuthenticator.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Security/GithubUser.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Security/GithubUserProvider.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Service/GitHubService.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Service/LessonPlanManagerService.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/Service/MarkdownService.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/symfony.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/tests/Controller/GitHubControllerTest.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/tests/Controller/LessonPlanControllerTest.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/tests/Service/GitHubServiceTest.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/tests/Service/LessonPlanManagerServiceTest.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/App.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/App.test.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/BranchSelector.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/GitHubCommitButton.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/Layout.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/LessonPlanEditor.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/LessonPlanSelector.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/RepoDisplay.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/RepoSelector.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/SetupStepper.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/common/DragHandle.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/common/MdxEditorComponent.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/common/SectionHeader.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/common/SortableListItem.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/common/SortableRowWithActions.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/common/SortableTableRow.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/images/home-visual.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/modals/ActivityEditorModal.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/modals/AuthorEditorModal.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/modals/LearningOutcomeEditorModal.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/modals/PrerequisiteEditorModal.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/modals/ReviewerEditorModal.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/navigation/ProtectedRoute.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/navigation/StyledAppBar.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/navigation/UserMenu.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/sections/ActivitiesEditor.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/sections/AuthorsEditor.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/sections/ContentEditor.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/sections/GeneralInfoEditor.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/sections/LearningOutcomesEditor.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/sections/PrerequisitesEditor.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/sections/ResourcesEditor.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/sections/SortableActivityRow.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/sections/SortablePrerequisiteRow.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/sections/TermsEditor.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/contexts/AuthContext.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/index.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/index.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/logo.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/EditorPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/GitHubCallback.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/LoginPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/SetupPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/react-app-env.d.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/reportWebVitals.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/apiAdapter.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/authQueryHooks.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/authService.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/contributorQueryHooks.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/contributorService.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/githubQueryHooks.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/githubRepoQueryHooks.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/githubRepoService.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/githubService.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/lessonPlanQueryHooks.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/lessonPlanService.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/markdownService.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/queryClient.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/setupTests.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/theme/theme.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/authorTypes.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/index.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils/markdownUtils.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils/queryUtils.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils/urlUtils.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.json" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ComposerSettings" synchronizationState="SYNCHRONIZE">
+    <pharConfigPath>$PROJECT_DIR$/server/composer.json</pharConfigPath>
+    <execution />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="/opt/homebrew/Cellar/php/8.3.0/bin/php">
+    <include_path>
+      <path value="$PROJECT_DIR$/server/vendor/psr/log" />
+      <path value="$PROJECT_DIR$/server/vendor/psr/clock" />
+      <path value="$PROJECT_DIR$/server/vendor/psr/container" />
+      <path value="$PROJECT_DIR$/server/vendor/psr/http-client" />
+      <path value="$PROJECT_DIR$/server/vendor/psr/event-dispatcher" />
+      <path value="$PROJECT_DIR$/server/vendor/psr/http-message" />
+      <path value="$PROJECT_DIR$/server/vendor/psr/cache" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/security-http" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/event-dispatcher" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/translation-contracts" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/config" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/cache" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/security-bundle" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/dotenv" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/validator" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/framework-bundle" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/serializer" />
+      <path value="$PROJECT_DIR$/server/vendor/nelmio/cors-bundle" />
+      <path value="$PROJECT_DIR$/server/vendor/nyholm/psr7" />
+      <path value="$PROJECT_DIR$/server/vendor/league/oauth2-github" />
+      <path value="$PROJECT_DIR$/server/vendor/league/oauth2-client" />
+      <path value="$PROJECT_DIR$/server/vendor/psr/http-factory" />
+      <path value="$PROJECT_DIR$/server/vendor/nikic/php-parser" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/security-core" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/deprecation-contracts" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/yaml" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/string" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/http-client" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/http-kernel" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/finder" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/polyfill-php83" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/event-dispatcher-contracts" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/property-access" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/maker-bundle" />
+      <path value="$PROJECT_DIR$/server/vendor/lcobucci/clock" />
+      <path value="$PROJECT_DIR$/server/vendor/lexik/jwt-authentication-bundle" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/polyfill-intl-normalizer" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/filesystem" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/security-csrf" />
+      <path value="$PROJECT_DIR$/server/vendor/lcobucci/jwt" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/runtime" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/var-dumper" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/polyfill-intl-grapheme" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/process" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/console" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/clock" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/password-hasher" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/cache-contracts" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/dependency-injection" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/flex" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/error-handler" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/http-foundation" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/var-exporter" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/http-client-contracts" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/property-info" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/routing" />
+      <path value="$PROJECT_DIR$/server/vendor/symfony/service-contracts" />
+      <path value="$PROJECT_DIR$/server/vendor/guzzlehttp/promises" />
+      <path value="$PROJECT_DIR$/server/vendor/guzzlehttp/psr7" />
+      <path value="$PROJECT_DIR$/server/vendor/doctrine/inflector" />
+      <path value="$PROJECT_DIR$/server/vendor/ralouphie/getallheaders" />
+      <path value="$PROJECT_DIR$/server/vendor/guzzlehttp/guzzle" />
+      <path value="$PROJECT_DIR$/server/vendor/knpuniversity/oauth2-client-bundle" />
+      <path value="$PROJECT_DIR$/server/vendor/composer" />
+    </include_path>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
+  <component name="ProjectId" id="31b3sMN64wgiNz91yH4NXnbXY8Q" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "php",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "ts.external.directory.path": "/Users/mgkersloot/Documents/Projects/AmsterdamUMC/LEARN-FAIR/lesson-plan-editor/node_modules/typescript/lib",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="es6.move.members.recent.items">
+      <recent name="$PROJECT_DIR$/src/components/LessonPlanEditor.tsx" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/pages" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-e768b9ed790e-JavaScript-PS-243.21565.202" />
+        <option value="bundled-php-predefined-a98d8de5180a-5fbe0c30323e-com.jetbrains.php.sharedIndexes-PS-243.21565.202" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="7cf69c84-6d84-4c8d-91bb-0ddecc8a2b3c" name="Changes" comment="" />
+      <created>1755779151249</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1755779151249</updated>
+      <workItem from="1755779152666" duration="7000" />
+      <workItem from="1756217981143" duration="4654000" />
+      <workItem from="1756470728570" duration="25788000" />
+      <workItem from="1758717096260" duration="7473000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
