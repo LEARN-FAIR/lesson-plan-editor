@@ -5,128 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7cf69c84-6d84-4c8d-91bb-0ddecc8a2b3c" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/favicon.ico" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/index.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/logo192.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/logo512.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/manifest.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/robots.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/.env" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/.env.dev" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/.env.example" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/bin/console" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/composer.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/composer.lock" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/bundles.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/packages/cache.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/packages/framework.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/packages/knpu_oauth2_client.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/packages/lexik_jwt_authentication.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/packages/nelmio_cors.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/packages/nyholm_psr7.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/packages/routing.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/packages/security.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/packages/validator.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/preload.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/routes.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/routes/framework.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/routes/security.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/config/services.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/public/index.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Controller/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Controller/AuthController.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Controller/ContributorsController.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Controller/GitHubController.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Controller/LessonPlanController.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/EventListener/ExceptionListener.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Kernel.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Model/Category.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Model/GitHubUser.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Model/LessonPlan.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Model/Repository.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Security/GithubAuthenticator.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Security/GithubUser.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Security/GithubUserProvider.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Service/GitHubService.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Service/LessonPlanManagerService.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/Service/MarkdownService.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/symfony.lock" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/tests/Controller/GitHubControllerTest.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/tests/Controller/LessonPlanControllerTest.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/tests/Service/GitHubServiceTest.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/tests/Service/LessonPlanManagerServiceTest.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/App.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/App.test.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/BranchSelector.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/GitHubCommitButton.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/Layout.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/LessonPlanEditor.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/LessonPlanSelector.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/RepoDisplay.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/RepoSelector.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/SetupStepper.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/common/DragHandle.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/common/MdxEditorComponent.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/common/SectionHeader.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/common/SortableListItem.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/common/SortableRowWithActions.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/common/SortableTableRow.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/images/home-visual.svg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/modals/ActivityEditorModal.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/modals/AuthorEditorModal.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/modals/LearningOutcomeEditorModal.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/modals/PrerequisiteEditorModal.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/modals/ReviewerEditorModal.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/navigation/ProtectedRoute.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/navigation/StyledAppBar.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/navigation/UserMenu.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/sections/ActivitiesEditor.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/sections/AuthorsEditor.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/sections/ContentEditor.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/sections/GeneralInfoEditor.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/sections/LearningOutcomesEditor.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/sections/PrerequisitesEditor.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/sections/ResourcesEditor.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/sections/SortableActivityRow.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/sections/SortablePrerequisiteRow.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/sections/TermsEditor.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/contexts/AuthContext.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/index.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/index.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/logo.svg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/EditorPage.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/GitHubCallback.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/LoginPage.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/SetupPage.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/react-app-env.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/reportWebVitals.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/apiAdapter.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/authQueryHooks.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/authService.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/contributorQueryHooks.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/contributorService.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/githubQueryHooks.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/githubRepoQueryHooks.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/githubRepoService.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/githubService.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/lessonPlanQueryHooks.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/lessonPlanService.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/markdownService.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/queryClient.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/setupTests.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/theme/theme.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/authorTypes.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/index.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils/markdownUtils.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils/queryUtils.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils/urlUtils.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/js/components/BranchSelector.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/js/components/BranchSelector.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/js/components/GitHubCommitButton.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/js/components/GitHubCommitButton.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/js/components/SetupStepper.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/js/components/SetupStepper.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/js/pages/EditorPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/js/pages/EditorPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/js/pages/SetupPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/js/pages/SetupPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/js/services/contributorService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/js/services/contributorService.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/js/services/githubRepoQueryHooks.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/js/services/githubRepoQueryHooks.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/js/services/githubRepoService.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/js/services/lessonPlanQueryHooks.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/js/services/lessonPlanQueryHooks.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/js/services/lessonPlanService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/js/services/lessonPlanService.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -258,11 +147,23 @@
       <workItem from="1755779152666" duration="7000" />
       <workItem from="1756217981143" duration="4654000" />
       <workItem from="1756470728570" duration="25788000" />
-      <workItem from="1758717096260" duration="7473000" />
+      <workItem from="1758717096260" duration="9537000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/src/js/components/GitHubCommitButton.tsx</url>
+          <line>51</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

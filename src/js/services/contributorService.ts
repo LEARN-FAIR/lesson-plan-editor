@@ -1,29 +1,28 @@
-import githubRepoService from './githubRepoService';
 import apiAdapter from './apiAdapter';
 
 export interface Contributor {
-    id: string;
-    orcid?: string;
-    firstName: string;
-    lastName: string;
-    git?: string;
+    id: number;
+    login: string;
+    avatar_url: string;
+    html_url: string;
+    contributions: number;
+    type: string;
 }
 
 /**
- * Fetch contributors from the backend API
- * Uses the currently selected repository and branch if available
+ * Fetch contributors for the specified repository and branch
+ * @param owner Repository owner
+ * @param repo Repository name
+ * @param branch Branch name
+ * @returns Promise<Contributor[]> Array of contributors
  */
-export const fetchContributors = async (): Promise<Contributor[]> => {
+export const fetchContributors = async (owner: string, repo: string, branch?: string): Promise<Contributor[]> => {
     try {
-        // Get the selected repository and branch from the GitHub repo service
-        const selectedRepo = githubRepoService.getSelectedRepo();
-        const selectedBranch = githubRepoService.getSelectedBranch();
-
         // Use the ApiAdapter to fetch contributors
         const contributors = await apiAdapter.getContributors(
-            selectedRepo?.owner.login,
-            selectedRepo?.name,
-            selectedBranch || undefined
+            owner,
+            repo,
+            branch || undefined
         );
         
         return contributors as Contributor[];

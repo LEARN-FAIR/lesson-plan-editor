@@ -1,6 +1,7 @@
 import {useQuery} from '@tanstack/react-query';
-import githubRepoService, {Branch, Repository} from './githubRepoService';
+import {Branch, Repository} from '../types/github';
 import {useAuth} from '../contexts/AuthContext';
+import apiAdapter from './apiAdapter';
 
 /**
  * React Query hook to fetch repositories and forks
@@ -9,7 +10,7 @@ import {useAuth} from '../contexts/AuthContext';
 export const useRepositoriesAndForks = () => {
     return useQuery<Repository[], Error>({
         queryKey: ['repositories'],
-        queryFn: () => githubRepoService.getTargetRepoAndForks(),
+        queryFn: () => apiAdapter.getTargetRepoAndForks(),
         staleTime: 5 * 60 * 1000, // 5 minutes
         enabled: true, // Always fetch repositories when the component mounts
     });
@@ -28,7 +29,7 @@ export const useBranches = (owner?: string, repo?: string) => {
             if (!owner || !repo) {
                 return [];
             }
-            return await githubRepoService.getBranches(owner, repo);
+            return await apiAdapter.getRepositoryBranches(owner, repo);
         },
         staleTime: 1000 * 60 * 5, // 5 minutes
         enabled: !!owner && !!repo, // Only run the query if owner and repo are provided
@@ -52,7 +53,7 @@ export const useRepositories = () => {
         refetch
     } = useQuery<Repository[], Error>({
         queryKey: ['repositories', isAuthenticated], // Add isAuthenticated as part of the key
-        queryFn: () => githubRepoService.getTargetRepoAndForks(),
+        queryFn: () => apiAdapter.getTargetRepoAndForks(),
         staleTime: 5 * 60 * 1000, // 5 minutes
         enabled: isAuthenticated, // Only fetch if authenticated
     });

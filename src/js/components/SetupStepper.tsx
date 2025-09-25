@@ -32,8 +32,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import ForkRightIcon from '@mui/icons-material/ForkRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import githubRepoService, {Repository} from '../services/githubRepoService';
-import lessonPlanService, {LessonPlan} from '../services/lessonPlanService';
+import {Repository} from '../types/github';
+import {LessonPlan} from '../services/lessonPlanService';
 import {useRepositories} from '../services/githubRepoQueryHooks';
 import {useLessonPlans} from '../services/lessonPlanQueryHooks';
 import BranchSelector from '../components/BranchSelector';
@@ -79,7 +79,7 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
         data: lessonPlans = [],
         isLoading: loadingLessonPlans,
         error: lessonPlanQueryError
-    } = useLessonPlans();
+    } = useLessonPlans(selectedRepo?.owner.login, selectedRepo?.name, selectedBranch || undefined);
 
     // Custom error state for lesson plans
     const [lessonPlanError, setLessonPlanError] = useState<string | null>(null);
@@ -139,20 +139,18 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
         setSelectedRepo(repo);
         setSelectedBranch(null);
         setSelectedLessonPlan(null);
-        // Invalidate lesson plans to ensure they're refetched with the new repo
-        queryClient.invalidateQueries({queryKey: ['lessonPlans']});
+        // React Query will automatically refetch lesson plans when repo/branch changes
     };
 
     const handleBranchSelected = (branch: string) => {
         setSelectedBranch(branch);
         setSelectedLessonPlan(null);
-        // Invalidate lesson plans to ensure they're refetched with the new branch
-        queryClient.invalidateQueries({queryKey: ['lessonPlans']});
+        // React Query will automatically refetch lesson plans when branch changes
     };
 
     const handleLessonPlanSelected = (lessonPlan: LessonPlan) => {
         setSelectedLessonPlan(lessonPlan);
-        lessonPlanService.setSelectedLessonPlan(lessonPlan);
+        // No longer storing in service - parent component handles state
     };
 
     // Repository step functions
@@ -314,6 +312,7 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
                                                 setSelectedBranch(branch);
                                             }}
                                             onBack={() => handleBack()}
+                                            repository={selectedRepo || undefined}
                                             repoId={selectedRepo?.id} // Pass repo ID to trigger refresh when repo changes
                                         />
                                     </Box>

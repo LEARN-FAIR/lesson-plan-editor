@@ -6,8 +6,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DescriptionIcon from '@mui/icons-material/Description';
 import {useQueryClient} from '@tanstack/react-query';
 import {useRepositories} from '../services/githubRepoQueryHooks';
-import githubRepoService, {Repository} from '../services/githubRepoService';
-import lessonPlanService from '../services/lessonPlanService';
+import {Repository} from '../types/github';
 import {useFileContent} from '../services/githubQueryHooks';
 import {useLessonPlanContent} from '../services/lessonPlanQueryHooks';
 import {exportMarkdownFile, getCurrentFilename} from '../services/markdownService';
@@ -100,7 +99,7 @@ const EditorPage: React.FC = () => {
                     <Typography variant="h6" component="div" color="white">
                         Lesson Plan Editor
                     </Typography>
-                    {githubRepoService.getSelectedRepo() && lessonPlanService.getSelectedLessonPlan() && (
+                    {owner && repo && lesson && (
                         <Box
                             component="button"
                             onClick={handleReturnToSelection}
@@ -117,20 +116,20 @@ const EditorPage: React.FC = () => {
                                 <Box sx={{display: 'flex', alignItems: 'center'}}>
                                     <GitHubIcon fontSize="small" sx={{mr: 0.5}}/>
                                     <Typography variant="caption" color="inherit">
-                                        {`${githubRepoService.getSelectedRepo()?.owner.login}/${githubRepoService.getSelectedRepo()?.name}`}
+                                        {`${owner}/${repo}`}
                                     </Typography>
                                 </Box>
                                 <Box sx={{display: 'flex', alignItems: 'center'}}>
                                     <AccountTreeIcon fontSize="small" sx={{mr: 0.5}}/>
                                     <Typography variant="caption" color="inherit">
-                                        {githubRepoService.getSelectedBranch() || githubRepoService.getSelectedRepo()?.default_branch || ''}
+                                        {branch || 'main'}
                                     </Typography>
                                 </Box>
                                 <Divider orientation="vertical" flexItem sx={{bgcolor: 'rgba(255,255,255,0.3)'}}/>
                                 <Box sx={{display: 'flex', alignItems: 'center'}}>
                                     <DescriptionIcon fontSize="small" sx={{mr: 0.5}}/>
                                     <Typography variant="caption" color="inherit">
-                                        {lessonPlanService.getSelectedLessonPlan()?.name || ''}
+                                        {lesson || ''}
                                     </Typography>
                                 </Box>
                             </Stack>

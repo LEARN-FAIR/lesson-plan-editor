@@ -1,12 +1,10 @@
 import React from 'react';
 import {Alert, AlertTitle, Box, CircularProgress, Container, Typography} from '@mui/material';
 import {useNavigate} from 'react-router-dom';
-import {useQueryClient} from '@tanstack/react-query';
 import {generateLessonPlanUrl} from '../utils/urlUtils';
-import githubRepoService, {Repository} from '../services/githubRepoService';
-import lessonPlanService, {LessonPlan} from '../services/lessonPlanService';
+import {Repository} from '../types/github';
+import {LessonPlan} from '../services/lessonPlanService';
 import {useRepositories} from '../services/githubRepoQueryHooks';
-import {useLessonPlans} from '../services/lessonPlanQueryHooks';
 import UserMenu from '../components/navigation/UserMenu';
 import SetupStepper from '../components/SetupStepper';
 import StyledAppBar from '../components/navigation/StyledAppBar';
@@ -20,31 +18,14 @@ const SetupPage: React.FC = () => {
         error: reposError
     } = useRepositories();
 
-    // Use React Query to fetch lesson plans
-    const {
-        isLoading: isLoadingLessonPlans,
-        error: lessonPlansError
-    } = useLessonPlans();
+    // Loading and error states from repositories only
+    const loading = isLoadingRepos;
+    const error = reposError ? (reposError as Error).message : null;
 
-    // Combine loading states
-    const loading = isLoadingRepos || isLoadingLessonPlans;
-
-    // Combine error states
-    const error =
-        (reposError ? (reposError as Error).message : null) ||
-        (lessonPlansError ? (lessonPlansError as Error).message : null);
-
-    const handleSetupComplete = (repo: Repository, lessonPlan: LessonPlan) => {
-        // Get the selected branch
-        const selectedBranch = githubRepoService.getSelectedBranch() || undefined;
-
-        // Store minimal selections in services for EditorPage to use
-        githubRepoService.setSelectedRepo(repo);
-        lessonPlanService.setSelectedLessonPlan(lessonPlan);
-
+    const handleSetupComplete = (repo: Repository, lessonPlan: LessonPlan, branch?: string) => {
         // Generate and navigate to the appropriate URL
-        // EditorPage will handle all loading
-        const url = generateLessonPlanUrl(repo, lessonPlan, selectedBranch);
+        // EditorPage will handle all loading from URL parameters
+        const url = generateLessonPlanUrl(repo, lessonPlan, branch);
         console.log('Navigating to editor with URL:', url);
         navigate(url);
     };

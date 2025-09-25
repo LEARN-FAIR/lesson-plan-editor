@@ -30,8 +30,8 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import githubService, {CommitFileParams} from '../services/githubService';
-import githubRepoService from '../services/githubRepoService';
-import lessonPlanService from '../services/lessonPlanService';
+import {Repository} from '../types/github';
+import {LessonPlan} from '../services/lessonPlanService';
 import {useHasCommitsOnBranch, useHasUncommittedChanges, useFileContent} from '../services/githubQueryHooks';
 import {useQueryClient} from '@tanstack/react-query';
 import {prefetchFileContent, setFileContentInCache} from '../utils/queryUtils';
@@ -44,6 +44,9 @@ interface GitHubCommitButtonProps {
     disabled?: boolean;
     color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
     onExport: () => void;
+    repository?: Repository;
+    branch?: string;
+    lessonPlan?: LessonPlan;
 }
 
 const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
@@ -52,7 +55,10 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                                                                    originalGithubContent: propOriginalContent,
                                                                    disabled = false,
                                                                    color,
-                                                                   onExport
+                                                                   onExport,
+                                                                   repository,
+                                                                   branch,
+                                                                   lessonPlan
                                                                }) => {
     const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -81,24 +87,24 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         setGithubUser(githubService.getUser());
     }, []);
 
-    // Get the selected repository and branch
-    const selectedRepo = githubRepoService.getSelectedRepo();
-    const selectedBranch = githubRepoService.getSelectedBranch();
+    // Use repository and branch from props
+    const selectedRepo = repository;
+    const selectedBranch = branch;
 
     // State for tracking if refreshing
     const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
     // Use React Query hooks for GitHub data
     const owner = selectedRepo?.owner.login || '';
-    const repo = selectedRepo?.name || '';
-    const branch = selectedBranch || '';
+    const repoName = selectedRepo?.name || '';
+    const branchName = selectedBranch || '';
 
     // Query for branch commits
     const {
         data: hasCommits = false,
         isLoading: isLoadingCommits,
         refetch: refetchCommits
-    } = useHasCommitsOnBranch(owner, repo, branch);
+    } = useHasCommitsOnBranch(owner, repoName, branchName);
 
     // Use React Query to fetch file content
     const {
