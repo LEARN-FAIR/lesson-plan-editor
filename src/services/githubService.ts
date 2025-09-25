@@ -7,10 +7,6 @@
 // Import the API adapter
 import apiAdapter from './apiAdapter';
 
-// Configuration for GitHub OAuth callback
-// The actual OAuth redirection is handled by the backend
-const GITHUB_CALLBACK_PATH = '/github-callback';
-
 // Types for file parameters
 export interface CommitFileParams {
     owner: string;      // GitHub username or organization name

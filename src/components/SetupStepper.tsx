@@ -87,26 +87,6 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
     // Other state
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        // Check if there's already a selected repository
-        const repo = githubRepoService.getSelectedRepo();
-        if (repo) {
-            setSelectedRepo(repo);
-        }
-
-        // Check if there's already a selected branch
-        const branch = githubRepoService.getSelectedBranch();
-        if (branch) {
-            setSelectedBranch(branch);
-        }
-
-        // Set error state if React Query had errors
-        if (repoQueryError) {
-            setRepoError((repoQueryError as Error).message);
-        }
-    }, [repoQueryError]);
 
     // Set up lesson plans when data is loaded
     useEffect(() => {
@@ -153,15 +133,10 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
         setSelectedRepo(null);
         setSelectedBranch(null);
         setSelectedLessonPlan(null);
-        githubRepoService.clearSelectedRepo();
-        githubRepoService.setSelectedBranch(null);
-        lessonPlanService.clearSelectedLessonPlan();
     };
 
     const handleRepoSelected = (repo: Repository) => {
         setSelectedRepo(repo);
-        githubRepoService.setSelectedRepo(repo);
-        // Reset branch and lesson plan when repo changes
         setSelectedBranch(null);
         setSelectedLessonPlan(null);
         // Invalidate lesson plans to ensure they're refetched with the new repo
@@ -170,8 +145,6 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
 
     const handleBranchSelected = (branch: string) => {
         setSelectedBranch(branch);
-        githubRepoService.setSelectedBranch(branch);
-        // Reset lesson plan when branch changes
         setSelectedLessonPlan(null);
         // Invalidate lesson plans to ensure they're refetched with the new branch
         queryClient.invalidateQueries({queryKey: ['lessonPlans']});

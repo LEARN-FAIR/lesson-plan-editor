@@ -2,28 +2,6 @@
  * Markdown file service for handling file operations
  */
 
-// Export filename as a constant for reuse
-export const DEFAULT_FILENAME = '1-why-fair.md';
-
-/**
- * Loads the markdown content from the specified path
- * @returns Promise with the markdown content
- */
-export const loadMarkdownFile = async (): Promise<string> => {
-    try {
-        const response = await fetch('/1-why-fair.md');
-
-        if (!response.ok) {
-            throw new Error(`Failed to load markdown: ${response.status} ${response.statusText}`);
-        }
-
-        return response.text();
-    } catch (error) {
-        console.error('Error loading markdown:', error);
-        throw error;
-    }
-};
-
 /**
  * Exports the markdown content as a file download
  * @param content The markdown content to export
@@ -37,7 +15,7 @@ export const exportMarkdownFile = (content: string, filename?: string): void => 
     const selectedLessonPlan = lessonPlanService.getSelectedLessonPlan();
 
     // Extract the actual filename from the path (get the last part after the last slash)
-    let downloadFilename = DEFAULT_FILENAME;
+    let downloadFilename = '';
 
     if (selectedLessonPlan && selectedLessonPlan.path) {
         // Extract just the filename from the path
@@ -77,5 +55,5 @@ export const getCurrentFilename = (): string => {
     }
 
     // Fallback to default filename if no lesson plan is selected
-    return DEFAULT_FILENAME;
+    return '';
 };

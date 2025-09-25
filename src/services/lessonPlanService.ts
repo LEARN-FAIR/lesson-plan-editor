@@ -9,9 +9,6 @@ import githubService from './githubService';
 // Local storage keys
 const SELECTED_LESSON_PLAN_KEY = 'selected_lesson_plan';
 
-// Lesson plan folder path
-const LESSON_PLANS_FOLDER = '_lesson-plans';
-
 export interface LessonPlan {
     name: string;
     path: string;

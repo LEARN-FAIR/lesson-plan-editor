@@ -9,7 +9,7 @@ import SetupPage from './pages/SetupPage';
 import LoginPage from './pages/LoginPage';
 
 // Components
-import GitHubCallback from './components/GitHubCallback';
+import GitHubCallback from './pages/GitHubCallback';
 import ProtectedRoute from './components/navigation/ProtectedRoute';
 import Layout from './components/Layout';
 

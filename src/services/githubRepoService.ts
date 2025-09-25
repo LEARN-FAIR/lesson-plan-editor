@@ -77,24 +77,6 @@ class GitHubRepoService {
     private selectedRepo: Repository | null = null;
     private selectedBranch: string | null = null;
 
-    constructor() {
-        // Try to load selected repo from local storage
-        const repoJson = localStorage.getItem(SELECTED_REPO_KEY);
-        if (repoJson) {
-            try {
-                this.selectedRepo = JSON.parse(repoJson);
-            } catch (e) {
-                console.error('Failed to parse stored repo:', e);
-            }
-        }
-
-        // Try to load selected branch from local storage
-        const branch = localStorage.getItem(SELECTED_BRANCH_KEY);
-        if (branch) {
-            this.selectedBranch = branch;
-        }
-    }
-
     /**
      * Get the target repository and its forks
      * Only returns repositories that the user has access to
@@ -108,23 +90,6 @@ class GitHubRepoService {
             return await apiAdapter.getTargetRepoAndForks();
         } catch (error) {
             console.error('Error fetching repositories:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Search for repositories matching the query
-     */
-    async searchRepositories(query: string): Promise<Repository[]> {
-        try {
-            if (!githubService.isAuthenticated()) {
-                throw new Error('Not authenticated with GitHub');
-            }
-
-            const data = await apiAdapter.searchRepositories(query);
-            return data;
-        } catch (error) {
-            console.error('Error searching repositories:', error);
             throw error;
         }
     }
@@ -144,117 +109,6 @@ class GitHubRepoService {
             return branches;
         } catch (error) {
             console.error('Error fetching branches:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Set the selected repository
-     */
-    setSelectedRepo(repo: Repository | null): void {
-        this.selectedRepo = repo;
-        if (repo) {
-            localStorage.setItem(SELECTED_REPO_KEY, JSON.stringify(repo));
-            // Reset selected branch when changing repo
-            this.setSelectedBranch(null);
-        } else {
-            localStorage.removeItem(SELECTED_REPO_KEY);
-            this.setSelectedBranch(null);
-        }
-    }
-
-    /**
-     * Get the selected repository
-     */
-    getSelectedRepo(): Repository | null {
-        return this.selectedRepo;
-    }
-
-    /**
-     * Set the selected branch
-     */
-    setSelectedBranch(branch: string | null): void {
-        this.selectedBranch = branch;
-        if (branch) {
-            localStorage.setItem(SELECTED_BRANCH_KEY, branch);
-        } else {
-            localStorage.removeItem(SELECTED_BRANCH_KEY);
-        }
-    }
-
-    /**
-     * Get the selected branch
-     */
-    getSelectedBranch(): string | null {
-        return this.selectedBranch;
-    }
-
-    /**
-     * Check if a repository is the target repository or its fork
-     * @param repo The repository to check
-     * @returns True if the repository is the target or its fork, false otherwise
-     */
-    isTargetRepoOrFork(repo: Repository): boolean {
-        // Check if it's the target repository
-        if (repo.owner.login === TARGET_OWNER && repo.name === TARGET_REPO) {
-            return true;
-        }
-
-        // Check if it's a fork of the target repository
-        if (repo.fork) {
-            // If source information is available
-            if ((repo as any).source) {
-                const sourceRepo = (repo as any).source;
-                return sourceRepo && sourceRepo.full_name === `${TARGET_OWNER}/${TARGET_REPO}`;
-            }
-
-            // Fallback to name matching (less reliable)
-            if (repo.name === TARGET_REPO) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Clear the selected repository
-     */
-    clearSelectedRepo(): void {
-        this.selectedRepo = null;
-        localStorage.removeItem(SELECTED_REPO_KEY);
-    }
-
-    /**
-     * Clear the selected branch
-     */
-    clearSelectedBranch(): void {
-        this.selectedBranch = null;
-        localStorage.removeItem(SELECTED_BRANCH_KEY);
-    }
-
-    /**
-     * Check if a repository is selected
-     */
-    hasSelectedRepo(): boolean {
-        return this.selectedRepo !== null;
-    }
-
-    /**
-     * Create a fork of the target repository if the user doesn't have one
-     */
-    async createFork(): Promise<Repository> {
-        if (!githubService.isAuthenticated()) {
-            throw new Error('Not authenticated with GitHub');
-        }
-
-        try {
-            const newFork = await apiAdapter.createFork();
-            this.setSelectedRepo(newFork);
-
-            return newFork;
-        } catch (error) {
-            console.error('Error creating fork:', error);
             throw error;
         }
     }
