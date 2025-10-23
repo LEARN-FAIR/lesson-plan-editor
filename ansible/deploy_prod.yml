@@ -1,0 +1,7 @@
+- name: deploy to prod
+  hosts: prod
+  remote_user: learn-fairnl
+  vars_files:
+    - vars/variables.yml
+  roles:
+    - deploy

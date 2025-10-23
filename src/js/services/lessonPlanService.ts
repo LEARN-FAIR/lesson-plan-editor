@@ -4,19 +4,7 @@
 
 import apiAdapter from './apiAdapter';
 import githubService from './githubService';
-
-export interface LessonPlan {
-    name: string;
-    path: string;
-    sha: string;
-    content: string | null;
-    decoded_content: string | null;
-    html_url: string;
-    category?: {
-        title: string;
-        number: number;
-    };
-}
+import type {LessonPlan} from "../types/lessonPlan";
 
 class LessonPlanService {
 

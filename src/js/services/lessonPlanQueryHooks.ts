@@ -1,6 +1,7 @@
 import {useQuery} from '@tanstack/react-query';
-import lessonPlanService, {LessonPlan} from './lessonPlanService';
+import lessonPlanService from './lessonPlanService';
 import githubService from './githubService';
+import type {LessonPlan} from "../types/lessonPlan";
 
 /**
  * React Query hook to fetch lesson plan content

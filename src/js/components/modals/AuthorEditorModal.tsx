@@ -11,8 +11,8 @@ import {
     TextField
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import {Contributor} from '../../services/contributorService';
-import {AuthorData} from '../../types/authorTypes';
+import type {Contributor} from '../../services/contributorService';
+import type {AuthorData} from '../../types/authorTypes';
 
 interface AuthorEditorModalProps {
     open: boolean;

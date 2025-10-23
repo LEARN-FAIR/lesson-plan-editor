@@ -19,13 +19,13 @@ import RateReviewIcon from '@mui/icons-material/RateReview';
 import SectionHeader from '../common/SectionHeader';
 import AuthorEditorModal from '../modals/AuthorEditorModal';
 import ReviewerEditorModal from '../modals/ReviewerEditorModal';
-import {FairMarkdownDocument} from '../../types';
-import {Contributor} from '../../services/contributorService';
+import type {FairMarkdownDocument} from '../../types';
+import type {Contributor} from '../../services/contributorService';
 import {useContributors} from '../../services/contributorQueryHooks';
 import {
     closestCenter,
     DndContext,
-    DragEndEvent,
+    type DragEndEvent,
     KeyboardSensor,
     PointerSensor,
     useSensor,
@@ -33,7 +33,7 @@ import {
 } from '@dnd-kit/core';
 import {arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable';
 import SortableRowWithActions from '../common/SortableRowWithActions';
-import {AuthorData} from '../../types/authorTypes';
+import type {AuthorData} from '../../types/authorTypes';
 
 interface AuthorsEditorProps {
     document: FairMarkdownDocument;

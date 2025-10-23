@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {Box, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import {Activity, FairMarkdownDocument} from '../../types';
+import type {Activity, FairMarkdownDocument} from '../../types';
 import ActivityEditorModal from '../modals/ActivityEditorModal';
 import SectionHeader from '../common/SectionHeader';
 import RestoreIcon from '@mui/icons-material/Restore';
@@ -11,7 +11,7 @@ import SortableActivityRow from './SortableActivityRow';
 import {
     closestCenter,
     DndContext,
-    DragEndEvent,
+    type DragEndEvent,
     KeyboardSensor,
     PointerSensor,
     useSensor,

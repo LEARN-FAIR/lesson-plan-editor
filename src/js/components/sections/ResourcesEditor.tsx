@@ -19,13 +19,13 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import {FairMarkdownDocument, Resource} from '../../types';
+import type {FairMarkdownDocument, Resource} from '../../types';
 import AddIcon from '@mui/icons-material/Add';
 import SectionHeader from '../common/SectionHeader';
 import {
     closestCenter,
     DndContext,
-    DragEndEvent,
+    type DragEndEvent,
     KeyboardSensor,
     PointerSensor,
     useSensor,

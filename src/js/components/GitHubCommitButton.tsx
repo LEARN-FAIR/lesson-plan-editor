@@ -29,9 +29,9 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import githubService, {CommitFileParams} from '../services/githubService';
-import {Repository} from '../types/github';
-import {LessonPlan} from '../services/lessonPlanService';
+import githubService, {type CommitFileParams} from '../services/githubService';
+import type {Repository} from '../types/github';
+import type {LessonPlan} from '../types/lessonPlan';
 import {useHasCommitsOnBranch, useHasUncommittedChanges, useFileContent} from '../services/githubQueryHooks';
 import {useQueryClient} from '@tanstack/react-query';
 import {prefetchFileContent, setFileContentInCache} from '../utils/queryUtils';
@@ -111,9 +111,9 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         data: fileContent,
         isLoading: isLoadingFileContent,
         refetch: refetchFileContent
-    } = useFileContent(owner, repo, filePath, branch, {
+    } = useFileContent(owner, repoName, filePath, branchName, {
         // Only enable if we don't have content from props
-        enabled: !propOriginalContent && !!owner && !!repo && !!filePath && !!branch
+        enabled: !propOriginalContent && !!owner && !!repoName && !!filePath && !!branchName
     });
     
     // Use the original GitHub content from props or from the query
@@ -209,7 +209,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         try {
             // Use prefetching utility to refresh file content
             // This will only fetch if needed and update the cache
-            await prefetchFileContent(owner, repo, filePath, branch);
+            await prefetchFileContent(owner, repoName, filePath, branchName);
             
             // Refetch commits in parallel
             const commitsResult = await refetchCommits();
@@ -233,7 +233,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                 
                 // If content has changed, update the cache
                 if (hasChanged) {
-                    setFileContentInCache(owner, repo, filePath, branch, newContent);
+                    setFileContentInCache(owner, repoName, filePath, branchName, newContent);
                 }
             }
         } finally {
@@ -302,9 +302,8 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
             return;
         }
 
-        // Get the selected repository and branch from the service
-        const selectedRepo = githubRepoService.getSelectedRepo();
-        const selectedBranch = githubRepoService.getSelectedBranch();
+        // Use repository and branch from props (already available as selectedRepo and selectedBranch)
+        // const selectedRepo and selectedBranch are already defined from props above
 
         if (!selectedRepo) {
             setError('No repository selected. Please select a repository first.');
@@ -320,7 +319,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         setError(null);
 
         try {
-            // Check if the user has write access to the repository first
+            // Check if the user has write access to the repoNamesitory first
             const hasAccess = await githubService.checkRepositoryWriteAccess(
                 selectedRepo.owner.login,
                 selectedRepo.name
@@ -359,10 +358,9 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
             
             // No need to invalidate cache anymore - direct fetch
 
-            // Invalidate lesson plan content if this is a lesson plan file
-            const selectedLessonPlan = lessonPlanService.getSelectedLessonPlan();
-            if (selectedLessonPlan && selectedLessonPlan.path) {
-                queryClient.invalidateQueries({queryKey: ['lessonPlanContent', selectedLessonPlan.path]});
+            // Invalidate lesson plan content for the current file path
+            if (filePath) {
+                queryClient.invalidateQueries({queryKey: ['lessonPlanContent', filePath]});
             }
             
             // Force immediate state update
@@ -374,8 +372,8 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                 
                 // Use prefetching utility to refresh file content
                 // This will force a refresh by invalidating the cache first
-                queryClient.removeQueries({ queryKey: ['fileContent', owner, repo, filePath, branch] });
-                await prefetchFileContent(owner, repo, filePath, branch);
+                queryClient.removeQueries({ queryKey: ['fileContent', owner, repoName, filePath, branchName] });
+                await prefetchFileContent(owner, repoName, filePath, branchName);
                 
                 // Then refetch both file content and commits in parallel
                 const [fileContentResult, commitsResult] = await Promise.all([
@@ -387,7 +385,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                 const newContent = fileContentResult.data || propOriginalContent || '';
                 
                 // Update the cache with the new content
-                setFileContentInCache(owner, repo, filePath, branch, newContent);
+                setFileContentInCache(owner, repoName, filePath, branchName, newContent);
                 console.log('Updated GitHub content after commit:', { 
                     source: fileContentResult.data ? 'query' : 'prop',
                     contentLength: newContent.length 
@@ -464,7 +462,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         }
         
         // Open GitHub PR creation page
-        const url = `https://github.com/${owner}/${repo}/pull/new/${branch}`;
+        const url = `https://github.com/${owner}/${repoName}/pull/new/${branchName}`;
         window.open(url, '_blank');
     };
     
@@ -582,7 +580,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                     {!isAuthenticated ? (
                         <>
                             <DialogContentText>
-                                Connect with your GitHub account to commit changes to a repository.
+                                Connect with your GitHub account to commit changes to a repoNamesitory.
                             </DialogContentText>
                             <Box sx={{mt: 3, mb: 3, display: 'flex', justifyContent: 'center'}}>
                                 <Button
@@ -604,7 +602,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
                                     {/* Left column: Repository, branch, file info */}
                                     <Box sx={{ flex: 1, width: '400px' }}>
-                                        {/* Display repository info */}
+                                        {/* Display repoNamesitory info */}
                                         <Box sx={{
                                             mb: 1,
                                             mt: '28px',
@@ -751,7 +749,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        To commit changes to this repository, you need to install the GitHub App.
+                        To commit changes to this repoNamesitory, you need to install the GitHub App.
                         This will grant the necessary permissions to create branches and make commits.
                     </DialogContentText>
 
@@ -762,7 +760,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                         <ol style={{marginTop: 0, paddingLeft: '1.5rem'}}>
                             <li>Click the "Install GitHub App" button below</li>
                             <li>On the GitHub page, select your organization/account</li>
-                            <li>Choose the repository you want to install the app on</li>
+                            <li>Choose the repoNamesitory you want to install the app on</li>
                             <li>Click "Install" to complete the process</li>
                             <li>Return to this page and try again</li>
                         </ol>

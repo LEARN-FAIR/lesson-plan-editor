@@ -1,6 +1,6 @@
-import {useQuery} from '@tanstack/react-query';
-import {Branch, Repository} from '../types/github';
-import {useAuth} from '../contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import type { Branch, Repository } from '../types/github';
+import { useAuth } from '../contexts/AuthContext';
 import apiAdapter from './apiAdapter';
 
 /**

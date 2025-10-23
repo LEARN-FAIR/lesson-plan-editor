@@ -1,0 +1,10 @@
+all:
+  children:
+    staging:
+      hosts:
+        learps.ssh.transip.me:
+          host_deploy_path: /data/sites/web/learn-fairnl/subsites/editor.learn-fair.nl
+          host_key_file: "/data/sites/web/learn-fairnl/.ssh/id_ed25519"
+          host_composer_path: composer
+          releases_to_keep: 5
+          ansible_python_interpreter: /data/sites/web/learn-fairnl/pypy3.11-v7.3.20-linux64/bin/python

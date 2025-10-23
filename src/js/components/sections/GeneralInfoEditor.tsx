@@ -10,7 +10,7 @@ import {
     TextField,
     Typography
 } from '@mui/material';
-import {FairMarkdownDocument} from '../../types';
+import type {FairMarkdownDocument} from '../../types';
 import MdxEditorComponent from '../common/MdxEditorComponent';
 import SectionHeader from '../common/SectionHeader';
 import InfoOutlineIcon from '@mui/icons-material/InfoOutline';

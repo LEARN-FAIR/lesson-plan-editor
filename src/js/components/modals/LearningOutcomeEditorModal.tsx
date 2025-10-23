@@ -10,7 +10,7 @@ import {
     TextField,
     Typography
 } from '@mui/material';
-import {LearningOutcome, LearningVerbLevel} from '../../types';
+import type {LearningOutcome, LearningVerbLevel} from '../../types';
 
 // Define a type for the level strings
 type LevelString = 'beginner' | 'intermediate' | 'expert';

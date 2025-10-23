@@ -4,7 +4,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ReactMarkdown from 'react-markdown';
 import SortableRowWithActions from '../common/SortableRowWithActions';
-import {Activity} from '../../types';
+import type {Activity} from '../../types';
 
 interface SortableActivityRowProps {
     activity: Activity;

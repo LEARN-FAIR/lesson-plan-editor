@@ -1,5 +1,6 @@
 import {useQuery} from '@tanstack/react-query';
-import {Contributor, fetchContributors} from './contributorService';
+import {fetchContributors} from './contributorService';
+import type {Contributor} from './contributorService';
 
 /**
  * React Query hook to fetch contributors

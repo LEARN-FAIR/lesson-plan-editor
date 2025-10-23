@@ -13,7 +13,7 @@ import {
     TextField,
     Typography
 } from '@mui/material';
-import {Activity} from '../../types';
+import type {Activity} from '../../types';
 import MdxEditorComponent from '../common/MdxEditorComponent';
 
 interface ActivityEditorModalProps {

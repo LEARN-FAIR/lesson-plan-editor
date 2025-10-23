@@ -1,0 +1,16 @@
+- name: Update old index
+  shell: "touch {{ host_deploy_path }}/public_html/index.php"
+
+- name: Create symlink to new release
+  file:
+    src: "{{ release_deploy_path }}"
+    dest: "{{ host_deploy_path }}/current"
+    state: link
+    force: yes
+
+- name: Create symlink to new release
+  file:
+    src: "{{ release_deploy_path }}/public"
+    dest: "{{ host_deploy_path }}/public_html"
+    state: link
+    force: yes

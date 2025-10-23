@@ -1,6 +1,6 @@
 import React from 'react';
 import {Box} from '@mui/material';
-import {FairMarkdownDocument} from '../../types';
+import type {FairMarkdownDocument} from '../../types';
 import MdxEditorComponent from '../common/MdxEditorComponent';
 import SectionHeader from '../common/SectionHeader';
 import SubjectIcon from '@mui/icons-material/Subject';

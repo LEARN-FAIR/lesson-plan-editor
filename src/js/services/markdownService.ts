@@ -42,18 +42,9 @@ export const exportMarkdownFile = (content: string, filename?: string): void => 
 
 /**
  * Gets the current filename for the markdown file
- * @returns The current filename or path from the selected lesson plan
+ * @param filePath The file path to use as filename
+ * @returns The provided file path or empty string if not provided
  */
-export const getCurrentFilename = (): string => {
-    // Import here to avoid circular dependency
-    const lessonPlanService = require('./lessonPlanService').default;
-
-    // Get the selected lesson plan and use its path if available
-    const selectedLessonPlan = lessonPlanService.getSelectedLessonPlan();
-    if (selectedLessonPlan && selectedLessonPlan.path) {
-        return selectedLessonPlan.path;
-    }
-
-    // Fallback to default filename if no lesson plan is selected
-    return '';
+export const getCurrentFilename = (filePath?: string): string => {
+    return filePath || '';
 };

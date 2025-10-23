@@ -26,7 +26,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import lessonPlanService, {LessonPlan} from '../services/lessonPlanService';
+import lessonPlanService from '../services/lessonPlanService';
+import type {LessonPlan} from '../types/lessonPlan';
 import githubRepoService from '../services/githubRepoService';
 import {useLessonPlans} from '../services/lessonPlanQueryHooks';
 

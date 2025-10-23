@@ -17,12 +17,12 @@ import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import SectionHeader from '../common/SectionHeader';
-import {FairMarkdownDocument, LearningOutcome, LearningVerbLevel} from '../../types';
+import type {FairMarkdownDocument, LearningOutcome, LearningVerbLevel} from '../../types';
 import LearningOutcomeEditorModal from '../modals/LearningOutcomeEditorModal';
 import {
     closestCenter,
     DndContext,
-    DragEndEvent,
+    type DragEndEvent,
     KeyboardSensor,
     PointerSensor,
     useSensor,

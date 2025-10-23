@@ -1,0 +1,23 @@
+- include_tasks: facts.yml
+- include_tasks: create-dirs.yml
+- include_tasks: git.yml
+- include_tasks: release-dirs.yml
+- include_tasks: composer.yml
+- include_tasks: ui.yml
+- include_tasks: finish-release.yml
+- include_tasks: clean-releases.yml
+
+#- name: Create var directory
+#  file:
+#    path: "{{ release_deploy_path }}/var"
+#    state: directory
+
+
+
+#- name: Create symlink to logs
+#  file:
+#    src: "{{ host_deploy_path }}/shared/var/log"
+#    dest: "{{ release_deploy_path }}/var/log"
+#    state: link
+#    force: yes
+#    follow: no

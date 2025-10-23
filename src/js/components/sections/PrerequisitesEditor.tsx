@@ -10,11 +10,11 @@ import ChecklistIcon from '@mui/icons-material/Checklist';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import SectionHeader from '../common/SectionHeader';
 import PrerequisiteEditorModal from '../modals/PrerequisiteEditorModal';
-import {FairMarkdownDocument} from '../../types';
+import type {FairMarkdownDocument} from '../../types';
 import {
     closestCenter,
     DndContext,
-    DragEndEvent,
+    type DragEndEvent,
     KeyboardSensor,
     PointerSensor,
     useSensor,

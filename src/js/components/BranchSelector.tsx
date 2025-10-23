@@ -14,15 +14,14 @@ import {
     InputLabel,
     MenuItem,
     Select,
-    SelectChangeEvent,
     TextField,
     Typography
 } from '@mui/material';
+import type {SelectChangeEvent} from '@mui/material';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import AddIcon from '@mui/icons-material/Add';
 import WarningIcon from '@mui/icons-material/Warning';
-import {Branch} from '../types/github';
-import {Repository} from '../types/github';
+import type {Branch, Repository} from '../types/github';
 import githubService from '../services/githubService';
 import {useBranches} from '../services/githubRepoQueryHooks';
 

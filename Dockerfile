@@ -1,63 +1,97 @@
-# Multi-stage build for production
-FROM node:18-alpine AS frontend-builder
+#syntax=docker/dockerfile:1
+
+# Versions
+FROM dunglas/frankenphp:1-php8.4 AS frankenphp_upstream
+
+# The different stages of this Dockerfile are meant to be built into separate images
+# https://docs.docker.com/develop/develop-images/multistage-build/#stop-at-a-specific-build-stage
+# https://docs.docker.com/compose/compose-file/#target
+
+
+# Base FrankenPHP image
+FROM frankenphp_upstream AS frankenphp_base
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-RUN npm ci --only=production
+VOLUME /app/var/
 
-# Copy source code
-COPY src/js ./src/js
-COPY vite.config.js ./
-COPY tsconfig.json ./
-COPY tsconfig.node.json ./
+# persistent / runtime deps
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	acl \
+	file \
+	gettext \
+	git \
+	&& rm -rf /var/lib/apt/lists/*
 
-# Build frontend assets
-RUN npm run build
+RUN set -eux; \
+	install-php-extensions \
+		@composer \
+		apcu \
+		intl \
+		opcache \
+		zip \
+	;
 
-# FrankenPHP stage
-FROM dunglas/frankenphp:1-php8.2
+# https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    && rm -rf /var/lib/apt/lists/*
+# Transport to use by Mercure (default to Bolt)
+ENV MERCURE_TRANSPORT_URL=bolt:///data/mercure.db
 
-# Install PHP extensions
-RUN docker-php-ext-install mbstring exif pcntl bcmath gd
+ENV PHP_INI_SCAN_DIR=":$PHP_INI_DIR/app.conf.d"
 
-# Get latest Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+###> recipes ###
+###< recipes ###
 
-# Set working directory
-WORKDIR /app
+COPY --link frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
+COPY --link --chmod=755 frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+COPY --link frankenphp/Caddyfile /etc/frankenphp/Caddyfile
 
-# Copy existing application directory contents
-COPY . .
+ENTRYPOINT ["docker-entrypoint"]
 
-# Copy built frontend assets from previous stage
-COPY --from=frontend-builder /app/public/build ./public/build
+HEALTHCHECK --start-period=60s CMD curl -f http://localhost:2019/metrics || exit 1
+CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile" ]
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Dev FrankenPHP image
+FROM frankenphp_base AS frankenphp_dev
 
-# Create Caddyfile for FrankenPHP
-COPY docker/Caddyfile /etc/caddy/Caddyfile
+ENV APP_ENV=dev
+ENV XDEBUG_MODE=off
+ENV FRANKENPHP_WORKER_CONFIG=watch
 
-# Create necessary directories and set permissions
-RUN mkdir -p /app/var/cache /app/var/log \
-    && chown -R www-data:www-data /app \
-    && chmod -R 755 /app/var
+RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 
-# Expose port 80 and 443
-EXPOSE 80 443
+RUN set -eux; \
+	install-php-extensions \
+		xdebug \
+	;
 
-# Start FrankenPHP
-CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
+COPY --link frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
+
+CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile", "--watch" ]
+
+# Prod FrankenPHP image
+FROM frankenphp_base AS frankenphp_prod
+
+ENV APP_ENV=prod
+
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+COPY --link frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
+
+# prevent the reinstallation of vendors at every changes in the source code
+COPY --link composer.* symfony.* ./
+RUN set -eux; \
+	composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
+
+# copy sources
+COPY --link . ./
+RUN rm -Rf frankenphp/
+
+RUN set -eux; \
+	mkdir -p var/cache var/log; \
+	composer dump-autoload --classmap-authoritative --no-dev; \
+	composer dump-env prod; \
+	composer run-script --no-dev post-install-cmd; \
+	chmod +x bin/console; sync;

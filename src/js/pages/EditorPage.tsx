@@ -6,14 +6,12 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DescriptionIcon from '@mui/icons-material/Description';
 import {useQueryClient} from '@tanstack/react-query';
 import {useRepositories} from '../services/githubRepoQueryHooks';
-import {Repository} from '../types/github';
 import {useFileContent} from '../services/githubQueryHooks';
 import {useLessonPlanContent} from '../services/lessonPlanQueryHooks';
 import {exportMarkdownFile, getCurrentFilename} from '../services/markdownService';
-import {prefetchFileContent, setFileContentInCache} from '../utils/queryUtils';
 import {parseMarkdown, serializeMarkdown} from '../utils/markdownUtils';
 import {constructLessonPath} from '../utils/urlUtils';
-import {FairMarkdownDocument} from '../types';
+import type {FairMarkdownDocument} from '../types';
 import UserMenu from '../components/navigation/UserMenu';
 import StyledAppBar from '../components/navigation/StyledAppBar';
 import GitHubCommitButton from '../components/GitHubCommitButton';
@@ -28,6 +26,10 @@ const EditorPage: React.FC = () => {
     const params = useParams<{ owner: string, repo: string, branch: string, category: string, lesson: string }>();
     const {owner, repo, branch, category, lesson} = params;
     const fullLessonPath = category && lesson ? constructLessonPath(category, lesson) : '';
+
+    // Get repositories to find the full repository object
+    const {repositories = []} = useRepositories();
+    const repository = repositories.find(r => r.owner.login === owner && r.name === repo);
 
     // Use React Query hook for file content
     const {
@@ -141,7 +143,9 @@ const EditorPage: React.FC = () => {
                         <GitHubCommitButton
                             content={markdownContent}
                             originalGithubContent={originalGithubContent}
-                            filePath={getCurrentFilename()}
+                            filePath={getCurrentFilename(fullLessonPath)}
+                            repository={repository}
+                            branch={branch}
                             color="secondary"
                             onExport={handleExportMarkdown}
                         />

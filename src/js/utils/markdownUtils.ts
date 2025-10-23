@@ -1,5 +1,5 @@
 import matter from 'gray-matter';
-import {FairMarkdownDocument} from '../types';
+import type {FairMarkdownDocument} from '../types';
 
 /**
  * Parse a markdown document with YAML frontmatter into structured data

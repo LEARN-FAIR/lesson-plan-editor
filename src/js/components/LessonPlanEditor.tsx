@@ -1,7 +1,7 @@
 import {Box, Paper, Tab, Tabs} from "@mui/material";
 import React, {useState} from "react";
 import {styled} from "@mui/material/styles";
-import {FairMarkdownDocument} from "../types";
+import type {FairMarkdownDocument} from "../types";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import AttributionIcon from "@mui/icons-material/Attribution";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
