@@ -11,7 +11,7 @@
  */
 
 // Backend API URL - Update this to point to the Symfony backend
-const API_URL = import.meta.env.VITE_API_URL || 'https://localhost/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://editor.learn-fair.nl/api';
 
 
 class ApiAdapter {

@@ -81,7 +81,7 @@ class AuthController extends AbstractController
             error_log('GitHub user ID stored in session: ' . $githubUser->getId());
             
             // Get the frontend URL from environment variable
-            $frontendUrl = $_ENV['FRONTEND_URL'] ?? 'https://localhost';
+            $frontendUrl = $_ENV['FRONTEND_URL'];
             
             // Redirect to frontend with authentication success indicator
             return new RedirectResponse($frontendUrl . '/#auth=success');
@@ -90,7 +90,7 @@ class AuthController extends AbstractController
             error_log('GitHub callback error: ' . $e->getMessage());
             
             // Get the frontend URL from environment variable
-            $frontendUrl = $_ENV['FRONTEND_URL'] ?? 'https://localhost';
+            $frontendUrl = $_ENV['FRONTEND_URL'];
             
             // Redirect to frontend with error
             return new RedirectResponse($frontendUrl . '/#error=' . urlencode($e->getMessage()));
