@@ -36,13 +36,13 @@ export const useLessonPlans = (owner?: string, repo?: string, branch?: string) =
     return useQuery<LessonPlan[], Error>({
         queryKey: ['lessonPlans', owner, repo, branch],
         queryFn: () => {
-            if (!owner || !repo) {
+            if (!owner || !repo || !branch) {
                 // Return empty array instead of throwing an error
                 return Promise.resolve([]);
             }
             return lessonPlanService.getLessonPlans(owner, repo, branch);
         },
         staleTime: 5 * 60 * 1000, // 5 minutes
-        enabled: githubService.isAuthenticated() && !!owner && !!repo, // Only run if authenticated and params provided
+        enabled: githubService.isAuthenticated() && !!owner && !!repo && !!branch, // Only run if authenticated and all params provided
     });
 };

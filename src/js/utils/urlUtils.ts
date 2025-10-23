@@ -29,7 +29,7 @@ export const extractLessonPathParts = (path: string): { category: string, lesson
  */
 export const generateLessonPlanUrl = (repo: Repository, lessonPlan: LessonPlan, branch?: string): string => {
     const pathParts = extractLessonPathParts(lessonPlan.path);
-    const branchName = branch || repo.default_branch || 'main';
+    const branchName = branch || repo.default_branch;
     return `/editor/${repo.owner.login}/${repo.name}/${branchName}/${pathParts.category}/${pathParts.lesson}`;
 };
 

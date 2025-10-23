@@ -124,7 +124,7 @@ const EditorPage: React.FC = () => {
                                 <Box sx={{display: 'flex', alignItems: 'center'}}>
                                     <AccountTreeIcon fontSize="small" sx={{mr: 0.5}}/>
                                     <Typography variant="caption" color="inherit">
-                                        {branch || 'main'}
+                                        {branch}
                                     </Typography>
                                 </Box>
                                 <Divider orientation="vertical" flexItem sx={{bgcolor: 'rgba(255,255,255,0.3)'}}/>

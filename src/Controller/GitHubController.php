@@ -82,7 +82,12 @@ class GitHubController extends AbstractController
     #[Route('/repository/{owner}/{repo}/commits', name: 'app_github_branch_commits', methods: ['GET'])]
     public function getBranchCommits(Request $request, string $owner, string $repo): JsonResponse
     {
-        $branch = $request->query->get('branch', 'main');
+        $branch = $request->query->get('branch');
+        
+        if (!$branch) {
+            return $this->json(['error' => 'Branch parameter is required'], Response::HTTP_BAD_REQUEST);
+        }
+        
         $perPage = (int)$request->query->get('per_page', 30);
         $token = $this->getTokenFromSession($request);
 

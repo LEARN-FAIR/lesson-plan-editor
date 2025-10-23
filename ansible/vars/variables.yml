@@ -1,5 +1,6 @@
 symfony_shared_dirs:
   - {name: logs, src: var/logs, path: var/logs}
+  - {name: certs, src: certs, path: certs}
 
 symfony_managed_dirs:
   - {name: cache, path: var/cache}

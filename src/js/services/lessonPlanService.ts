@@ -21,9 +21,12 @@ class LessonPlanService {
             throw new Error('Repository owner and name are required');
         }
 
+        if (!branch) {
+            throw new Error('Branch is required');
+        }
+
         try {
-            // Use provided branch or default to 'main'
-            const selectedBranch = branch || 'main';
+            const selectedBranch = branch;
 
             // Get lesson plans from the backend API via the adapter
             const lessonPlans = await apiAdapter.getLessonPlans(
@@ -60,8 +63,12 @@ class LessonPlanService {
             throw new Error('Repository owner and name are required');
         }
 
+        if (!branch) {
+            throw new Error('Branch is required');
+        }
+
         try {
-            const selectedBranch = branch || 'main';
+            const selectedBranch = branch;
 
             // Get lesson plan from the backend API via the adapter
             const lessonPlan = await apiAdapter.getLessonPlan(

@@ -82,7 +82,11 @@ class GitHubService
     {
         $response = $this->makeRequest('GET', "/repos/{$owner}/{$repo}", $accessToken);
         
-        $defaultBranch = $response['default_branch'] ?? 'main';
+        $defaultBranch = $response['default_branch'] ?? null;
+        
+        if (!$defaultBranch) {
+            throw new \RuntimeException('Repository does not have a default branch');
+        }
         
         // Check permissions
         $hasWriteAccess = false;

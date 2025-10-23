@@ -54,7 +54,7 @@ const steps = [
 ];
 
 interface SetupStepperProps {
-    onComplete: (repo: Repository, lessonPlan: LessonPlan) => void;
+    onComplete: (repo: Repository, lessonPlan: LessonPlan, branch?: string) => void;
 }
 
 const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
@@ -119,7 +119,7 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
             // After lesson plan selection, complete the setup
             if (selectedRepo && selectedBranch && selectedLessonPlan) {
                 setActiveStep(3);
-                onComplete(selectedRepo, selectedLessonPlan);
+                onComplete(selectedRepo, selectedLessonPlan, selectedBranch);
             }
         }
     };

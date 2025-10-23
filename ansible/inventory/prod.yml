@@ -1,6 +1,6 @@
 all:
   children:
-    staging:
+    prod:
       hosts:
         learps.ssh.transip.me:
           host_deploy_path: /data/sites/web/learn-fairnl/subsites/editor.learn-fair.nl
