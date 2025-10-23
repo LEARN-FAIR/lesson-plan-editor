@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
+import logger from '../utils/logger';
 import {Alert, AlertTitle, Box, Button, CircularProgress, Container, Divider, Stack, Typography} from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
@@ -78,7 +79,7 @@ const EditorPage: React.FC = () => {
                 setMarkdownContent(markdown);
                 // The content update will be handled by the useEffect that watches markdownContent
             } catch (error) {
-                console.error('Error serializing markdown:', error);
+                logger.error('Error serializing markdown:', error);
                 // Handle error state
             }
         }

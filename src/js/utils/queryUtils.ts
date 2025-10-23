@@ -1,5 +1,6 @@
 import queryClient from '../services/queryClient';
 import githubService from '../services/githubService';
+import logger from './logger';
 
 /**
  * Prefetch file content and store it in the React Query cache
@@ -22,7 +23,7 @@ export const prefetchFileContent = async (
     
     // If the query already exists and has data, don't prefetch
     if (existingQuery?.state.data !== undefined) {
-        console.log(`File content for ${path} already in cache, skipping prefetch`);
+        logger.log(`File content for ${path} already in cache, skipping prefetch`);
         return;
     }
     
@@ -55,5 +56,5 @@ export const setFileContentInCache = (
     
     // Set the data in the cache
     queryClient.setQueryData(queryKey, content);
-    console.log(`Set file content for ${path} in cache`);
+    logger.log(`Set file content for ${path} in cache`);
 };

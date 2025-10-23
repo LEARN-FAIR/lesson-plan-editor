@@ -3,6 +3,7 @@ import {Box, Button, CircularProgress, Container, Paper, Typography} from '@mui/
 import {useLocation, useNavigate} from 'react-router-dom';
 import githubService from '../services/githubService';
 import {useAuth} from '../contexts/AuthContext';
+import logger from '../utils/logger';
 import Visual from '../components/images/home-visual.svg';
 import AddIcon from "@mui/icons-material/Add";
 import GitHubIcon from "@mui/icons-material/GitHub";
@@ -16,12 +17,12 @@ const LoginPage: React.FC = () => {
     const searchParams = new URLSearchParams(location.search);
     const redirectUrl = searchParams.get('redirect_url') || '/';
 
-    console.log('LoginPage: redirect_url is', redirectUrl);
+    logger.log('LoginPage: redirect_url is', redirectUrl);
 
     // If user is already authenticated, redirect to the requested page
     useEffect(() => {
         if (isAuthenticated && !isLoading) {
-            console.log('User is authenticated, redirecting to:', redirectUrl);
+            logger.log('User is authenticated, redirecting to:', redirectUrl);
             navigate(redirectUrl, {replace: true});
         }
     }, [isAuthenticated, isLoading, navigate, redirectUrl]);
@@ -44,7 +45,7 @@ const LoginPage: React.FC = () => {
         // Pass the redirect_url as a state parameter to GitHub OAuth
         // This will be available in the state when we return from GitHub
         if (redirectUrl && redirectUrl !== '/login') {
-            console.log('Using redirect URL for GitHub OAuth:', redirectUrl);
+            logger.log('Using redirect URL for GitHub OAuth:', redirectUrl);
             // Store in local storage as a fallback
             localStorage.setItem('redirect_url', redirectUrl);
 

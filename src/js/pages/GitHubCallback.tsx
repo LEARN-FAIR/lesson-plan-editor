@@ -2,13 +2,13 @@ import React, {useEffect, useRef, useState} from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {Box, CircularProgress, Paper, Typography} from '@mui/material';
 import {useQueryClient} from '@tanstack/react-query';
-import githubService from '../services/githubService';
+import {refreshAuthState} from '../services/authService';
+import logger from '../utils/logger';
 import {useAuth} from '../contexts/AuthContext';
 import apiAdapter from '../services/apiAdapter';
-import {refreshAuthState} from '../services/authService';
 
 /**
- * Component to handle GitHub OAuth callback.
+{{ ... }}
  * This component should be rendered at the /github-callback route.
  */
 const GitHubCallback: React.FC = () => {
@@ -26,11 +26,11 @@ const GitHubCallback: React.FC = () => {
         // First try to get from local storage (set by LoginPage)
         const storedUrl = localStorage.getItem('redirect_url');
         if (storedUrl) {
-            console.log('Found stored redirect URL:', storedUrl);
+            logger.log('Found stored redirect URL:', storedUrl);
             setRedirectUrl(storedUrl);
             // Don't clear it yet, we'll need it in the callback handler
         } else {
-            console.log('No stored redirect URL, will use default');
+            logger.log('No stored redirect URL, will use default');
             setRedirectUrl('/');
         }
     }, []);
@@ -39,19 +39,19 @@ const GitHubCallback: React.FC = () => {
     useEffect(() => {
         // Only process once per component mount
         if (processed.current) {
-            console.log('Already processed OAuth callback, skipping');
+            logger.log('Already processed OAuth callback, skipping');
             return;
         }
 
         const handleCallback = async () => {
             // If already processing, don't try again
             if (processing) {
-                console.log('Already processing OAuth callback, skipping');
+                logger.log('Already processing OAuth callback, skipping');
                 return;
             }
 
             try {
-                console.log('Starting GitHub OAuth callback processing');
+                logger.log('Starting GitHub OAuth callback processing');
                 setProcessing(true);
                 processed.current = true;
                 
@@ -60,7 +60,7 @@ const GitHubCallback: React.FC = () => {
                 
                 // Use refreshAuthState to update auth state and invalidate queries
                 const authResult = await refreshAuthState(queryClient);
-                console.log('Authentication refresh result:', authResult);
+                logger.log('Authentication refresh result:', authResult);
                 
                 if (!authResult.authenticated) {
                     throw new Error('Authentication failed - session not established');
@@ -71,14 +71,14 @@ const GitHubCallback: React.FC = () => {
 
                 // Get the final redirect URL to use
                 const sessionRedirectUrl = localStorage.getItem('redirect_url');
-                console.log('Session storage redirect URL at redirect time:', sessionRedirectUrl);
+                logger.log('Session storage redirect URL at redirect time:', sessionRedirectUrl);
 
                 // If we have a complex editor URL in session storage, prioritize it
                 const isEditorUrl = sessionRedirectUrl && sessionRedirectUrl.startsWith('/editor/');
 
                 // Always prioritize local storage for authenticated users
                 const finalRedirectUrl = sessionRedirectUrl || redirectUrl || '/';
-                console.log('Final redirect URL decision:', {
+                logger.log('Final redirect URL decision:', {
                     redirectUrl,
                     sessionRedirectUrl,
                     isEditorUrl,
@@ -90,14 +90,14 @@ const GitHubCallback: React.FC = () => {
 
                 try {
                     const decodedUrl = decodeURIComponent(finalRedirectUrl);
-                    console.log('Redirecting to:', decodedUrl);
+                    logger.log('Redirecting to:', decodedUrl);
                     window.location.href = decodedUrl; // Use direct location change instead of navigate
                 } catch (error) {
-                    console.error('Error decoding redirect URL:', error);
+                    logger.error('Error decoding redirect URL:', error);
                     window.location.href = finalRedirectUrl; // Use direct location change instead of navigate
                 }
             } catch (err) {
-                console.error('GitHub OAuth callback error:', err);
+                logger.error('GitHub OAuth callback error:', err);
                 setError(`Authentication failed: ${(err as Error).message}`);
                 setProcessing(false);
             }

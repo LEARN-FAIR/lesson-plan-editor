@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
+import logger from '../utils/logger';
 import {
     Accordion,
     AccordionDetails,
@@ -308,7 +309,7 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
                                     <Box sx={{mt: 2}}>
                                         <BranchSelector
                                             onBranchSelected={(branch) => {
-                                                console.log('Branch selected:', branch);
+                                                logger.log('Branch selected:', branch);
                                                 setSelectedBranch(branch);
                                             }}
                                             onBack={() => handleBack()}

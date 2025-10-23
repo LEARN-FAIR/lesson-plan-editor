@@ -1,4 +1,5 @@
 import apiAdapter from './apiAdapter';
+import logger from '../utils/logger';
 
 export interface Contributor {
     id: number;
@@ -27,7 +28,7 @@ export const fetchContributors = async (owner: string, repo: string, branch?: st
         
         return contributors as Contributor[];
     } catch (error) {
-        console.error('Error fetching contributors:', error);
+        logger.error('Error fetching contributors:', error);
         // Fallback to empty array if the API fails
         return [];
     }

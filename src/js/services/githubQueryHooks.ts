@@ -1,5 +1,6 @@
 import {useQuery} from '@tanstack/react-query';
 import githubService from './githubService';
+import logger from '../utils/logger';
 
 /**
  * React Query hook for checking if a branch has commits
@@ -58,7 +59,7 @@ export const useHasUncommittedChanges = (
         queryKey: ['hasUncommittedChanges', owner, repo, path, branch],
         queryFn: async () => {
             // Log the current state to help with debugging
-            console.log('useHasUncommittedChanges state:', {
+            logger.debug('useHasUncommittedChanges state:', {
                 fileContentQueryStatus: skipFileContentFetch ? 'skipped' : fileContentQuery.status,
                 fileContentQueryData: skipFileContentFetch ? 'using override' : fileContentQuery.data,
                 hasLocalContent: !!content,
@@ -73,7 +74,7 @@ export const useHasUncommittedChanges = (
                 const normalizedGithubContent = githubContent.replace(/\r\n/g, '\n').trim();
                 const normalizedLocalContent = content.replace(/\r\n/g, '\n').trim();
                 
-                console.log('Content comparison:', {
+                logger.debug('Content comparison:', {
                     normalizedGithubContentLength: normalizedGithubContent.length,
                     normalizedLocalContentLength: normalizedLocalContent.length,
                     isDifferent: normalizedGithubContent !== normalizedLocalContent
@@ -84,7 +85,7 @@ export const useHasUncommittedChanges = (
             
             // If fileContent query failed, try to refetch it
             if (fileContentQuery.isError) {
-                console.warn('File content query failed, attempting to refetch');
+                logger.warn('File content query failed, attempting to refetch');
                 const refetchResult = await fileContentQuery.refetch();
 
                 // If refetch succeeded, try again with the new data
@@ -97,7 +98,7 @@ export const useHasUncommittedChanges = (
             }
             
             // Fallback to API call if no cached content or refetch failed
-            console.log('Falling back to direct API call for uncommitted changes check');
+            logger.log('Falling back to direct API call for uncommitted changes check');
             return githubService.hasUncommittedChanges(owner, repo, path, content, branch);
         },
         // Only run if all parameters are provided and not explicitly disabled

@@ -23,6 +23,7 @@ import AddIcon from '@mui/icons-material/Add';
 import WarningIcon from '@mui/icons-material/Warning';
 import type {Branch, Repository} from '../types/github';
 import githubService from '../services/githubService';
+import logger from '../utils/logger';
 import {useBranches} from '../services/githubRepoQueryHooks';
 
 interface BranchSelectorProps {
@@ -124,7 +125,7 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({onBranchSelected, onBack
             setHasWriteAccess(hasAccess);
             return hasAccess;
         } catch (err) {
-            console.error('Error checking repository access:', err);
+            logger.error('Error checking repository access:', err);
             setHasWriteAccess(false);
             return false;
         } finally {
@@ -259,7 +260,7 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({onBranchSelected, onBack
             // TODO: Implement branch creation through API adapter
             throw new Error('Branch creation not yet implemented - please create branches through GitHub directly');
         } catch (err) {
-            console.error('Error creating branch:', err);
+            logger.error('Error creating branch:', err);
 
             // Check if this is a permissions error
             const errorMessage = (err as Error).message;

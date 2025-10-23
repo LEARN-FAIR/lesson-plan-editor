@@ -1,5 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 import apiAdapter from './apiAdapter';
+import logger from '../utils/logger';
 import githubService from './githubService';
 import { invalidateAuthQueries } from './authQueryHooks';
 
@@ -20,7 +21,7 @@ export const performLogout = async (queryClient: QueryClient) => {
     
     return { success: true };
   } catch (error) {
-    console.error('Error during logout:', error);
+    logger.error('Error during logout:', error);
     return { success: false, error };
   }
 };
@@ -49,7 +50,7 @@ export const refreshAuthState = async (queryClient: QueryClient) => {
     
     return { success: true, authenticated: authStatus.authenticated };
   } catch (error) {
-    console.error('Error refreshing auth state:', error);
+    logger.error('Error refreshing auth state:', error);
     return { success: false, error };
   }
 };

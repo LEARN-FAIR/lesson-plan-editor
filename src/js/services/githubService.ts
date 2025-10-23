@@ -6,6 +6,7 @@
 
 // Import the API adapter
 import apiAdapter from './apiAdapter';
+import logger from '../utils/logger';
 
 // Types for file parameters
 export interface CommitFileParams {
@@ -64,12 +65,12 @@ class GitHubService {
     async handleAuthCallback(code: string, state?: string): Promise<string | null> {
         // If we're already authenticated, don't try to authenticate again
         if (this.authenticated && this.user) {
-            console.log('Already authenticated, skipping authentication');
+            logger.log('Already authenticated, skipping authentication');
             return null;
         }
 
         try {
-            console.log('Completing authentication via server...');
+            logger.log('Completing authentication via server...');
             
             // Check if authentication was successful by checking URL fragment
             if (apiAdapter.checkAuthSuccessInUrl()) {
@@ -83,7 +84,7 @@ class GitHubService {
             
             return null;
         } catch (error) {
-            console.error('Error handling GitHub callback:', error);
+            logger.error('Error handling GitHub callback:', error);
             throw error;
         }
     }
@@ -121,7 +122,7 @@ class GitHubService {
             
             return this.authenticated;
         } catch (error) {
-            console.error('Error checking authentication status:', error);
+            logger.error('Error checking authentication status:', error);
             this.authenticated = false;
             this.user = null;
             return false;
@@ -196,7 +197,7 @@ class GitHubService {
 
             return this.user;
         } catch (error) {
-            console.error('Failed to get user information:', error);
+            logger.error('Failed to get user information:', error);
             this.authenticated = false;
             throw error;
         }
@@ -217,7 +218,7 @@ class GitHubService {
             const repoInfo = await apiAdapter.checkRepositoryAccess(owner, repo);
             return repoInfo.hasWriteAccess === true;
         } catch (error) {
-            console.error('Error checking repository permissions:', error);
+            logger.error('Error checking repository permissions:', error);
             return false;
         }
     }
@@ -256,18 +257,18 @@ class GitHubService {
                 const lessonPlan = await apiAdapter.getLessonPlan(owner, repo, path, branch);
                 if (lessonPlan && lessonPlan.sha) {
                     sha = lessonPlan.sha;
-                    console.log('Retrieved SHA for file update:', sha);
+                    logger.log('Retrieved SHA for file update:', sha);
                 }
             } catch (shaError) {
                 // If we can't get the SHA, it might be a new file
-                console.warn('Could not get file SHA, might be a new file:', shaError);
+                logger.warn('Could not get file SHA, might be a new file:', shaError);
                 // Continue without SHA for new files
             }
 
             // Now commit the file with the SHA if available
             return await apiAdapter.saveLessonPlan(owner, repo, path, content, message, sha, branch);
         } catch (error) {
-            console.error('Error committing file:', error);
+            logger.error('Error committing file:', error);
             throw error;
         }
     }
@@ -289,7 +290,7 @@ class GitHubService {
             const commits = await apiAdapter.getBranchCommits(owner, repo, branch);
             return commits.length > 0;
         } catch (error) {
-            console.error('Error checking branch commits:', error);
+            logger.error('Error checking branch commits:', error);
             
             // If the endpoint is not implemented yet (404 or 501), try an alternative approach
             // Check if we can access the repository at all - if we can, assume it has commits
@@ -299,7 +300,7 @@ class GitHubService {
                 // This is a fallback until the commits endpoint is implemented
                 return true;
             } catch (repoError) {
-                console.error('Error checking repository access:', repoError);
+                logger.error('Error checking repository access:', repoError);
                 // If we can't even access the repo, assume there are no commits
                 return false;
             }
@@ -328,7 +329,7 @@ class GitHubService {
             // Compare the content
             return githubContent !== content;
         } catch (error) {
-            console.error('Error checking for uncommitted changes:', error);
+            logger.error('Error checking for uncommitted changes:', error);
             // If we can't get the file (e.g., it doesn't exist yet), consider it as having changes
             return true;
         }

@@ -2,6 +2,7 @@ import React from 'react';
 import {Alert, AlertTitle, Box, CircularProgress, Container, Typography} from '@mui/material';
 import {useNavigate} from 'react-router-dom';
 import {generateLessonPlanUrl} from '../utils/urlUtils';
+import logger from '../utils/logger';
 import type {Repository} from '../types/github';
 import type {LessonPlan} from '../types/lessonPlan';
 import {useRepositories} from '../services/githubRepoQueryHooks';
@@ -26,7 +27,7 @@ const SetupPage: React.FC = () => {
         // Generate and navigate to the appropriate URL
         // EditorPage will handle all loading from URL parameters
         const url = generateLessonPlanUrl(repo, lessonPlan, branch);
-        console.log('Navigating to editor with URL:', url);
+        logger.log('Navigating to editor with URL:', url);
         navigate(url);
     };
 

@@ -1,4 +1,5 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
+import logger from '../utils/logger';
 import {
     Accordion,
     AccordionDetails,
@@ -67,7 +68,7 @@ const LessonPlanSelector: React.FC<LessonPlanSelectorProps> = ({open, onClose, o
             }
             onClose();
         } catch (err) {
-            console.error('Error selecting lesson plan:', err);
+            logger.error('Error selecting lesson plan:', err);
             // We can't set error state anymore as we're using React Query
             // Just log the error for now
         }

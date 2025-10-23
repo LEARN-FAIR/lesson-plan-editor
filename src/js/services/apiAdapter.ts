@@ -2,6 +2,9 @@
  * API Adapter for making requests to the backend
  */
 
+import githubService from './githubService';
+import logger from '../utils/logger';
+
 /**
  * API Adapter Service
  * 
@@ -142,7 +145,7 @@ class ApiAdapter {
             this.userData = response.user || null;
             return response;
         } catch (error) {
-            console.error('Error checking auth status:', error);
+            logger.error('Error checking auth status:', error);
             this.isAuthenticated = false;
             this.userData = null;
             throw error;
@@ -161,7 +164,7 @@ class ApiAdapter {
             // React Query will handle cache invalidation
             return { success: true };
         } catch (error) {
-            console.error('Logout error:', error);
+            logger.error('Logout error:', error);
             return { success: false, error: 'Failed to logout' };
         }
     }
@@ -311,18 +314,18 @@ class ApiAdapter {
                     }
                     content = new TextDecoder('utf-8').decode(bytes);
                 } catch (e) {
-                    console.warn('Error decoding base64 content:', e);
+                    logger.warn('Error decoding base64 content:', e);
                     // If not base64, return as is
                     content = lessonPlan.content;
                 }
             } else {
                 // If we can't get content, return empty string
-                console.warn('No content found for file:', path);
+                logger.warn('No content found for file:', path);
             }
             
             return content;
         } catch (error) {
-            console.error('Error getting file content:', error);
+            logger.error('Error getting file content:', error);
             throw error;
         }
     }

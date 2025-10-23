@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import logger from '../utils/logger';
 import {
     Alert,
     Avatar,
@@ -47,7 +48,7 @@ const RepoSelector: React.FC<RepoSelectorProps> = ({open, onClose, onRepoSelecte
             const repos = await githubRepoService.getTargetRepoAndForks();
             setRepositories(repos);
         } catch (err) {
-            console.error('Error fetching repositories:', err);
+            logger.error('Error fetching repositories:', err);
             setError(err instanceof Error ? err.message : 'Failed to load repositories');
         } finally {
             setLoading(false);

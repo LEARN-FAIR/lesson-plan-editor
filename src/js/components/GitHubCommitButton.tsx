@@ -36,6 +36,7 @@ import {useHasCommitsOnBranch, useHasUncommittedChanges, useFileContent} from '.
 import {useQueryClient} from '@tanstack/react-query';
 import {prefetchFileContent, setFileContentInCache} from '../utils/queryUtils';
 import ReactDiffViewer from 'react-diff-viewer-continued';
+import logger from '../utils/logger';
 
 interface GitHubCommitButtonProps {
     content: string;
@@ -123,7 +124,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
     useEffect(() => {
         if (propOriginalContent || fileContent) {
             setIsLoadingContent(false);
-            console.log('Using GitHub content:', { 
+            logger.log('Using GitHub content:', { 
                 source: propOriginalContent ? 'prop' : 'query',
                 contentLength: (propOriginalContent || fileContent || '').length 
             });
@@ -174,7 +175,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
             const normalizedLocalContent = content.replace(/\r\n/g, '\n').trim();
             const hasChanged = normalizedGithubContent !== normalizedLocalContent;
             
-            console.log('Content comparison:', {
+            logger.log('Content comparison:', {
                 githubContentLength: effectiveGithubContent.length,
                 localContentLength: content.length,
                 hasChanged
@@ -187,7 +188,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
     
     // Update PR mode when commits, uncommitted changes, or content changes
     useEffect(() => {
-        console.log('PR mode dependencies changed:', {
+        logger.log('PR mode dependencies changed:', {
             hasCommits,
             hasUncommittedChanges,
             contentChanged,
@@ -198,7 +199,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         
         // Only show PR mode if there are commits AND no uncommitted changes AND content hasn't changed
         const shouldShowPrMode = hasCommits && !hasUncommittedChanges && !contentChanged && contentLoaded;
-        console.log(`Setting PR mode to: ${shouldShowPrMode}`);
+        logger.log(`Setting PR mode to: ${shouldShowPrMode}`);
         setIsPrMode(shouldShowPrMode);
     }, [hasCommits, hasUncommittedChanges, contentChanged, contentLoaded, effectiveGithubContent, content]);
 
@@ -226,7 +227,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                 
                 setContentChanged(hasChanged);
                 setHasUncommittedChanges(hasChanged);
-                console.log('Content comparison after refresh:', { 
+                logger.log('Content comparison after refresh:', { 
                     hasChanged,
                     contentLength: newContent.length
                 });
@@ -255,7 +256,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         
         // If we had a successful commit, refresh the state to update button text
         if (success) {
-            console.log('Commit was successful, refreshing state after dialog close');
+            logger.log('Commit was successful, refreshing state after dialog close');
             // Force immediate state update for better UX
             setContentChanged(false);
             setIsPrMode(true);
@@ -347,7 +348,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
             };
 
             const result = await githubService.commitFile(params);
-            console.log('Commit successful:', result);
+            logger.log('Commit successful:', result);
             setSuccess(true);
             handleCloseDialog();
 
@@ -368,7 +369,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
             
             // Wait a moment for React Query to settle, then update state once
             setTimeout(async () => {
-                console.log('Performing delayed state update after commit');
+                logger.log('Performing delayed state update after commit');
                 
                 // Use prefetching utility to refresh file content
                 // This will force a refresh by invalidating the cache first
@@ -386,7 +387,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                 
                 // Update the cache with the new content
                 setFileContentInCache(owner, repoName, filePath, branchName, newContent);
-                console.log('Updated GitHub content after commit:', { 
+                logger.log('Updated GitHub content after commit:', { 
                     source: fileContentResult.data ? 'query' : 'prop',
                     contentLength: newContent.length 
                 });
@@ -401,7 +402,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                     setContentChanged(hasChanges);
                 }
                 
-                console.log('State after refetch:', {
+                logger.log('State after refetch:', {
                     hasCommits: commitsResult.data,
                     hasUncommittedChanges: hasChanges,
                     githubContentUpdated: !!newContent
@@ -409,12 +410,12 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                 
                 // Update PR mode based on refetched data
                 const shouldShowPrMode = !!commitsResult.data && !hasChanges && !!newContent;
-                console.log(`Setting PR mode to ${shouldShowPrMode} after commit`);
+                logger.log(`Setting PR mode to ${shouldShowPrMode} after commit`);
                 setIsPrMode(shouldShowPrMode);
             }, 500);
 
         } catch (err) {
-            console.error('Commit error:', err);
+            logger.error('Commit error:', err);
 
             // Check if this is a GitHub App installation error
             if ((err as Error).message.includes('Resource not accessible by integration')) {
@@ -471,7 +472,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
     
     // Debug logging to help diagnose issues
     useEffect(() => {
-        console.log('GitHubCommitButton state:', {
+        logger.log('GitHubCommitButton state:', {
             contentLoaded,
             isContentReady,
             githubContentLength: propOriginalContent?.length || 0,

@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Box, CircularProgress } from '@mui/material';
+import logger from '../../utils/logger';
 
 /**
  * ProtectedRoute component for React Router v6
@@ -32,7 +33,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element }) => {
             const fullPath = location.pathname +
                 (location.search ? location.search : '') +
                 (location.hash ? location.hash : '');
-            console.log('Redirecting to login with redirect_url:', fullPath);
+            logger.log('Redirecting to login with redirect_url:', fullPath);
 
             // Use query parameter instead of session storage
             const encodedRedirectUrl = encodeURIComponent(fullPath);

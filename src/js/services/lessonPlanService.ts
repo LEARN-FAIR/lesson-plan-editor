@@ -5,6 +5,7 @@
 import apiAdapter from './apiAdapter';
 import githubService from './githubService';
 import type {LessonPlan} from "../types/lessonPlan";
+import logger from '../utils/logger';
 
 class LessonPlanService {
 
@@ -37,7 +38,7 @@ class LessonPlanService {
             
             return lessonPlans;
         } catch (error) {
-            console.error('Error fetching lesson plans:', error);
+            logger.error('Error fetching lesson plans:', error);
 
             // If the folder doesn't exist, return an empty array
             if ((error as any).status === 404) {
@@ -80,7 +81,7 @@ class LessonPlanService {
             
             return lessonPlan;
         } catch (error) {
-            console.error('Error fetching lesson plan:', error);
+            logger.error('Error fetching lesson plan:', error);
             throw error;
         }
     }
