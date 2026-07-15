@@ -58,6 +58,11 @@ interface SetupStepperProps {
     onComplete: (repo: Repository, lessonPlan: LessonPlan, branch?: string) => void;
 }
 
+// Prefer the frontmatter title; fall back to a humanized filename when a lesson
+// plan has no title defined.
+const getLessonPlanTitle = (plan: LessonPlan): string =>
+    plan.title?.trim() || plan.name.replace(/\.md$/, '').replace(/-/g, ' ');
+
 const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
     const queryClient = useQueryClient();
     const [activeStep, setActiveStep] = useState<number>(0);
@@ -233,9 +238,10 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
         const query = searchQuery.toLowerCase();
         return plans.filter(plan => {
             const nameMatch = plan.name.toLowerCase().includes(query);
+            const titleMatch = plan.title ? plan.title.toLowerCase().includes(query) : false;
             const categoryMatch = plan.category && typeof plan.category === 'object' && 'title' in plan.category && plan.category.title ?
                 plan.category.title.toLowerCase().includes(query) : false;
-            return nameMatch || categoryMatch;
+            return nameMatch || titleMatch || categoryMatch;
         });
     };
 
@@ -343,10 +349,10 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
                                                         )}
                                                         <Typography variant="subtitle1"
                                                                     sx={{fontWeight: 'bold', mt: 1}}>
-                                                            {selectedLessonPlan.name.replace(/\.md$/, '').replace(/-/g, ' ')}
+                                                            {getLessonPlanTitle(selectedLessonPlan)}
                                                         </Typography>
                                                         <Typography variant="body2" color="text.secondary" sx={{mb: 2}}>
-                                                            {selectedLessonPlan.path}
+                                                            {selectedLessonPlan.name}
                                                         </Typography>
                                                         <Button
                                                             variant="outlined"
@@ -408,8 +414,8 @@ const SetupStepper: React.FC<SetupStepperProps> = ({onComplete}) => {
                                                                                     }}
                                                                                 >
                                                                                     <ListItemText
-                                                                                        primary={plan.name.replace(/\.md$/, '').replace(/-/g, ' ')}
-                                                                                        secondary={plan.path.split('/').slice(0, -1).join('/')}
+                                                                                        primary={getLessonPlanTitle(plan)}
+                                                                                        secondary={plan.name}
                                                                                     />
                                                                                 </ListItemButton>
                                                                             </ListItem>

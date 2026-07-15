@@ -65,7 +65,10 @@ const StyledTab = styled((props: StyledTabProps) => <Tab disableRipple {...props
 
 export function EditorTabs(props: {
     document?: FairMarkdownDocument,
-    onDocumentChange: (updatedDocument: Partial<FairMarkdownDocument>) => void
+    onDocumentChange: (updatedDocument: Partial<FairMarkdownDocument>) => void,
+    owner?: string,
+    repo?: string,
+    branch?: string
 }) {
     const [tabValue, setTabValue] = useState<number>(0);
         if(props.document === undefined) {
@@ -101,6 +104,9 @@ export function EditorTabs(props: {
             <AuthorsEditor
                 document={props.document}
                 onChange={props.onDocumentChange}
+                owner={props.owner}
+                repo={props.repo}
+                branch={props.branch}
             />
         </TabPanel>
 

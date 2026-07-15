@@ -38,15 +38,18 @@ import type {AuthorData} from '../../types/authorTypes';
 interface AuthorsEditorProps {
     document: FairMarkdownDocument;
     onChange: (updatedDocument: Partial<FairMarkdownDocument>) => void;
+    owner?: string;
+    repo?: string;
+    branch?: string;
 }
 
-const AuthorsEditor: React.FC<AuthorsEditorProps> = ({document, onChange}) => {
+const AuthorsEditor: React.FC<AuthorsEditorProps> = ({document, onChange, owner, repo, branch}) => {
     const [authorModalOpen, setAuthorModalOpen] = useState(false);
     const [reviewerModalOpen, setReviewerModalOpen] = useState(false);
     const [newAuthor, setNewAuthor] = useState('');
     const [newReviewer, setNewReviewer] = useState('');
     // Use React Query to fetch contributors
-    const {data: contributors = [], isLoading: loading} = useContributors();
+    const {data: contributors = [], isLoading: loading} = useContributors(owner, repo, branch);
     const [selectedAuthor, setSelectedAuthor] = useState<Contributor | null>(null);
     const [selectedReviewer, setSelectedReviewer] = useState<Contributor | null>(null);
 
@@ -152,18 +155,16 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({document, onChange}) => {
 
     const handleSaveAuthor = (author: AuthorData) => {
         const updatedAuthors = [...(document.authors || [])];
-        // Use the ORCID if available, otherwise use the name
-        const authorId = author.orcid || author.name;
-        updatedAuthors.push(authorId);
+        // Use the contributor ID
+        updatedAuthors.push(author.id);
 
         onChange({authors: updatedAuthors});
     };
 
     const handleSaveReviewer = (reviewer: AuthorData) => {
         const updatedReviewers = [...(document.reviewers || [])];
-        // Use the ORCID if available, otherwise use the name
-        const reviewerId = reviewer.orcid || reviewer.name;
-        updatedReviewers.push(reviewerId);
+        // Use the contributor ID
+        updatedReviewers.push(reviewer.id);
 
         onChange({reviewers: updatedReviewers});
         setReviewerModalOpen(false);
@@ -241,7 +242,7 @@ const AuthorsEditor: React.FC<AuthorsEditorProps> = ({document, onChange}) => {
 
                                             if (contributor) {
                                                 name = `${contributor.firstName} ${contributor.lastName}`;
-                                                orcid = contributor.id || '';
+                                                orcid = contributor.orcid || contributor.id || '';
                                             } else if (authorId.startsWith('0000-')) {
                                                 // If it's an ORCID format but not found in contributors
                                                 orcid = authorId;

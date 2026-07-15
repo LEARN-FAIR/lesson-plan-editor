@@ -15,6 +15,8 @@ import {
     MenuItem,
     Snackbar,
     Stack,
+    Tab,
+    Tabs,
     TextField,
     Typography
 } from '@mui/material';
@@ -32,11 +34,14 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import githubService, {type CommitFileParams} from '../services/githubService';
 import type {Repository} from '../types/github';
 import type {LessonPlan} from '../types/lessonPlan';
+import type {FairMarkdownDocument} from '../types';
 import {useHasCommitsOnBranch, useHasUncommittedChanges, useFileContent} from '../services/githubQueryHooks';
 import {useQueryClient} from '@tanstack/react-query';
 import {prefetchFileContent, setFileContentInCache} from '../utils/queryUtils';
 import ReactDiffViewer from 'react-diff-viewer-continued';
 import logger from '../utils/logger';
+import apiAdapter from '../services/apiAdapter';
+import customContributorService from '../services/customContributorService';
 
 interface GitHubCommitButtonProps {
     content: string;
@@ -48,6 +53,7 @@ interface GitHubCommitButtonProps {
     repository?: Repository;
     branch?: string;
     lessonPlan?: LessonPlan;
+    document?: FairMarkdownDocument;
 }
 
 const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
@@ -59,7 +65,8 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                                                                    onExport,
                                                                    repository,
                                                                    branch,
-                                                                   lessonPlan
+                                                                   lessonPlan,
+                                                                   document
                                                                }) => {
     const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -67,6 +74,10 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
     const [success, setSuccess] = useState<boolean>(false);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [commitMessage, setCommitMessage] = useState<string>(`Update ${filePath}`);
+    const [diffTab, setDiffTab] = useState<number>(0);
+    const [contributorsContent, setContributorsContent] = useState<string>('');
+    const [originalContributorsContent, setOriginalContributorsContent] = useState<string>('');
+    const [usedCustomContributorsForCommit, setUsedCustomContributorsForCommit] = useState<any[]>([]);
 
     // GitHub App installation dialog state
     const [isAppInstallDialogOpen, setIsAppInstallDialogOpen] = useState<boolean>(false);
@@ -242,17 +253,105 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
         }
     };
 
-    const handleOpenDialog = () => {
+    const handleOpenDialog = async () => {
         setIsDialogOpen(true);
         setAnchorEl(null);
 
         // Set commit message based on the current file path
         setCommitMessage('');
+        
+        // Fetch contributors file if we have custom contributors
+        const allCustomContributors = customContributorService.getCustomContributors();
+        
+        if (allCustomContributors.length > 0 && owner && repoName && selectedBranch && document) {
+            // Use structured document data instead of parsing markdown
+            const usedContributorIds = new Set<string>();
+            
+            console.log(document);
+
+            // Add all authors
+            if (document.authors) {
+                document.authors.forEach(id => usedContributorIds.add(id));
+            }
+            
+            // Add all reviewers
+            if (document.reviewers) {
+                document.reviewers.forEach(id => usedContributorIds.add(id));
+            }
+            
+            logger.log('Custom contributors check:', {
+                allCustomContributors,
+                authors: document.authors,
+                reviewers: document.reviewers,
+                usedContributorIds: Array.from(usedContributorIds)
+            });
+            
+            // Filter custom contributors to only those actually used in the lesson plan
+            // Note: allCustomContributors already contains only custom contributors from localStorage
+            const usedCustomContributors = allCustomContributors.filter(c => 
+                usedContributorIds.has(c.id)
+            );
+            
+            logger.log('Used custom contributors:', usedCustomContributors);
+            
+            // Store for commit
+            setUsedCustomContributorsForCommit(usedCustomContributors);
+            
+            if (usedCustomContributors.length > 0) {
+                try {
+                    // Fetch existing contributors file
+                    const existingContent = await apiAdapter.getFileContent(owner, repoName, '_data/contributors.yaml', selectedBranch);
+                    setOriginalContributorsContent(existingContent);
+                    
+                    // Generate YAML for used custom contributors only (array format)
+                    const customYaml = usedCustomContributors.map(c => {
+                        const lines = [
+                            `- id: "${c.id}"`,
+                            `  orcid: "${c.orcid || c.id}"`,
+                            `  firstName: "${c.firstName}"`,
+                            `  lastName: "${c.lastName}"`
+                        ];
+                        if (c.git) {
+                            lines.push(`  git: "${c.git}"`);
+                        }
+                        return lines.join('\n');
+                    }).join('\n\n');
+                    
+                    // Append custom contributors to existing content
+                    let mergedContent = existingContent;
+                    if (mergedContent && !mergedContent.endsWith('\n')) {
+                        mergedContent += '\n';
+                    }
+                    mergedContent += customYaml;
+                    
+                    setContributorsContent(mergedContent);
+                } catch (error) {
+                    logger.warn('Could not fetch contributors file:', error);
+                    setOriginalContributorsContent('');
+                    
+                    // If file doesn't exist, just use used custom contributors (array format)
+                    const newContent = usedCustomContributors.map(c => {
+                        const lines = [
+                            `- id: "${c.id}"`,
+                            `  orcid: "${c.orcid || c.id}"`,
+                            `  firstName: "${c.firstName}"`,
+                            `  lastName: "${c.lastName}"`
+                        ];
+                        if (c.git) {
+                            lines.push(`  git: "${c.git}"`);
+                        }
+                        return lines.join('\n');
+                    }).join('\n\n');
+                    setContributorsContent(newContent);
+                }
+            }
+        }
     };
 
     const handleCloseDialog = () => {
         setIsDialogOpen(false);
         setError('');
+        setUsedCustomContributorsForCommit([]);
         
         // If we had a successful commit, refresh the state to update button text
         if (success) {
@@ -344,7 +443,8 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                 path: filePath,
                 message: commitMessage,
                 content,
-                branch: selectedBranch
+                branch: selectedBranch,
+                customContributors: usedCustomContributorsForCommit.length > 0 ? usedCustomContributorsForCommit : undefined
             };
 
             const result = await githubService.commitFile(params);
@@ -678,7 +778,7 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                                         />
                                     </Box>
                                     
-                                    {/* Right column: Diff viewer */}
+                                    {/* Right column: Diff viewer with tabs */}
                                     <Box sx={{ flex: 2, overflow: 'hidden' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -688,6 +788,14 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                                                 </Typography>
                                             </Box>
                                         </Box>
+                                        
+                                        <Tabs value={diffTab} onChange={(_, newValue) => setDiffTab(newValue)} sx={{ mb: 1, minHeight: '36px' }}>
+                                            <Tab label="Lesson Plan" sx={{ minHeight: '36px', py: 0.5, textTransform: 'none' }} />
+                                            {contributorsContent && (
+                                                <Tab label="Contributors" sx={{ minHeight: '36px', py: 0.5, textTransform: 'none' }} />
+                                            )}
+                                        </Tabs>
+                                        
                                         <Box sx={{ 
                                             border: '1px solid',
                                             borderColor: 'divider',
@@ -695,28 +803,54 @@ const GitHubCommitButton: React.FC<GitHubCommitButtonProps> = ({
                                             overflow: 'auto',
                                             maxHeight: '400px'
                                         }}>
-                                            <ReactDiffViewer
-                                                oldValue={propOriginalContent || ''}
-                                                newValue={content}
-                                                splitView={false}
-                                                showDiffOnly={false}
-                                                useDarkTheme={false}
-                                                styles={{
-                                                    contentText: {
-                                                        fontSize: '0.7rem',
-                                                        lineHeight: '1.2',
-                                                        fontFamily: 'monospace'
-                                                    },
-                                                    gutter: {
-                                                        fontSize: '0.65rem',
-                                                        padding: '0 0.3rem',
-                                                        lineHeight: '1.2'
-                                                    },
-                                                    line: {
-                                                        padding: '0'
-                                                    }
-                                                }}
-                                            />
+                                            {diffTab === 0 && (
+                                                <ReactDiffViewer
+                                                    oldValue={propOriginalContent || ''}
+                                                    newValue={content}
+                                                    splitView={false}
+                                                    showDiffOnly={false}
+                                                    useDarkTheme={false}
+                                                    styles={{
+                                                        contentText: {
+                                                            fontSize: '0.7rem',
+                                                            lineHeight: '1.2',
+                                                            fontFamily: 'monospace'
+                                                        },
+                                                        gutter: {
+                                                            fontSize: '0.65rem',
+                                                            padding: '0 0.3rem',
+                                                            lineHeight: '1.2'
+                                                        },
+                                                        line: {
+                                                            padding: '0'
+                                                        }
+                                                    }}
+                                                />
+                                            )}
+                                            {diffTab === 1 && contributorsContent && (
+                                                <ReactDiffViewer
+                                                    oldValue={originalContributorsContent}
+                                                    newValue={contributorsContent}
+                                                    splitView={false}
+                                                    showDiffOnly={false}
+                                                    useDarkTheme={false}
+                                                    styles={{
+                                                        contentText: {
+                                                            fontSize: '0.7rem',
+                                                            lineHeight: '1.2',
+                                                            fontFamily: 'monospace'
+                                                        },
+                                                        gutter: {
+                                                            fontSize: '0.65rem',
+                                                            padding: '0 0.3rem',
+                                                            lineHeight: '1.2'
+                                                        },
+                                                        line: {
+                                                            padding: '0'
+                                                        }
+                                                    }}
+                                                />
+                                            )}
                                         </Box>
                                     </Box>
                                 </Box>

@@ -5,6 +5,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import ReactMarkdown from 'react-markdown';
 import SortableRowWithActions from '../common/SortableRowWithActions';
 import type {Activity} from '../../types';
+import {getActivityLearningOutcomes} from '../../utils/activityUtils';
 
 interface SortableActivityRowProps {
     activity: Activity;
@@ -46,22 +47,25 @@ const SortableActivityRow: React.FC<SortableActivityRowProps> = ({
         </>
     );
     
+    const learningOutcomeIds = getActivityLearningOutcomes(activity);
+
     return (
         <SortableRowWithActions id={id} actions={actions}>
             <TableCell>
-                {activity.learning_outcome ? (
-                    <Tooltip
-                        title={learningOutcomes?.[String(activity.learning_outcome)]?.outcome || 'No description available'}
-                        arrow
-                        placement="top"
-                    >
-                        <Box component="span" sx={{cursor: 'help'}}>
-                            {activity.learning_outcome}
-                        </Box>
-                    </Tooltip>
-                ) : (
-                    ''
-                )}
+                <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 0.5}}>
+                    {learningOutcomeIds.map((lo, i) => (
+                        <Tooltip
+                            key={lo}
+                            title={learningOutcomes?.[String(lo)]?.outcome || 'No description available'}
+                            arrow
+                            placement="top"
+                        >
+                            <Box component="span" sx={{cursor: 'help'}}>
+                                {lo}{i < learningOutcomeIds.length - 1 ? ',' : ''}
+                            </Box>
+                        </Tooltip>
+                    ))}
+                </Box>
             </TableCell>
             <TableCell>
                 <Box sx={{maxHeight: '100px', overflow: 'auto'}}>

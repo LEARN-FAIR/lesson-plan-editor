@@ -214,22 +214,37 @@ class ApiAdapter {
      * Create a fork of the target repository
      */
     async createFork(): Promise<any> {
-        // This would need to be implemented in the Symfony backend
-        throw new Error('Fork creation not yet implemented in Symfony backend');
+        throw new Error('Fork creation not yet implemented');
     }
 
     /**
-     * Create a new branch
+     * Create a new branch from a source branch
      */
     async createBranch(owner: string, repo: string, branchName: string, sourceBranch: string): Promise<any> {
-        // This would need to be implemented in the Symfony backend
-        throw new Error('Branch creation not yet implemented in Symfony backend');
+        const response = await fetch(`${this.getBaseUrl()}/github/repository/${owner}/${repo}/branches`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                branchName,
+                sourceBranch
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to create branch');
+        }
+
+        return response.json();
     }
 
     // ===== Lesson Plan Endpoints =====
 
     /**
-     * Get all lesson plans
+     * Get all lesson plans from a repository
      */
     async getLessonPlans(owner: string, repo: string, branch?: string): Promise<any> {
         let url = `/lesson-plans?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`;
@@ -240,7 +255,7 @@ class ApiAdapter {
     }
 
     /**
-     * Get a specific lesson plan
+     * Get a specific lesson plan by path
      */
     async getLessonPlan(owner: string, repo: string, path: string, branch?: string): Promise<any> {
         let url = `/lesson-plans/file?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}`;
@@ -251,9 +266,18 @@ class ApiAdapter {
     }
 
     /**
-     * Save a lesson plan
+     * Save a lesson plan to GitHub
+     * @param owner Repository owner
+     * @param repo Repository name
+     * @param path File path
+     * @param content File content
+     * @param commitMessage Commit message
+     * @param sha File SHA (for updates)
+     * @param branch Branch name
+     * @param customContributors Optional array of custom contributors to commit
+     * @returns Commit result
      */
-    async saveLessonPlan(owner: string, repo: string, path: string, content: string, commitMessage: string, sha?: string, branch?: string): Promise<any> {
+    async saveLessonPlan(owner: string, repo: string, path: string, content: string, commitMessage: string, sha?: string, branch?: string, customContributors?: any[]): Promise<any> {
         return this.request('/lesson-plans/file', {
             method: 'POST',
             body: JSON.stringify({
@@ -263,13 +287,14 @@ class ApiAdapter {
                 content,
                 commitMessage,
                 sha,
-                branch
+                branch,
+                customContributors
             })
         });
     }
 
     /**
-     * Get contributors from GitHub repository
+     * Get contributors from the repository
      * @param owner Repository owner (organization or username)
      * @param repo Repository name
      * @param branch Branch name

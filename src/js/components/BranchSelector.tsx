@@ -23,6 +23,7 @@ import AddIcon from '@mui/icons-material/Add';
 import WarningIcon from '@mui/icons-material/Warning';
 import type {Branch, Repository} from '../types/github';
 import githubService from '../services/githubService';
+import apiAdapter from '../services/apiAdapter';
 import logger from '../utils/logger';
 import {useBranches} from '../services/githubRepoQueryHooks';
 
@@ -257,8 +258,10 @@ const BranchSelector: React.FC<BranchSelectorProps> = ({onBranchSelected, onBack
                 }
             }
 
-            // TODO: Implement branch creation through API adapter
-            throw new Error('Branch creation not yet implemented - please create branches through GitHub directly');
+            // Create the branch via API adapter
+            if (repository) {
+                await apiAdapter.createBranch(repository.owner.login, repository.name, newBranchName, selectedBranch);
+            }
         } catch (err) {
             logger.error('Error creating branch:', err);
 

@@ -16,6 +16,7 @@ export interface CommitFileParams {
     message: string;    // Commit message
     content: string;    // File content to commit
     branch?: string;    // Target branch (default: main/master)
+    customContributors?: any[];  // Optional custom contributors to commit
 }
 
 // User info from GitHub API
@@ -248,7 +249,7 @@ class GitHubService {
             throw new Error('Not authenticated with GitHub');
         }
 
-        const {owner, repo, path, message, content, branch = 'main'} = params;
+        const {owner, repo, path, message, content, branch = 'main', customContributors} = params;
 
         try {
             // Get the file SHA from GitHub API first
@@ -265,8 +266,8 @@ class GitHubService {
                 // Continue without SHA for new files
             }
 
-            // Now commit the file with the SHA if available
-            return await apiAdapter.saveLessonPlan(owner, repo, path, content, message, sha, branch);
+            // Use provided custom contributors or undefined
+            return await apiAdapter.saveLessonPlan(owner, repo, path, content, message, sha, branch, customContributors);
         } catch (error) {
             logger.error('Error committing file:', error);
             throw error;

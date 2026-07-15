@@ -91,17 +91,125 @@ class LessonPlanController extends AbstractController
         $commitMessage = $data['commitMessage'] ?? 'Update lesson plan';
         $sha = $data['sha'] ?? null;
         $branch = $data['branch'] ?? null;
+        $customContributors = $data['customContributors'] ?? null;
 
         if (!$owner || !$repo || !$path || !$content) {
             return $this->json(['error' => 'Owner, repo, path, and content are required'], Response::HTTP_BAD_REQUEST);
         }
 
         try {
-            $result = $this->githubService->commitFile($token, $owner, $repo, $path, $content, $commitMessage, $sha, $branch);
+            // If we have custom contributors, commit both files together
+            if ($customContributors && !empty($customContributors)) {
+                // Fetch existing contributors file to merge with custom ones
+                $existingYaml = $this->fetchExistingContributors($token, $owner, $repo, $branch);
+                
+                // Merge custom contributors with existing ones
+                $yamlContent = $this->mergeContributorsToYaml($customContributors, $existingYaml);
+                
+                // Commit both files in a single commit
+                $files = [
+                    ['path' => $path, 'content' => $content],
+                    ['path' => '_data/contributors.yaml', 'content' => $yamlContent]
+                ];
+                
+                $result = $this->githubService->commitMultipleFiles(
+                    $token, 
+                    $owner, 
+                    $repo, 
+                    $files, 
+                    $commitMessage, 
+                    $branch
+                );
+            } else {
+                // Just commit the lesson plan file
+                $result = $this->githubService->commitFile($token, $owner, $repo, $path, $content, $commitMessage, $sha, $branch);
+            }
+            
             return $this->json($result);
         } catch (\Exception $e) {
             return $this->json(['error' => 'Failed to save lesson plan: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+    
+    /**
+     * Fetch existing contributors file from the repository
+     */
+    private function fetchExistingContributors(string $token, string $owner, string $repo, ?string $branch): string
+    {
+        try {
+            // Try to fetch the existing contributors file
+            $response = $this->githubService->getFileContent($token, $owner, $repo, '_data/contributors.yaml', $branch);
+            return $response['content'] ?? '';
+        } catch (\Exception $e) {
+            // If file doesn't exist, return empty string (we'll create it)
+            return '';
+        }
+    }
+    
+    /**
+     * Merge custom contributors with existing YAML content
+     */
+    private function mergeContributorsToYaml(array $customContributors, string $existingYaml): string
+    {
+        // Parse existing YAML if it exists
+        $existingData = [];
+        if (!empty($existingYaml)) {
+            try {
+                $existingData = \Symfony\Component\Yaml\Yaml::parse($existingYaml) ?? [];
+            } catch (\Exception $e) {
+                // If parsing fails, start fresh
+                $existingData = [];
+            }
+        }
+        
+        // Ensure existingData is an array (not associative)
+        if (!is_array($existingData)) {
+            $existingData = [];
+        }
+        
+        // If it's an associative array (object), convert to sequential array
+        if (!empty($existingData) && array_keys($existingData) !== range(0, count($existingData) - 1)) {
+            // It's an associative array, convert to sequential
+            $sequential = [];
+            foreach ($existingData as $id => $data) {
+                $data['id'] = $id;
+                $sequential[] = $data;
+            }
+            $existingData = $sequential;
+        }
+        
+        // Create a map of existing contributors by ID for quick lookup
+        $existingMap = [];
+        foreach ($existingData as $index => $contributor) {
+            if (isset($contributor['id'])) {
+                $existingMap[$contributor['id']] = $index;
+            }
+        }
+        
+        // Add or update custom contributors
+        foreach ($customContributors as $contributor) {
+            $id = $contributor['id'] ?? '';
+            if (!empty($id)) {
+                $contributorData = [
+                    'id' => $id,
+                    'orcid' => $contributor['orcid'] ?? null,
+                    'firstName' => $contributor['firstName'] ?? '',
+                    'lastName' => $contributor['lastName'] ?? '',
+                    'git' => $contributor['git'] ?? null
+                ];
+                
+                if (isset($existingMap[$id])) {
+                    // Update existing contributor
+                    $existingData[$existingMap[$id]] = $contributorData;
+                } else {
+                    // Add new contributor
+                    $existingData[] = $contributorData;
+                }
+            }
+        }
+        
+        // Convert back to YAML with array format
+        return \Symfony\Component\Yaml\Yaml::dump($existingData, 3, 2);
     }
 
     /**

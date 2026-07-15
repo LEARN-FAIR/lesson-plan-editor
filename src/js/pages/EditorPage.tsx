@@ -147,6 +147,7 @@ const EditorPage: React.FC = () => {
                             filePath={getCurrentFilename(fullLessonPath)}
                             repository={repository}
                             branch={branch}
+                            document={document}
                             color="secondary"
                             onExport={handleExportMarkdown}
                         />
@@ -174,7 +175,13 @@ const EditorPage: React.FC = () => {
                     </Alert>
                 ) : (
                     <Box sx={{flexGrow: 1, display: 'flex', flexDirection: 'column'}}>
-                        <EditorTabs document={document} onDocumentChange={handleDocumentChange}/>
+                        <EditorTabs 
+                            document={document} 
+                            onDocumentChange={handleDocumentChange}
+                            owner={owner}
+                            repo={repo}
+                            branch={branch}
+                        />
                     </Box>
                 )}
             </Container>

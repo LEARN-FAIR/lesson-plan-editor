@@ -16,7 +16,12 @@ export interface LearningOutcome {
 }
 
 export interface Activity {
-    learning_outcome: number;
+    /**
+     * @deprecated Use `learning_outcomes` instead. Retained only so existing
+     * content that still uses the single-value field keeps working.
+     */
+    learning_outcome?: number;
+    learning_outcomes?: number[];
     activities: string | string[];
     time: string;
     type: string;

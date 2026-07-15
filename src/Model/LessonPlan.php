@@ -5,6 +5,7 @@ namespace App\Model;
 class LessonPlan
 {
     private ?string $name = null;
+    private ?string $title = null;
     private ?string $path = null;
     private ?string $sha = null;
     private ?string $content = null;
@@ -19,7 +20,8 @@ class LessonPlan
         ?string $content = null,
         ?string $decodedContent = null,
         ?string $htmlUrl = null,
-        ?Category $category = null
+        ?Category $category = null,
+        ?string $title = null
     ) {
         $this->name = $name;
         $this->path = $path;
@@ -28,11 +30,23 @@ class LessonPlan
         $this->decodedContent = $decodedContent;
         $this->htmlUrl = $htmlUrl;
         $this->category = $category;
+        $this->title = $title;
     }
 
     public function getName(): ?string
     {
         return $this->name;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(?string $title): self
+    {
+        $this->title = $title;
+        return $this;
     }
 
     public function setName(?string $name): self
@@ -111,6 +125,7 @@ class LessonPlan
     {
         $data = [
             'name' => $this->name,
+            'title' => $this->title,
             'path' => $this->path,
             'sha' => $this->sha,
             'content' => $this->content,

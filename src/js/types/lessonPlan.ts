@@ -1,5 +1,6 @@
 export interface LessonPlan {
     name: string;
+    title?: string;
     path: string;
     sha: string;
     content: string | null;

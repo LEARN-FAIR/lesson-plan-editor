@@ -5,3 +5,5 @@
     dest: "{{ release_deploy_path }}"
     key_file: "{{ host_key_file }}"
     accept_hostkey: true
+    version: php
+

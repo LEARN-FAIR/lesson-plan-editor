@@ -2,18 +2,23 @@ import React, {useEffect, useState} from 'react';
 import {
     Box,
     Button,
+    Checkbox,
+    Chip,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
     FormControl,
     InputLabel,
+    ListItemText,
     MenuItem,
+    OutlinedInput,
     Select,
     TextField,
     Typography
 } from '@mui/material';
 import type {Activity} from '../../types';
+import {getActivityLearningOutcomes} from '../../utils/activityUtils';
 import MdxEditorComponent from '../common/MdxEditorComponent';
 
 interface ActivityEditorModalProps {
@@ -34,13 +39,13 @@ const ActivityEditorModal: React.FC<ActivityEditorModalProps> = ({
                                                                      mode
                                                                  }) => {
     const [formData, setFormData] = useState<{
-        learning_outcome: string;
+        learning_outcomes: string[];
         activities: string;
         time: string;
         type: string;
         level: 'beginner' | 'intermediate' | 'expert';
     }>({
-        learning_outcome: '',
+        learning_outcomes: [],
         activities: '',
         time: '',
         type: '',
@@ -51,7 +56,7 @@ const ActivityEditorModal: React.FC<ActivityEditorModalProps> = ({
     useEffect(() => {
         if (activity && mode === 'edit') {
             setFormData({
-                learning_outcome: activity.learning_outcome.toString(),
+                learning_outcomes: getActivityLearningOutcomes(activity).map((lo) => lo.toString()),
                 activities: typeof activity.activities === 'string'
                     ? activity.activities
                     : activity.activities.join("\n"),
@@ -62,7 +67,7 @@ const ActivityEditorModal: React.FC<ActivityEditorModalProps> = ({
         } else {
             // Reset form when adding a new activity
             setFormData({
-                learning_outcome: '',
+                learning_outcomes: [],
                 activities: '',
                 time: '',
                 type: '',
@@ -80,6 +85,13 @@ const ActivityEditorModal: React.FC<ActivityEditorModalProps> = ({
         });
     };
 
+    const handleLearningOutcomesChange = (value: string | string[]) => {
+        setFormData({
+            ...formData,
+            learning_outcomes: typeof value === 'string' ? value.split(',') : value
+        });
+    };
+
     const handleActivitiesChange = (value: string) => {
         setFormData({
             ...formData,
@@ -89,12 +101,14 @@ const ActivityEditorModal: React.FC<ActivityEditorModalProps> = ({
 
     const handleSave = () => {
         // Validate required fields
-        if (!formData.learning_outcome || !formData.activities || !formData.time || !formData.type) {
+        if (formData.learning_outcomes.length === 0 || !formData.activities || !formData.time || !formData.type) {
             return;
         }
 
         const activityData: Activity = {
-            learning_outcome: parseInt(formData.learning_outcome),
+            learning_outcomes: formData.learning_outcomes
+                .map((lo) => parseInt(lo, 10))
+                .filter((lo) => !Number.isNaN(lo)),
             activities: formData.activities,
             time: formData.time,
             type: formData.type,
@@ -125,11 +139,22 @@ const ActivityEditorModal: React.FC<ActivityEditorModalProps> = ({
                 }}>
                     <Box>
                         <FormControl fullWidth size="small">
-                            <InputLabel>Learning outcome</InputLabel>
+                            <InputLabel>Learning outcomes</InputLabel>
                             <Select
-                                value={formData.learning_outcome}
-                                label="Learning outcome"
-                                onChange={handleFormChange('learning_outcome') as any}
+                                multiple
+                                value={formData.learning_outcomes}
+                                input={<OutlinedInput label="Learning outcomes"/>}
+                                onChange={(event) => handleLearningOutcomesChange(event.target.value)}
+                                renderValue={(selected) => (
+                                    <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 0.5}}>
+                                        {(selected as string[])
+                                            .slice()
+                                            .sort((a, b) => parseInt(a, 10) - parseInt(b, 10))
+                                            .map((value) => (
+                                                <Chip key={value} label={value} size="small"/>
+                                            ))}
+                                    </Box>
+                                )}
                             >
                                 {Object.entries(learningOutcomes || {})
                                     // Sort by numeric ID to ensure consistent display order
@@ -140,7 +165,11 @@ const ActivityEditorModal: React.FC<ActivityEditorModalProps> = ({
                                     })
                                     .map(([key, outcome]) => (
                                         <MenuItem key={key} value={key}>
-                                            {key}: {outcome.outcome.substring(0, 50)}{outcome.outcome.length > 50 ? '...' : ''}
+                                            <Checkbox
+                                                checked={formData.learning_outcomes.indexOf(key) > -1}
+                                                size="small"/>
+                                            <ListItemText
+                                                primary={`${key}: ${outcome.outcome.substring(0, 50)}${outcome.outcome.length > 50 ? '...' : ''}`}/>
                                         </MenuItem>
                                     ))}
                             </Select>
@@ -208,7 +237,7 @@ const ActivityEditorModal: React.FC<ActivityEditorModalProps> = ({
                 <Button
                     variant="contained"
                     onClick={handleSave}
-                    disabled={!formData.learning_outcome || !formData.activities || !formData.time || !formData.type}
+                    disabled={formData.learning_outcomes.length === 0 || !formData.activities || !formData.time || !formData.type}
                 >
                     {mode === 'add' ? 'Add' : 'Save'}
                 </Button>

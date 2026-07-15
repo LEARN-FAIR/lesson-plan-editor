@@ -123,26 +123,26 @@ class GitHubService
             ]);
             
             $lessonPlans = [];
-            
+
             // Process each item in the lesson plans folder
             foreach ($response as $item) {
                 if ($item['type'] === 'dir') {
                     // This is a category folder
                     $categoryInfo = $this->getCategoryInfo($accessToken, $owner, $repo, $item['path'], $branch);
-                    
+
                     // Get the contents of the topics folder within this category
                     try {
                         $topicsPath = "{$item['path']}/topics";
                         $topicsResponse = $this->makeRequest('GET', "/repos/{$owner}/{$repo}/contents/{$topicsPath}", $accessToken, [
                             'ref' => $branch
                         ]);
-                        
+
                         // Process each lesson plan in the topics folder
                         foreach ($topicsResponse as $topicFile) {
                             if ($topicFile['type'] === 'file' && $this->endsWith($topicFile['name'], '.md')) {
                                 $content = $topicFile['content'] ?? null;
                                 $decodedContent = $content ? base64_decode($content) : null;
-                                
+
                                 $lessonPlans[] = new LessonPlan(
                                     $topicFile['name'],
                                     $topicFile['path'],
@@ -161,7 +161,7 @@ class GitHubService
                     // Also include any markdown files directly in the _lesson-plans folder (except index.md)
                     $content = $item['content'] ?? null;
                     $decodedContent = $content ? base64_decode($content) : null;
-                    
+
                     $lessonPlans[] = new LessonPlan(
                         $item['name'],
                         $item['path'],
@@ -172,7 +172,13 @@ class GitHubService
                     );
                 }
             }
-            
+
+            // The directory listing does not include file contents, so the
+            // frontmatter title is not yet known. Fetch all titles in a single
+            // GraphQL request so the UI can display the real title rather than
+            // the filename.
+            $this->populateTitles($lessonPlans, $accessToken, $owner, $repo, $branch);
+
             return $lessonPlans;
         } catch (\Exception $e) {
             // If the folder doesn't exist, return an empty array
@@ -182,6 +188,28 @@ class GitHubService
             
             throw $e;
         }
+    }
+
+    /**
+     * Get file content from GitHub
+     */
+    public function getFileContent(string $accessToken, string $owner, string $repo, string $path, ?string $branch = null): array
+    {
+        $response = $this->makeRequest('GET', "/repos/{$owner}/{$repo}/contents/{$path}", $accessToken, [
+            'ref' => $branch
+        ]);
+        
+        if (is_array($response) && !isset($response['type'])) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, 'Expected a file, got a directory');
+        }
+        
+        $content = $response['content'] ?? null;
+        $decodedContent = $content ? base64_decode($content) : null;
+        
+        return [
+            'content' => $decodedContent,
+            'sha' => $response['sha'] ?? null
+        ];
     }
 
     /**
@@ -242,6 +270,71 @@ class GitHubService
     }
 
     /**
+     * Commit multiple files in a single commit using the Git Data API
+     * This is used to commit both lesson plan and contributors file together
+     */
+    public function commitMultipleFiles(
+        string $accessToken,
+        string $owner,
+        string $repo,
+        array $files, // Array of ['path' => string, 'content' => string]
+        string $commitMessage,
+        ?string $branch = null
+    ): array {
+        // Get the default branch if not specified
+        if (!$branch) {
+            $repoInfo = $this->makeRequest('GET', "/repos/{$owner}/{$repo}", $accessToken);
+            $branch = $repoInfo['default_branch'] ?? 'main';
+        }
+        
+        // Get the latest commit SHA on the branch
+        $refResponse = $this->makeRequest('GET', "/repos/{$owner}/{$repo}/git/ref/heads/{$branch}", $accessToken);
+        $latestCommitSha = $refResponse['object']['sha'];
+        
+        // Get the tree SHA from the latest commit
+        $commitResponse = $this->makeRequest('GET', "/repos/{$owner}/{$repo}/git/commits/{$latestCommitSha}", $accessToken);
+        $baseTreeSha = $commitResponse['tree']['sha'];
+        
+        // Create blobs for each file
+        $treeItems = [];
+        foreach ($files as $file) {
+            $blobResponse = $this->makeRequest('POST', "/repos/{$owner}/{$repo}/git/blobs", $accessToken, [
+                'content' => $file['content'],
+                'encoding' => 'utf-8'
+            ]);
+            
+            $treeItems[] = [
+                'path' => $file['path'],
+                'mode' => '100644', // Regular file
+                'type' => 'blob',
+                'sha' => $blobResponse['sha']
+            ];
+        }
+        
+        // Create a new tree
+        $treeResponse = $this->makeRequest('POST', "/repos/{$owner}/{$repo}/git/trees", $accessToken, [
+            'base_tree' => $baseTreeSha,
+            'tree' => $treeItems
+        ]);
+        
+        // Create a new commit
+        $newCommitResponse = $this->makeRequest('POST', "/repos/{$owner}/{$repo}/git/commits", $accessToken, [
+            'message' => $commitMessage,
+            'tree' => $treeResponse['sha'],
+            'parents' => [$latestCommitSha]
+        ]);
+        
+        // Update the reference
+        $this->makeRequest('PATCH', "/repos/{$owner}/{$repo}/git/refs/heads/{$branch}", $accessToken, [
+            'sha' => $newCommitResponse['sha']
+        ]);
+        
+        return [
+            'commit' => $newCommitResponse
+        ];
+    }
+
+    /**
      * Parse category information from index.md file
      */
     private function getCategoryInfo(
@@ -278,8 +371,83 @@ class GitHubService
     }
 
     /**
+     * Set the frontmatter title on each LessonPlan.
+     *
+     * The REST directory listing does not include file contents, so titles are
+     * unknown after enumeration. Rather than fetching each file individually,
+     * a single GraphQL query retrieves every lesson plan's file text by path
+     * for the selected branch, keeping the title list branch-accurate.
+     *
+     * @param LessonPlan[] $lessonPlans
+     */
+    private function populateTitles(array $lessonPlans, string $accessToken, string $owner, string $repo, ?string $branch = null): void
+    {
+        if (empty($lessonPlans)) {
+            return;
+        }
+
+        // GraphQL resolves a file by a "ref:path" expression; fall back to the
+        // repository default (HEAD) when no branch was provided.
+        $ref = $branch ?: 'HEAD';
+
+        // Build one query that aliases every lesson plan's blob text by path.
+        $fields = [];
+        $aliasToIndex = [];
+        foreach ($lessonPlans as $index => $lessonPlan) {
+            $alias = 'f' . $index;
+            $aliasToIndex[$alias] = $index;
+            // json_encode produces a properly-escaped GraphQL string literal.
+            $expression = json_encode($ref . ':' . $lessonPlan->getPath());
+            $fields[] = "{$alias}: object(expression: {$expression}) { ... on Blob { text } }";
+        }
+
+        $query = sprintf(
+            'query { repository(owner: %s, name: %s) { %s } }',
+            json_encode($owner),
+            json_encode($repo),
+            implode(' ', $fields)
+        );
+
+        try {
+            $response = $this->makeRequest('POST', '/graphql', $accessToken, ['query' => $query]);
+            $repository = $response['data']['repository'] ?? null;
+
+            if (!is_array($repository)) {
+                return;
+            }
+
+            foreach ($repository as $alias => $object) {
+                if (!isset($aliasToIndex[$alias]) || !is_array($object)) {
+                    continue;
+                }
+
+                $title = $this->extractFrontmatterTitle((string) ($object['text'] ?? ''));
+                if ($title !== null) {
+                    $lessonPlans[$aliasToIndex[$alias]]->setTitle($title);
+                }
+            }
+        } catch (\Exception $e) {
+            // Leave titles unset; the UI falls back to the filename.
+        }
+    }
+
+    /**
+     * Extract the `title` value from a markdown file's YAML frontmatter.
+     * Only matches a top-level (column 0) key so indented `title:` entries
+     * inside e.g. additionalResources are ignored.
+     */
+    private function extractFrontmatterTitle(string $content): ?string
+    {
+        if (preg_match('/^title:\s*(.+?)\s*$/m', $content, $match)) {
+            return trim($match[1], " \t\"'");
+        }
+
+        return null;
+    }
+
+    /**
      * Make a request to the GitHub API
-     * 
+     *
      * @throws HttpException If the request fails
      */
     private function makeRequest(string $method, string $endpoint, string $accessToken, array $params = []): array
@@ -441,5 +609,30 @@ class GitHubService
             // If there's an error (e.g., branch doesn't exist), return an empty array
             return [];
         }
+    }
+
+    /**
+     * Create a new branch from a source branch
+     * 
+     * @param string $accessToken GitHub access token
+     * @param string $owner Repository owner
+     * @param string $repo Repository name
+     * @param string $branchName Name of the new branch to create
+     * @param string $sourceBranch Name of the source branch (e.g., 'main')
+     * @return array Branch creation response
+     */
+    public function createBranch(string $accessToken, string $owner, string $repo, string $branchName, string $sourceBranch): array
+    {
+        // First, get the SHA of the source branch
+        $sourceRef = $this->makeRequest('GET', "/repos/{$owner}/{$repo}/git/ref/heads/{$sourceBranch}", $accessToken);
+        $sourceSha = $sourceRef['object']['sha'];
+        
+        // Create the new branch reference
+        $response = $this->makeRequest('POST', "/repos/{$owner}/{$repo}/git/refs", $accessToken, [
+            'ref' => "refs/heads/{$branchName}",
+            'sha' => $sourceSha
+        ]);
+        
+        return $response;
     }
 }

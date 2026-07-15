@@ -100,6 +100,30 @@ class GitHubController extends AbstractController
     }
 
     /**
+     * Create a new branch
+     */
+    #[Route('/repository/{owner}/{repo}/branches', name: 'app_github_create_branch', methods: ['POST'])]
+    public function createBranch(Request $request, string $owner, string $repo): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $branchName = $data['branchName'] ?? null;
+        $sourceBranch = $data['sourceBranch'] ?? null;
+        
+        if (!$branchName || !$sourceBranch) {
+            return $this->json(['error' => 'branchName and sourceBranch are required'], Response::HTTP_BAD_REQUEST);
+        }
+        
+        $token = $this->getTokenFromSession($request);
+
+        try {
+            $result = $this->githubService->createBranch($token, $owner, $repo, $branchName, $sourceBranch);
+            return $this->json($result);
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Failed to create branch: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * Get GitHub token from session for authenticated users
      */
     private function getTokenFromSession(Request $request = null): string
