@@ -88,15 +88,15 @@ file sessions do not work across instances.
    your image path is `rg.nl-ams.scw.cloud/learn-fair/lesson-plan-editor`.
 2. **API key**: IAM → API keys → generate; note the **Access key**, **Secret key**,
    and your **Project ID**.
-3. **GitHub secrets** (repo → Settings → Secrets and variables → Actions):
+3. **GitHub secrets & variables** (repo → Settings → Secrets and variables → Actions):
 
-   | Secret | Value |
-   | --- | --- |
-   | `SCW_ACCESS_KEY` | Scaleway API access key |
-   | `SCW_SECRET_KEY` | Scaleway API secret key |
-   | `SCW_PROJECT_ID` | Scaleway project id |
-   | `SCW_REGISTRY_IMAGE` | `rg.nl-ams.scw.cloud/learn-fair/lesson-plan-editor` |
-   | `SCW_CONTAINER_ID` | *(leave unset for the first run — see below)* |
+   | Name | Kind | Value |
+   | --- | --- | --- |
+   | `SCW_ACCESS_KEY` | secret | Scaleway API access key |
+   | `SCW_SECRET_KEY` | secret | Scaleway API secret key |
+   | `SCW_PROJECT_ID` | secret | Scaleway project id |
+   | `SCW_CONTAINER_ID` | secret | *(leave unset for the first run — see below)* |
+   | `SCW_REGISTRY_IMAGE` | **variable** | `rg.nl-ams.scw.cloud/learn-fair/lesson-plan-editor` |
 
 4. **First run** (build + push only): trigger the workflow. With `SCW_CONTAINER_ID`
    unset it builds and pushes the image and skips the deploy step.
