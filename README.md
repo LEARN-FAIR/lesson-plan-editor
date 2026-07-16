@@ -100,7 +100,24 @@ for role in roles/run.admin roles/cloudbuild.builds.editor \
             roles/artifactregistry.admin roles/iam.serviceAccountUser roles/storage.admin; do
   gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA" --role="$role"
 done
-gcloud iam service-accounts keys create key.json --iam-account="$SA"  # -> GH secret GCP_SA_KEY
+
+# Workload Identity Federation (no downloadable key; works when
+# iam.disableServiceAccountKeyCreation is enforced).
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
+gcloud iam workload-identity-pools create github-pool \
+  --location=global --display-name="GitHub Actions"
+gcloud iam workload-identity-pools providers create-oidc github-provider \
+  --location=global --workload-identity-pool=github-pool --display-name="GitHub" \
+  --issuer-uri="https://token.actions.githubusercontent.com" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
+  --attribute-condition="assertion.repository_owner == 'LEARN-FAIR'"
+gcloud iam service-accounts add-iam-policy-binding "$SA" \
+  --role=roles/iam.workloadIdentityUser \
+  --member="principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/attribute.repository/LEARN-FAIR/lesson-plan-editor"
+
+# Values for the GitHub secrets below:
+echo "GCP_DEPLOY_SA   = $SA"
+echo "GCP_WIF_PROVIDER = projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
 
 # Let the Cloud Run runtime SA read the secrets
 PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
@@ -116,7 +133,8 @@ done
 | Secret | Value |
 | --- | --- |
 | `GCP_PROJECT_ID` | your GCP project id |
-| `GCP_SA_KEY` | contents of `key.json` |
+| `GCP_WIF_PROVIDER` | the `projects/…/providers/github-provider` string printed above |
+| `GCP_DEPLOY_SA` | `lpe-deployer@<project-id>.iam.gserviceaccount.com` |
 | `GH_OAUTH_CLIENT_ID` | GitHub OAuth App client id |
 
 Non-secret config (`CORS_ALLOW_ORIGIN`, `FRONTEND_URL`) is already baked from
