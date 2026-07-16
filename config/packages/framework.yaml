@@ -5,6 +5,12 @@ framework:
     http_method_override: false
     handle_all_throwables: true
 
+    # The container runs behind Scaleway's TLS-terminating proxy, which forwards
+    # plain HTTP with X-Forwarded-* headers. Trust the direct peer so Symfony
+    # sees the original https scheme/host (needed for correct OAuth callback URLs).
+    trusted_proxies: '127.0.0.1,REMOTE_ADDR,PRIVATE_SUBNETS'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
+
     # Enables session support. Note that the session will ONLY be started if you read or write from it.
     # Remove or comment this section to explicitly disable session support.
     session:
