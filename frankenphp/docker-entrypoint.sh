@@ -57,8 +57,13 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		fi
 	fi
 
-	setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX var
-	setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX var
+	# Some serverless filesystems (e.g. Scaleway Serverless Containers) don't
+	# support ACLs. Probe once on var/, and only apply ACLs if supported —
+	# otherwise setfacl fails on every file and, under `set -e`, aborts startup.
+	if setfacl -m u:www-data:rwX var >/dev/null 2>&1; then
+		setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX var
+		setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX var
+	fi
 
 	echo 'PHP app ready!'
 fi
