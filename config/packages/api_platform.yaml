@@ -1,0 +1,20 @@
+api_platform:
+    title: LEARN-FAIR Lesson Plan Editor API
+    version: 1.0.0
+    show_webby: false
+    enable_entrypoint: false
+    # The frontend consumes plain JSON (not JSON-LD/Hydra), so expose json only.
+    formats:
+        json: ['application/json']
+    defaults:
+        # Auth is GitHub-OAuth session based, so requests are not stateless.
+        stateless: false
+        pagination_enabled: false
+        cache_headers:
+            vary: ['Content-Type', 'Authorization', 'Origin']
+    mapping:
+        paths:
+            - '%kernel.project_dir%/src/Auth/Infrastructure/ApiPlatform/Resource'
+            - '%kernel.project_dir%/src/GitHub/Infrastructure/ApiPlatform/Resource'
+            - '%kernel.project_dir%/src/LessonPlan/Infrastructure/ApiPlatform/Resource'
+            - '%kernel.project_dir%/src/Contributor/Infrastructure/ApiPlatform/Resource'

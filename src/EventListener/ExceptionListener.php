@@ -26,7 +26,7 @@ class ExceptionListener
         $request = $event->getRequest();
         
         // Only handle JSON requests
-        if ($request->getContentType() !== 'json' && !$request->isXmlHttpRequest() && 
+        if ($request->getContentTypeFormat() !== 'json' && !$request->isXmlHttpRequest() &&
             !str_starts_with($request->getPathInfo(), '/api/')) {
             return;
         }

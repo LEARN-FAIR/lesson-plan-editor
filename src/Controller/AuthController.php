@@ -97,45 +97,4 @@ class AuthController extends AbstractController
         }
     }
     
-    /**
-     * Check authentication status
-     */
-    #[Route('/status', name: 'app_auth_status', methods: ['GET'])]
-    public function checkAuthStatus(Request $request): JsonResponse
-    {
-        $session = $request->getSession();
-        
-        // Check if GitHub token exists in session
-        if ($session->has('github_token')) {
-            return $this->json([
-                'authenticated' => true,
-                'user' => [
-                    'id' => $session->get('github_user_id'),
-                    'login' => $session->get('github_username'),
-                    'email' => $session->get('github_email'),
-                    'avatar_url' => $session->get('github_avatar')
-                ]
-            ]);
-        }
-        
-        return $this->json(['authenticated' => false]);
-    }
-    
-    /**
-     * Logout - clear session
-     */
-    #[Route('/logout', name: 'app_auth_logout', methods: ['POST'])]
-    public function logout(Request $request): JsonResponse
-    {
-        // Clear the session
-        $session = $request->getSession();
-        $session->remove('github_token');
-        $session->remove('github_user_id');
-        $session->remove('github_username');
-        $session->remove('github_email');
-        $session->remove('github_avatar');
-        
-        return $this->json(['success' => true, 'message' => 'Logged out successfully']);
-    }
-    
 }
