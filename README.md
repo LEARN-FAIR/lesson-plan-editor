@@ -1,112 +1,67 @@
-# LEARN-FAIR Lesson Plan Editor
+# LEARN-FAIR Lesson Plan Editor — Backend API
 
-A React TypeScript application for editing FAIR lesson plans with GitHub integration for saving and versioning content.
+Symfony API for the FAIR lesson plan editor. It handles GitHub OAuth and proxies
+GitHub operations (listing/reading/committing lesson plans) for the frontend.
 
-## Features
+The frontend is a separate repository (`lesson-plan-editor-frontend`), a static
+React/Vite SPA deployed to Cloudflare Pages. This repo is **API-only** — it does
+not build or serve any UI.
 
-- Markdown-based lesson plan editing
-- GitHub integration for saving and versioning content
-- OAuth authentication with GitHub
-- Full-stack application with secure backend for OAuth flow
+## Architecture
 
-## Available Scripts
+- **Backend** (this repo): `api.editor.fairdata.education` — Symfony API + GitHub OAuth.
+- **Frontend** (separate repo): `editor.fairdata.education` — static SPA on Cloudflare Pages.
 
-In the project directory, you can run:
+Both hosts share the registrable domain `fairdata.education`, so they are
+*same-site*. Auth uses a `SameSite=Lax` session cookie set by this API; the
+browser sends it with the frontend's cross-origin (but same-site) API requests.
+CORS is handled by `nelmio/cors-bundle`; the allowed origin and the post-login
+redirect target are configured via environment variables.
 
-### `npm start`
+All routes are under `/api/*`.
 
-Runs the app in the development mode.\
-Open [https://localhost:3000](https://localhost:3000) to view it in the browser.
+## Requirements
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+- PHP 8.x + Composer
+- A GitHub OAuth App
 
-### `npm test`
+## Setup
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## GitHub Integration Setup
-
-### Backend Setup (Symfony)
-
-1. Navigate to the server directory:
-   ```
-   cd server
-   ```
-
-2. Install PHP dependencies:
-   ```
+1. Install PHP dependencies:
+   ```bash
    composer install
    ```
 
-3. Create a `.env.local` file based on the `.env` file:
-   ```
+2. Create a local env override:
+   ```bash
    cp .env .env.local
    ```
 
-4. Configure your GitHub OAuth application in the `.env.local` file:
+3. Configure the GitHub OAuth App credentials (in `.env.local` or the environment).
+   The OAuth **callback URL** registered on GitHub must point at this API:
    ```
-   GITHUB_CLIENT_ID=your_github_client_id
-   GITHUB_CLIENT_SECRET=your_github_client_secret
-   GITHUB_REDIRECT_URI=https://localhost:3000/github-callback
+   https://api.editor.fairdata.education/api/auth/github/callback
+   ```
+   (for local dev, `http://localhost:8000/api/auth/github/callback`).
+
+4. Environment variables of note:
+   - `CORS_ALLOW_ORIGIN` — regex of allowed frontend origins (localhost + `editor.fairdata.education`).
+   - `FRONTEND_URL` — where the API redirects after a successful OAuth login.
+
+5. Generate JWT keys if not present (used by `lexik/jwt-authentication-bundle`):
+   ```bash
+   php bin/console lexik:jwt:generate-keypair
    ```
 
-5. Start the Symfony development server:
-   ```
+6. Run the dev server:
+   ```bash
    symfony server:start --port=8000
-   ```
-   or
-   ```
+   # or
    php -S localhost:8000 -t public
    ```
 
-### Frontend Setup
+## Deployment
 
-1. Create a `.env` file in the root directory with the API URL:
-   ```
-   REACT_APP_API_URL=http://localhost:8000/api
-   ```
-
-2. Install dependencies and start the frontend application:
-   ```
-   npm install
-   npm start
-   ```
-
-3. The frontend will communicate with the Symfony backend through the API adapter.
-
-## Using GitHub Integration
-
-1. Click the "Sign in with GitHub" button in the editor.
-2. You will be redirected to GitHub to authorize the application.
-3. After authorization, you'll be redirected back to the editor with your GitHub account connected.
-4. Use the commit form to save your lesson plan to a GitHub repository.
-
-## Learn More
-
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+Deployed via the Ansible role under `ansible/` (see `compose*.yaml` / `Dockerfile`
+for the container build). The frontend is deployed independently on Cloudflare
+Pages and is not part of this repo's release.

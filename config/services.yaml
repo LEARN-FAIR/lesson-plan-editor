@@ -33,9 +33,3 @@ services:
     # Enable SessionInterface for autowiring
     Symfony\Component\HttpFoundation\Session\SessionInterface:
         alias: 'session'
-
-    App\Twig\AssetExtension:
-        arguments:
-            $appVersion: '%env(APP_VERSION)%'
-        tags:
-            - { name: twig.extension }

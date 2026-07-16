@@ -1,7 +1,0 @@
-pentatrion_vite:
-    throw_on_missing_entry: true
-    builds:
-        app:
-            build_directory: '%kernel.project_dir%/public/build'
-            script_attributes:
-                defer: true
