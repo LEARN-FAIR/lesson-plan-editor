@@ -1,0 +1,16 @@
+# The prod image builds vendor/ itself; keep the build context clean.
+.git/
+.github/
+.idea/
+vendor/
+var/
+node_modules/
+tests/
+ansible/
+certs/
+compose*.yaml
+.env.local
+.env.*.local
+.dockerignore
+.gcloudignore
+README.md

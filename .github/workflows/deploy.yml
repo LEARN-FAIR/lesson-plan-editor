@@ -1,4 +1,4 @@
-name: Deploy backend (Cloud Run)
+name: Deploy backend (Scaleway)
 
 on:
   push:
@@ -7,45 +7,39 @@ on:
   workflow_dispatch:
 
 env:
-  SERVICE: lesson-plan-editor
-  REGION: europe-west4
+  SCW_REGION: nl-ams
+  # e.g. rg.nl-ams.scw.cloud/learn-fair/lesson-plan-editor
+  IMAGE: ${{ secrets.SCW_REGISTRY_IMAGE }}
+  SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+  SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+  SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+  SCW_CONTAINER_ID: ${{ secrets.SCW_CONTAINER_ID }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write   # required for Workload Identity Federation
     steps:
       - uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
-          service_account: ${{ secrets.GCP_DEPLOY_SA }}
+      - name: Log in to Scaleway Container Registry
+        run: echo "$SCW_SECRET_KEY" | docker login "rg.${SCW_REGION}.scw.cloud" -u nologin --password-stdin
 
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
-
-      # Builds the Dockerfile's final stage (frankenphp_prod) via Cloud Build,
-      # then deploys it. Scale-to-zero (min 0) + a single instance (max 1) keeps
-      # file-based sessions consistent; --cpu-boost shortens cold starts, which
-      # the frontend masks with its on-load /api/auth/status call.
-      - name: Deploy to Cloud Run
+      - name: Build and push image (frankenphp_prod)
         run: |
-          gcloud run deploy "$SERVICE" \
-            --project "${{ secrets.GCP_PROJECT_ID }}" \
-            --region "$REGION" \
-            --source . \
-            --platform managed \
-            --allow-unauthenticated \
-            --port 8080 \
-            --cpu 1 \
-            --memory 512Mi \
-            --min-instances 0 \
-            --max-instances 1 \
-            --cpu-boost \
-            --set-env-vars "SERVER_NAME=:8080,CADDY_GLOBAL_OPTIONS=auto_https off,GITHUB_CLIENT_ID=${{ secrets.GH_OAUTH_CLIENT_ID }}" \
-            --set-secrets "APP_SECRET=lpe-app-secret:latest,GITHUB_CLIENT_SECRET=lpe-github-client-secret:latest"
+          docker build --target frankenphp_prod -t "$IMAGE:$GITHUB_SHA" -t "$IMAGE:latest" .
+          docker push "$IMAGE:$GITHUB_SHA"
+          docker push "$IMAGE:latest"
+
+      - name: Install Scaleway CLI
+        if: env.SCW_CONTAINER_ID != ''
+        run: curl -s https://raw.githubusercontent.com/scaleway/scaleway-cli/master/scripts/get.sh | sudo sh
+
+      # Skipped on the very first run (before the container exists). Create the
+      # container once against the pushed :latest image, set SCW_CONTAINER_ID,
+      # then re-run and this points it at the new immutable SHA tag and redeploys.
+      - name: Update image and redeploy container
+        if: env.SCW_CONTAINER_ID != ''
+        run: |
+          scw container container update "$SCW_CONTAINER_ID" \
+            registry-image="$IMAGE:$GITHUB_SHA" region="$SCW_REGION"
+          scw container container deploy "$SCW_CONTAINER_ID" region="$SCW_REGION"
