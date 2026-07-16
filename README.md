@@ -95,7 +95,7 @@ file sessions do not work across instances.
    | `SCW_ACCESS_KEY` | secret | Scaleway API access key |
    | `SCW_SECRET_KEY` | secret | Scaleway API secret key |
    | `SCW_PROJECT_ID` | secret | Scaleway project id |
-   | `SCW_CONTAINER_ID` | secret | *(leave unset for the first run — see below)* |
+   | `SCW_CONTAINER_ID` | **variable** | *(leave unset for the first run — see below)* |
    | `SCW_REGISTRY_IMAGE` | **variable** | `rg.nl-ams.scw.cloud/learn-fair/lesson-plan-editor` |
 
 4. **First run** (build + push only): trigger the workflow. With `SCW_CONTAINER_ID`
