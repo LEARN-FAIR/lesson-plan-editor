@@ -1,0 +1,46 @@
+name: Deploy backend (Cloud Run)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  SERVICE: lesson-plan-editor
+  REGION: europe-west4
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Builds the Dockerfile's final stage (frankenphp_prod) via Cloud Build,
+      # then deploys it. Scale-to-zero (min 0) + a single instance (max 1) keeps
+      # file-based sessions consistent; --cpu-boost shortens cold starts, which
+      # the frontend masks with its on-load /api/auth/status call.
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --region "$REGION" \
+            --source . \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8080 \
+            --cpu 1 \
+            --memory 512Mi \
+            --min-instances 0 \
+            --max-instances 1 \
+            --cpu-boost \
+            --set-env-vars "SERVER_NAME=:8080,CADDY_GLOBAL_OPTIONS=auto_https off,GITHUB_CLIENT_ID=${{ secrets.GH_OAUTH_CLIENT_ID }}" \
+            --set-secrets "APP_SECRET=lpe-app-secret:latest,GITHUB_CLIENT_SECRET=lpe-github-client-secret:latest"

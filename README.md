@@ -60,8 +60,80 @@ All routes are under `/api/*`.
    php -S localhost:8000 -t public
    ```
 
-## Deployment
+## Deployment — Google Cloud Run (serverless container)
 
-Deployed via the Ansible role under `ansible/` (see `compose*.yaml` / `Dockerfile`
-for the container build). The frontend is deployed independently on Cloudflare
-Pages and is not part of this repo's release.
+The backend runs as a FrankenPHP container on **Cloud Run**, scale-to-zero
+(free tier). `.github/workflows/deploy.yml` builds the Dockerfile's
+`frankenphp_prod` stage via Cloud Build and deploys on every push to `main`.
+
+Key settings baked into the workflow:
+
+- Region `europe-west4` (Netherlands); `--min-instances 0 --max-instances 1`.
+- `--cpu-boost` for faster cold starts. The frontend already calls
+  `GET /api/auth/status` on load, which wakes the container while the user is on
+  the login page, so the ~1s cold start is hidden.
+- `SERVER_NAME=:8080` so Caddy serves plain HTTP on Cloud Run's port (Cloud Run
+  terminates TLS).
+
+**Sessions:** file-based sessions stay consistent because of `--max-instances 1`.
+After a long idle the instance scales to zero and the session is dropped, so the
+next visit re-authenticates via a quick GitHub OAuth redirect. If you ever need
+more than one instance, move sessions to a shared store (e.g. Upstash Redis)
+first — file sessions do not work across instances.
+
+### One-time setup
+
+```bash
+PROJECT_ID=your-gcp-project
+gcloud config set project "$PROJECT_ID"
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
+  artifactregistry.googleapis.com secretmanager.googleapis.com
+
+# Secrets (Secret Manager)
+php -r 'echo bin2hex(random_bytes(16));' | gcloud secrets create lpe-app-secret --data-file=-
+printf '%s' 'YOUR_GITHUB_OAUTH_CLIENT_SECRET' | gcloud secrets create lpe-github-client-secret --data-file=-
+
+# Deploy service account for GitHub Actions
+gcloud iam service-accounts create lpe-deployer --display-name="Lesson Plan Editor deployer"
+SA="lpe-deployer@$PROJECT_ID.iam.gserviceaccount.com"
+for role in roles/run.admin roles/cloudbuild.builds.editor \
+            roles/artifactregistry.admin roles/iam.serviceAccountUser roles/storage.admin; do
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA" --role="$role"
+done
+gcloud iam service-accounts keys create key.json --iam-account="$SA"  # -> GH secret GCP_SA_KEY
+
+# Let the Cloud Run runtime SA read the secrets
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
+RUNTIME_SA="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
+for s in lpe-app-secret lpe-github-client-secret; do
+  gcloud secrets add-iam-policy-binding "$s" \
+    --member="serviceAccount:$RUNTIME_SA" --role=roles/secretmanager.secretAccessor
+done
+```
+
+### GitHub Actions secrets
+
+| Secret | Value |
+| --- | --- |
+| `GCP_PROJECT_ID` | your GCP project id |
+| `GCP_SA_KEY` | contents of `key.json` |
+| `GH_OAUTH_CLIENT_ID` | GitHub OAuth App client id |
+
+Non-secret config (`CORS_ALLOW_ORIGIN`, `FRONTEND_URL`) is already baked from
+committed `.env`; override at deploy with extra `--set-env-vars` if needed.
+
+### After the first deploy
+
+- Map the domain: `gcloud run domain-mappings create --service lesson-plan-editor \
+  --domain api.editor.fairdata.education --region europe-west4`, then add the DNS
+  records it prints.
+- Set the GitHub OAuth App **callback URL** to
+  `https://api.editor.fairdata.education/api/auth/github/callback`.
+
+> **Security:** the `APP_SECRET` committed in `.env` is public — the `lpe-app-secret`
+> Secret Manager value overrides it at runtime, so set a fresh one there (and
+> ideally rotate the committed value).
+
+An older Ansible deploy (`ansible/`, `compose*.yaml`) targeting the previous host
+also exists; Cloud Run is the current path. The frontend deploys independently to
+Cloudflare.
